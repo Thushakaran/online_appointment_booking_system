@@ -1,11 +1,14 @@
 package com.se.Online.Appointment.Booking.System.controller;
 
+
 import com.se.Online.Appointment.Booking.System.exception.ResourceNotFoundException;
 import com.se.Online.Appointment.Booking.System.model.Role;
 import com.se.Online.Appointment.Booking.System.model.User;
 import com.se.Online.Appointment.Booking.System.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,36 +35,64 @@ public class UserController {
 
     // Get all user
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<User>> getAllUser() {
         return ResponseEntity.ok(userService.getAllUser());
     }
 
     // Get user by id
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<User> getUserById(@PathVariable Long id, Authentication auth) {
         User user = userService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")) ||
+                auth.getName().equals(user.getUsername())) {
+            return ResponseEntity.ok(user);
+        }
+
         return ResponseEntity.ok(user);
     }
 
     // Update user
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updateUser) {
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updateUser, Authentication auth) {
         User user = userService.findById((id))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
+        if (!auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")) &&
+                !auth.getName().equals(user.getUsername())) {
+            return ResponseEntity.status(403).build();
+        }
+
         user.setUsername(updateUser.getUsername());
         user.setEmail(updateUser.getEmail());
-        user.setPassword(updateUser.getPassword());
-        user.setRole(updateUser.getRole());
+        if (updateUser.getPassword() != null) {
+            user.setPassword(updateUser.getPassword()); // should be encoded before saving
+        }
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            user.setRole(updateUser.getRole()); // only admin can change roles
+        }
 
         return ResponseEntity.ok(userService.saveUser(user));
+
     }
 
     // Delete user
+    // Only ADMIN can delete
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.ok("User deleted successfully.");
     }
+
+    // User endpoint: view own profile
+    @GetMapping("/me")
+    public ResponseEntity<User> getCurrentUser(Authentication auth) {
+        User user = userService.findByUsername(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + auth.getName()));
+        return ResponseEntity.ok(user);
+    }
 }
+
