@@ -7,9 +7,11 @@ import com.se.Online.Appointment.Booking.System.model.Provider;
 import com.se.Online.Appointment.Booking.System.model.User;
 import com.se.Online.Appointment.Booking.System.repository.AppointmentRepository;
 import com.se.Online.Appointment.Booking.System.service.AppointmentService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentRepository appointmentRepository;
 

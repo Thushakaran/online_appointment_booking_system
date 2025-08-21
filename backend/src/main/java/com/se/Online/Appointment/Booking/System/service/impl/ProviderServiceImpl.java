@@ -4,9 +4,11 @@ import com.se.Online.Appointment.Booking.System.exception.ResourceNotFoundExcept
 import com.se.Online.Appointment.Booking.System.model.Provider;
 import com.se.Online.Appointment.Booking.System.repository.ProviderRepository;
 import com.se.Online.Appointment.Booking.System.service.ProviderService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public class ProviderServiceImpl implements ProviderService {
     private final ProviderRepository providerRepository;
 
