@@ -18,7 +18,7 @@ public class Provider {
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
-    private String serviceNam;
+    private String serviceName;
 
     private String description;
 }
