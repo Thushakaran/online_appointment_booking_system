@@ -10,4 +10,8 @@ public interface ProviderService {
     List<Provider> getAllProviders();
 
     Provider getProviderById(Long id);
+
+    Provider updateProvider(Long id, Provider provider);
+
+    void deleteProvider(Long id);
 }

@@ -33,13 +33,13 @@ public class AuthController {
     }
 
     // Register
-    @PostMapping("register")
-    public ResponseEntity<?> register(@RequestBody User user){
-        if(userRepository.existsByEmail(user.getEmail())){
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody User user) {
+        if (userRepository.existsByEmail(user.getEmail())) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email already in use"));
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        if(user.getRole() == null){
+        if (user.getRole() == null) {
             user.setRole(Role.USER);
         }
         userRepository.save(user);
@@ -48,12 +48,12 @@ public class AuthController {
 
     // Login
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request){
-        try{
+    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+        try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.get("üsername"), request.get("password"))
+                    new UsernamePasswordAuthenticationToken(request.get("username"), request.get("password"))
             );
-        }catch(BadCredentialsException e){
+        } catch (BadCredentialsException e) {
             return ResponseEntity.status(401).body(Map.of("error", "Invalid username or password"));
         }
 

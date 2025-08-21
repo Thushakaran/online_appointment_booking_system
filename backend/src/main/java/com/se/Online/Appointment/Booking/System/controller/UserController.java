@@ -56,26 +56,9 @@ public class UserController {
 
     // Update user
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updateUser, Authentication auth) {
-        User user = userService.findById((id))
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-
-        if (!auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")) &&
-                !auth.getName().equals(user.getUsername())) {
-            return ResponseEntity.status(403).build();
-        }
-
-        user.setUsername(updateUser.getUsername());
-        user.setEmail(updateUser.getEmail());
-        if (updateUser.getPassword() != null) {
-            user.setPassword(updateUser.getPassword()); // should be encoded before saving
-        }
-        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-            user.setRole(updateUser.getRole()); // only admin can change roles
-        }
-
-        return ResponseEntity.ok(userService.saveUser(user));
-
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+        User updatedUser = userService.updateUser(id, userDetails);
+        return ResponseEntity.ok(updatedUser);
     }
 
     // Delete user
