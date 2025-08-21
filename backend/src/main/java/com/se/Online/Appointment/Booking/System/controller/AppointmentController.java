@@ -1,6 +1,6 @@
 package com.se.Online.Appointment.Booking.System.controller;
 
-import com.se.Online.Appointment.Booking.System.dto.request.UpdateStatusRequest;
+import com.se.Online.Appointment.Booking.System.dto.request.AppointmentRequest;
 import com.se.Online.Appointment.Booking.System.model.Appointment;
 import com.se.Online.Appointment.Booking.System.model.User;
 import com.se.Online.Appointment.Booking.System.service.AppointmentService;
@@ -38,7 +38,7 @@ public class AppointmentController {
 
     // Update appointment status
     @PutMapping("/{id}/status")
-    public ResponseEntity<Appointment> updateAppointmentStatus(@PathVariable Long id, @RequestBody UpdateStatusRequest request) {
+    public ResponseEntity<Appointment> updateAppointmentStatus(@PathVariable Long id, @RequestBody AppointmentRequest request) {
         Appointment updated = appointmentService.updateAppointmentStatus(id, request.getStatus());
         return ResponseEntity.ok(updated);
     }
