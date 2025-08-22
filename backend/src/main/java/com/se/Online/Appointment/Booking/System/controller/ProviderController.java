@@ -33,14 +33,12 @@ public class ProviderController {
 
     // Get all providers
     @GetMapping
-    @PreAuthorize("hasRole('PROVIDER')")
     public ResponseEntity<List<Provider>> getAllProviders() {
         return ResponseEntity.ok(providerService.getAllProviders());
     }
 
     // Get provider by ID
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('PROVIDER')")
     public ResponseEntity<Provider> getProviderById(@PathVariable Long id) {
         Provider provider = providerService.getProviderById(id);
         return ResponseEntity.ok(provider);
@@ -52,6 +50,7 @@ public class ProviderController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String deleteProvider(@PathVariable Long id) {
         providerService.deleteProvider(id);
         return "Provider deleted successfully with id: " + id;

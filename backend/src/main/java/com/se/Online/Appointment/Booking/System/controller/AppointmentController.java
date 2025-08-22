@@ -35,6 +35,7 @@ public class AppointmentController {
         user.setId(userId); // minimal object
         return ResponseEntity.ok(appointmentService.getAppointmentByUser(user));
     }
+   
 
     // Update appointment status
     @PutMapping("/{id}/status")

@@ -26,6 +26,7 @@ public class UserController {
 
     // Create user (register)
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<User> createUser(@RequestBody User user) {
         if (user.getRole() == null) {
             user.setRole(Role.USER);

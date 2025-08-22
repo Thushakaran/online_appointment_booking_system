@@ -3,6 +3,7 @@ package com.se.Online.Appointment.Booking.System.controller;
 import com.se.Online.Appointment.Booking.System.model.Availability;
 import com.se.Online.Appointment.Booking.System.service.AvailabilityService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -28,6 +29,7 @@ public class AvailabilityController {
 
     // Get all availabilities
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Availability>> getAllAvailabilities() {
         return ResponseEntity.ok(availabilityService.getAllAvailability());
     }
