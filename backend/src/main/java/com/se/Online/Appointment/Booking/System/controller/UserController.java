@@ -1,6 +1,5 @@
 package com.se.Online.Appointment.Booking.System.controller;
 
-
 import com.se.Online.Appointment.Booking.System.exception.ResourceNotFoundException;
 import com.se.Online.Appointment.Booking.System.model.Role;
 import com.se.Online.Appointment.Booking.System.model.User;
@@ -9,9 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -19,6 +21,9 @@ public class UserController {
 
     @Autowired
     private final UserService userService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public UserController(UserService userService) {
         this.userService = userService;
@@ -78,5 +83,38 @@ public class UserController {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + auth.getName()));
         return ResponseEntity.ok(user);
     }
-}
 
+    // Change password endpoint
+    @PostMapping("/change-password")
+    public ResponseEntity<Map<String, String>> changePassword(
+            @RequestBody Map<String, String> passwordRequest,
+            Authentication auth) {
+
+        String currentPassword = passwordRequest.get("currentPassword");
+        String newPassword = passwordRequest.get("newPassword");
+
+        if (currentPassword == null || newPassword == null) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Current password and new password are required");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        User user = userService.findByUsername(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + auth.getName()));
+
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Current password is incorrect");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userService.saveUser(user);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Password changed successfully");
+        return ResponseEntity.ok(response);
+    }
+}
