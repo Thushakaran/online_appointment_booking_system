@@ -38,8 +38,22 @@ public class JwtUtil {
                 .compact();
     }
 
+    public String generateToken(String username, String role) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + jwtExpirationMs);
+
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("role", role)
+                .setIssuedAt(now)
+                .setExpiration(expiry)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     /**
-     * Returns claims if token is valid, else throws JwtException/IllegalArgumentException
+     * Returns claims if token is valid, else throws
+     * JwtException/IllegalArgumentException
      */
     public Claims parseClaims(String token) throws JwtException, IllegalArgumentException {
         return Jwts.parserBuilder()
@@ -65,6 +79,17 @@ public class JwtUtil {
         return claims != null
                 && expectedUsername != null
                 && expectedUsername.equals(claims.getSubject())
+                && claims.getExpiration() != null
+                && claims.getExpiration().after(new Date());
+    }
+
+    public boolean isTokenValid(String token, String expectedUsername, String expectedRole) {
+        Claims claims = tryParseClaims(token);
+        return claims != null
+                && expectedUsername != null
+                && expectedUsername.equals(claims.getSubject())
+                && expectedRole != null
+                && expectedRole.equals(claims.get("role", String.class))
                 && claims.getExpiration() != null
                 && claims.getExpiration().after(new Date());
     }

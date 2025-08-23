@@ -31,11 +31,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
-            FilterChain chain
-    ) throws ServletException, IOException {
+            FilterChain chain) throws ServletException, IOException {
+
+        System.out.println("=== JWT Filter Debug ===");
+        System.out.println("Request URI: " + request.getRequestURI());
+        System.out.println("Request Method: " + request.getMethod());
 
         String header = request.getHeader("Authorization");
         String token = null;
+
+        System.out.println("Authorization header: "
+                + (header != null ? header.substring(0, Math.min(50, header.length())) + "..." : "null"));
 
         if (header != null && header.startsWith("Bearer ")) {
             token = header.substring(7).trim();
@@ -44,33 +50,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        System.out.println("Extracted token: "
+                + (token != null ? token.substring(0, Math.min(30, token.length())) + "..." : "null"));
+
         if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 // Parse once and reuse
                 Claims claims = jwtUtil.parseClaims(token);
                 String username = claims.getSubject();
+                String role = claims.get("role", String.class);
+                System.out.println("JWT Subject (username): " + username);
+                System.out.println("JWT Role: " + role);
 
                 if (username != null) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    System.out.println("Loaded user details: " + userDetails.getUsername());
+                    System.out.println("User authorities: " + userDetails.getAuthorities());
 
                     // Optional: confirm subject matches and token still valid
                     if (jwtUtil.isTokenValid(token, userDetails.getUsername())) {
-                        UsernamePasswordAuthenticationToken authToken =
-                                new UsernamePasswordAuthenticationToken(
-                                        userDetails,
-                                        null,
-                                        userDetails.getAuthorities()
-                                );
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities());
                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(authToken);
+                        System.out.println("Authentication set successfully");
+                    } else {
+                        System.out.println("Token validation failed");
                     }
                 }
             } catch (JwtException | IllegalArgumentException ex) {
                 // SignatureException, ExpiredJwtException, MalformedJwtException, etc.
-                // Log at debug/info; do not block the request
-                // e.g., logger.info("Invalid JWT: {}", ex.getMessage());
+                System.err.println("JWT parsing error: " + ex.getMessage());
+                ex.printStackTrace();
             }
+        } else {
+            System.out.println("No token or authentication already exists");
         }
+
+        System.out.println("Current authentication: " + SecurityContextHolder.getContext().getAuthentication());
+        System.out.println("=== End JWT Filter Debug ===");
 
         chain.doFilter(request, response);
     }

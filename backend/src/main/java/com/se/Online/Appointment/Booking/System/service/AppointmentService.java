@@ -13,5 +13,11 @@ public interface AppointmentService {
 
     List<Appointment> getAppointmentByProvider(Provider provider);
 
+    List<Appointment> getAllAppointments();
+
+    Appointment getAppointmentById(Long id);
+
     Appointment updateAppointmentStatus(Long id, String status);
+
+    void deleteAppointment(Long id);
 }

@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface AvailabilityRepository extends JpaRepository<Availability, Long> {
     List<Availability> findByProviderIdAndIsBookedFalse(Long providerId);
+
+    List<Availability> findByProviderId(Long providerId);
 }

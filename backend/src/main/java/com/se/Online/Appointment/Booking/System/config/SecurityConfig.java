@@ -27,14 +27,21 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
+        http
+                .cors(cors -> cors.configure(http))
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()   // public endpoints
-                        .requestMatchers("/api/users/**").permitAll()   // public endpoints
-                        .requestMatchers("/api/availabilities/**").permitAll()   // public endpoints
-                        .anyRequest().authenticated()                 // secure others
-                )
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/providers").permitAll() // Allow viewing providers without auth
+                        .requestMatchers("/api/availabilities/provider/**").permitAll() // Allow viewing availability
+                                                                                        // without auth
+                        .requestMatchers("/api/users/me").authenticated()
+                        .requestMatchers("/api/providers/me").authenticated()
+                        .requestMatchers("/api/appointments/**").authenticated()
+                        .requestMatchers("/api/availabilities/**").authenticated()
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 

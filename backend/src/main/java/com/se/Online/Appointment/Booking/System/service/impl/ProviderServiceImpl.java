@@ -3,6 +3,7 @@ package com.se.Online.Appointment.Booking.System.service.impl;
 import com.se.Online.Appointment.Booking.System.exception.ResourceNotFoundException;
 import com.se.Online.Appointment.Booking.System.model.Provider;
 import com.se.Online.Appointment.Booking.System.repository.ProviderRepository;
+import com.se.Online.Appointment.Booking.System.repository.AvailabilityRepository;
 import com.se.Online.Appointment.Booking.System.service.ProviderService;
 import org.springframework.stereotype.Service;
 
@@ -12,9 +13,11 @@ import java.util.Optional;
 @Service
 public class ProviderServiceImpl implements ProviderService {
     private final ProviderRepository providerRepository;
+    private final AvailabilityRepository availabilityRepository;
 
-    public ProviderServiceImpl(ProviderRepository providerRepository) {
+    public ProviderServiceImpl(ProviderRepository providerRepository, AvailabilityRepository availabilityRepository) {
         this.providerRepository = providerRepository;
+        this.availabilityRepository = availabilityRepository;
     }
 
     @Override
@@ -22,10 +25,16 @@ public class ProviderServiceImpl implements ProviderService {
         return providerRepository.save(provider);
     }
 
-
     @Override
     public List<Provider> getAllProviders() {
-        return providerRepository.findAll();
+        List<Provider> providers = providerRepository.findAll();
+        // Load availabilities for each provider
+        for (Provider provider : providers) {
+            List<com.se.Online.Appointment.Booking.System.model.Availability> availabilities = availabilityRepository
+                    .findByProviderIdAndIsBookedFalse(provider.getId());
+            provider.setAvailabilities(availabilities);
+        }
+        return providers;
     }
 
     @Override
@@ -48,4 +57,16 @@ public class ProviderServiceImpl implements ProviderService {
         Provider provider = getProviderById(id);
         providerRepository.delete(provider);
     }
+
+    @Override
+    public Provider findByUserUsername(String username) {
+        return providerRepository.findByUserUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
+    }
+
+    @Override
+    public Provider getProviderByUsername(String username) {
+        return findByUserUsername(username);
+    }
+
 }

@@ -11,9 +11,13 @@ public interface AvailabilityService {
 
     List<Availability> getAvailabilitiesByProvider(Long providerId);
 
+    List<Availability> getAllAvailabilitiesByProvider(Long providerId);
+
     Availability getAvailabilityById(Long id);
+
+    Availability updateAvailability(Availability availability);
 
     Availability markAsBooked(Long id);
 
-
+    void deleteAvailability(Long id);
 }

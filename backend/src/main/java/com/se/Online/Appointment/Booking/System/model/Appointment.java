@@ -1,5 +1,6 @@
 package com.se.Online.Appointment.Booking.System.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.*;
@@ -25,6 +26,11 @@ public class Appointment {
     @ManyToOne
     @JoinColumn(name = "provider_id")
     private Provider provider;
+
+    @ManyToOne
+    @JoinColumn(name = "availability_id")
+    @JsonBackReference
+    private Availability availability;
 
     private LocalDateTime appointmentDate;
 

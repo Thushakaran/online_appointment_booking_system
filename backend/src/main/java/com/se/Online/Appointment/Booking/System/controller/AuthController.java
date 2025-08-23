@@ -26,8 +26,8 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-
-    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository, UserService userService, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository,
+            UserService userService, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.userService = userService;
@@ -48,19 +48,27 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "User registered successfully"));
     }
 
-
     // Login
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.get("username"), request.get("password"))
-            );
+                    new UsernamePasswordAuthenticationToken(request.get("username"), request.get("password")));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401).body(Map.of("error", "Invalid username or password"));
         }
 
-        String token = jwtUtil.generateToken(request.get("username"));
-        return ResponseEntity.ok(Map.of("token", token));
+        User user = userRepository.findByUsername(request.get("username"))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
+
+        // Return token + username + role
+        return ResponseEntity.ok(Map.of(
+                "token", token,
+                "username", user.getUsername(),
+                "role", user.getRole().name(),
+                "id", user.getId() // Add this
+        ));
     }
 }

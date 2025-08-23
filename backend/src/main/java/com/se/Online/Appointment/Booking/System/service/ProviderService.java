@@ -14,4 +14,8 @@ public interface ProviderService {
     Provider updateProvider(Long id, Provider provider);
 
     void deleteProvider(Long id);
+
+    public Provider findByUserUsername(String username);
+
+    Provider getProviderByUsername(String username);
 }
