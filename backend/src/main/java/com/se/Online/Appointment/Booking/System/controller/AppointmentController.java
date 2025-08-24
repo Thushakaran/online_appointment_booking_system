@@ -2,6 +2,7 @@ package com.se.Online.Appointment.Booking.System.controller;
 
 import com.se.Online.Appointment.Booking.System.dto.request.AppointmentRequest;
 import com.se.Online.Appointment.Booking.System.model.Appointment;
+import com.se.Online.Appointment.Booking.System.model.Provider;
 import com.se.Online.Appointment.Booking.System.model.User;
 import com.se.Online.Appointment.Booking.System.service.AppointmentService;
 import org.springframework.http.ResponseEntity;
@@ -87,8 +88,18 @@ public class AppointmentController {
     @GetMapping("/provider/{providerId}")
     @PreAuthorize("hasRole('PROVIDER')")
     public ResponseEntity<List<Appointment>> getAppointmentByProvider(@PathVariable Long providerId) {
-        // This would need to be implemented with proper provider lookup
-        return ResponseEntity.ok(List.of());
+        Provider provider = new Provider();
+        provider.setId(providerId);
+        return ResponseEntity.ok(appointmentService.getAppointmentByProvider(provider));
+    }
+
+    // Get appointments for current provider (authenticated provider)
+    @GetMapping("/my-appointments")
+    @PreAuthorize("hasRole('PROVIDER')")
+    public ResponseEntity<List<Appointment>> getMyAppointments(Authentication authentication) {
+        String username = authentication.getName();
+        List<Appointment> appointments = appointmentService.getAppointmentsByProviderUsername(username);
+        return ResponseEntity.ok(appointments);
     }
 
     // Update appointment status

@@ -62,7 +62,19 @@ public class UserController {
 
     // Update user
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails, Authentication auth) {
+        // Check if user is updating their own profile or is admin
+        User existingUser = userService.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isOwnProfile = auth.getName().equals(existingUser.getUsername());
+
+        if (!isAdmin && !isOwnProfile) {
+            return ResponseEntity.status(403).build();
+        }
+
         User updatedUser = userService.updateUser(id, userDetails);
         return ResponseEntity.ok(updatedUser);
     }

@@ -49,6 +49,14 @@ public class ProviderServiceImpl implements ProviderService {
         provider.setUser(providerDetails.getUser());
         provider.setServiceName(providerDetails.getServiceName());
         provider.setDescription(providerDetails.getDescription());
+        provider.setProfileImage(providerDetails.getProfileImage());
+        provider.setPhoneNumber(providerDetails.getPhoneNumber());
+        provider.setAddress(providerDetails.getAddress());
+        provider.setCity(providerDetails.getCity());
+        provider.setState(providerDetails.getState());
+        provider.setZipCode(providerDetails.getZipCode());
+        provider.setCountry(providerDetails.getCountry());
+        provider.setServicePricing(providerDetails.getServicePricing());
         return providerRepository.save(provider);
     }
 

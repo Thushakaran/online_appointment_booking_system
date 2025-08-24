@@ -13,6 +13,8 @@ public interface AppointmentService {
 
     List<Appointment> getAppointmentByProvider(Provider provider);
 
+    List<Appointment> getAppointmentsByProviderUsername(String username);
+
     List<Appointment> getAllAppointments();
 
     Appointment getAppointmentById(Long id);

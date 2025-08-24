@@ -8,6 +8,7 @@ import com.se.Online.Appointment.Booking.System.model.Provider;
 import com.se.Online.Appointment.Booking.System.model.User;
 import com.se.Online.Appointment.Booking.System.repository.AppointmentRepository;
 import com.se.Online.Appointment.Booking.System.repository.AvailabilityRepository;
+import com.se.Online.Appointment.Booking.System.repository.ProviderRepository;
 import com.se.Online.Appointment.Booking.System.service.AppointmentService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,11 +19,14 @@ import java.util.List;
 public class AppointmentServiceImpl implements AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final AvailabilityRepository availabilityRepository;
+    private final ProviderRepository providerRepository;
 
     public AppointmentServiceImpl(AppointmentRepository appointmentRepository,
-            AvailabilityRepository availabilityRepository) {
+            AvailabilityRepository availabilityRepository,
+            ProviderRepository providerRepository) {
         this.appointmentRepository = appointmentRepository;
         this.availabilityRepository = availabilityRepository;
+        this.providerRepository = providerRepository;
     }
 
     @Override
@@ -63,6 +67,21 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public List<Appointment> getAppointmentByProvider(Provider provider) {
+        return appointmentRepository.findByProvider(provider);
+    }
+
+    @Override
+    public List<Appointment> getAppointmentsByProviderUsername(String username) {
+        // Find provider by username
+        Provider provider = providerRepository.findAll().stream()
+                .filter(p -> p.getUser().getUsername().equals(username))
+                .findFirst()
+                .orElse(null);
+
+        if (provider == null) {
+            return List.of();
+        }
+
         return appointmentRepository.findByProvider(provider);
     }
 

@@ -123,7 +123,9 @@ export default function Providers() {
   return (
     <VideoBackground>
       <div className="max-w-6xl mx-auto py-8 px-4">
-        <h2 className="text-3xl font-bold mb-6 text-white">All Providers</h2>
+        <h2 className="text-3xl font-bold mb-6 text-heading-h2">
+          All Providers
+        </h2>
 
         {err && (
           <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-lg mb-6">
@@ -142,7 +144,7 @@ export default function Providers() {
               key={p.id}
               className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 hover:bg-white/30 transition-all duration-300"
             >
-              <h3 className="font-semibold text-xl text-white mb-2">
+              <h3 className="font-semibold text-xl text-heading-h3 mb-2">
                 {p.user?.username || "Unknown User"}
               </h3>
               <p className="text-white/80 mb-2">{p.serviceName || "-"}</p>

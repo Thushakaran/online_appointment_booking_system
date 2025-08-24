@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/auth/authSlice";
 
@@ -16,11 +16,13 @@ import { AiOutlineLogin, AiOutlineUserAdd } from "react-icons/ai";
 
 export default function Navbar() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const location = useLocation();
-  const { token, role } = useSelector((state) => state.auth);
+  const { token, role, user } = useSelector((state) => state.auth);
 
   const handleLogout = () => {
     dispatch(logout());
+    navigate("/");
   };
 
   return (
@@ -44,17 +46,19 @@ export default function Navbar() {
         <div className="flex items-center gap-6">
           {token ? (
             <>
-              {/* Common links */}
-              <Link
-                to="/providers"
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-white transition-colors ${
-                  location.pathname === "/providers"
-                    ? "text-purple-400 font-semibold"
-                    : "hover:text-purple-400"
-                }`}
-              >
-                <FaUserMd /> Browse Providers
-              </Link>
+              {/* Common links - only show Browse Providers for non-providers */}
+              {role !== "PROVIDER" && (
+                <Link
+                  to="/providers"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-white transition-colors ${
+                    location.pathname === "/providers"
+                      ? "text-purple-400 font-semibold"
+                      : "hover:text-purple-400"
+                  }`}
+                >
+                  <FaUserMd /> Browse Providers
+                </Link>
+              )}
 
               {/* Role-specific navigation */}
               {role === "USER" && (
@@ -118,7 +122,7 @@ export default function Navbar() {
                       : "hover:text-purple-400"
                   }`}
                 >
-                  <FaUser /> Profile
+                  <FaUser /> {user || "Profile"}
                 </Link>
                 <button
                   onClick={handleLogout}

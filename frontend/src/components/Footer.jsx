@@ -12,7 +12,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 py-12 grid md:grid-cols-3 gap-8">
         {/* About Section */}
         <div>
-          <h3 className="text-xl font-bold mb-4">Appointment Booking</h3>
+          <h3 className="text-xl font-bold mb-4 text-heading-h3">
+            Appointment Booking
+          </h3>
           <p className="text-gray-300">
             Seamlessly schedule appointments with providers you trust. Browse
             slots, manage your bookings, and stay organized.
@@ -21,7 +23,9 @@ export default function Footer() {
 
         {/* Quick Links */}
         <div>
-          <h3 className="text-xl font-bold mb-4">Quick Links</h3>
+          <h3 className="text-xl font-bold mb-4 text-heading-h3">
+            Quick Links
+          </h3>
           <ul className="space-y-2">
             {["/", "/providers", "/appointments", "/profile"].map(
               (path, index) => {
@@ -43,7 +47,7 @@ export default function Footer() {
 
         {/* Social / Contact */}
         <div>
-          <h3 className="text-xl font-bold mb-4">Follow Us</h3>
+          <h3 className="text-xl font-bold mb-4 text-heading-h3">Follow Us</h3>
           <div className="flex gap-4">
             {[FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn].map(
               (Icon, i) => (

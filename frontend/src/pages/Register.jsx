@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { register, clearError } from "../features/auth/authSlice";
+import { register, clearError, login } from "../features/auth/authSlice";
 import { useNavigate } from "react-router-dom";
 import VideoBackground from "../components/VideoBackground";
 
@@ -57,8 +57,42 @@ export default function Register() {
     try {
       const result = await dispatch(register(form));
       if (register.fulfilled.match(result)) {
-        setSuccessMessage("Registered! You can login now.");
-        setTimeout(() => navigate("/login"), 2000);
+        // If registration is successful and user is a provider, auto-login and redirect to setup
+        if (form.role === "PROVIDER") {
+          setSuccessMessage("Registration successful! Logging you in...");
+
+          try {
+            // Auto-login the provider
+            const loginResult = await dispatch(
+              login({
+                username: form.username,
+                password: form.password,
+              })
+            );
+
+            if (login.fulfilled.match(loginResult)) {
+              setTimeout(() => {
+                navigate("/provider-setup");
+              }, 1500);
+            } else {
+              // If auto-login fails, redirect to login page
+              setSuccessMessage(
+                "Registration successful! Please login to continue."
+              );
+              setTimeout(() => navigate("/login"), 2000);
+            }
+          } catch (loginError) {
+            // If auto-login fails, redirect to login page
+            setSuccessMessage(
+              "Registration successful! Please login to continue."
+            );
+            setTimeout(() => navigate("/login"), 2000);
+          }
+        } else {
+          // For regular users, show success message and redirect to login
+          setSuccessMessage("Registered! You can login now.");
+          setTimeout(() => navigate("/login"), 2000);
+        }
       }
     } catch {
       // Error is now handled in the Redux slice
@@ -93,7 +127,7 @@ export default function Register() {
           onSubmit={submit}
           className="bg-white/20 backdrop-blur-lg border border-white/30 w-full max-w-md p-8 rounded-2xl shadow-2xl"
         >
-          <h2 className="text-2xl font-semibold mb-6 text-white">
+          <h2 className="text-2xl font-semibold mb-6 text-heading-h2">
             Create an account
           </h2>
 
@@ -175,7 +209,9 @@ export default function Register() {
             )}
           </div>
 
-          <label className="text-sm text-white/80 mb-2 block">Role</label>
+          <label className="text-sm text-white/80 mb-2 block">
+            I want to register as:
+          </label>
           <select
             name="role"
             className="bg-white/20 backdrop-blur-sm border-2 border-white/30 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30 rounded-xl p-3 w-full mb-6 outline-none transition-all duration-300 text-white"
@@ -184,15 +220,25 @@ export default function Register() {
             disabled={loading}
           >
             <option value="USER" className="bg-gray-800">
-              User
+              👤 User (Book appointments)
             </option>
             <option value="PROVIDER" className="bg-gray-800">
-              Provider
+              🏥 Provider (Offer services)
             </option>
             <option value="ADMIN" className="bg-gray-800">
-              Admin
+              🔧 Admin (System management)
             </option>
           </select>
+
+          {form.role === "PROVIDER" && (
+            <div className="bg-blue-500/20 border border-blue-400/50 text-blue-200 p-3 rounded-lg mb-4">
+              <p className="text-sm font-medium text-center">
+                🎉 Great choice! After registration, you'll be automatically
+                logged in and redirected to complete your provider profile
+                setup.
+              </p>
+            </div>
+          )}
 
           <button
             type="submit"

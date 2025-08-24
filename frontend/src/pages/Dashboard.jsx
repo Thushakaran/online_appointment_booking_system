@@ -24,7 +24,7 @@ export default function Dashboard() {
         <div className="relative mb-10 h-96 md:h-[500px]">
           <div className="h-full flex items-center p-8 md:p-12">
             <div className="max-w-2xl text-white">
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight text-heading-h1">
                 Welcome to{" "}
                 <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                   Appointment Booking
@@ -80,7 +80,7 @@ export default function Dashboard() {
                   <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-white group-hover:text-blue-400 transition-colors">
+              <h3 className="text-xl font-bold mb-3 text-heading-h3 group-hover:text-blue-400 transition-colors">
                 Providers
               </h3>
               <p className="text-gray-100 leading-relaxed">
@@ -110,7 +110,7 @@ export default function Dashboard() {
                   <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-white group-hover:text-green-400 transition-colors">
+              <h3 className="text-xl font-bold mb-3 text-heading-h3 group-hover:text-green-400 transition-colors">
                 My Appointments
               </h3>
               <p className="text-gray-100 leading-relaxed">
@@ -139,7 +139,7 @@ export default function Dashboard() {
                   <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-3 text-white group-hover:text-purple-400 transition-colors">
+              <h3 className="text-xl font-bold mb-3 text-heading-h3 group-hover:text-purple-400 transition-colors">
                 Profile
               </h3>
               <p className="text-gray-100 leading-relaxed">
@@ -152,7 +152,7 @@ export default function Dashboard() {
 
         {/* Stats / Features Section */}
         <div className="mt-16 text-center px-4 md:px-0">
-          <h2 className="text-3xl font-bold text-white mb-4">
+          <h2 className="text-3xl font-bold text-heading-h2 mb-4">
             Why Choose Our Platform?
           </h2>
           <div className="grid md:grid-cols-3 gap-8 mt-12">
@@ -171,7 +171,9 @@ export default function Dashboard() {
                   <path d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Lightning Fast</h3>
+              <h3 className="text-xl font-semibold mb-2 text-heading-h3">
+                Lightning Fast
+              </h3>
               <p>
                 Book appointments in seconds with our streamlined interface.
               </p>
@@ -192,7 +194,9 @@ export default function Dashboard() {
                   <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">100% Reliable</h3>
+              <h3 className="text-xl font-semibold mb-2 text-heading-h3">
+                100% Reliable
+              </h3>
               <p>Trusted by thousands of users for secure booking.</p>
             </div>
 
@@ -211,7 +215,9 @@ export default function Dashboard() {
                   <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">24/7 Available</h3>
+              <h3 className="text-xl font-semibold mb-2 text-heading-h3">
+                24/7 Available
+              </h3>
               <p>Access your appointments anytime, anywhere.</p>
             </div>
           </div>

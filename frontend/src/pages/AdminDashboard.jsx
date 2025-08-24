@@ -105,7 +105,9 @@ export default function AdminDashboard() {
     <VideoBackground>
       <div className="p-8 max-w-7xl mx-auto">
         <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold text-heading-h1">
+            Admin Dashboard
+          </h1>
           <div className="flex gap-4">
             <button
               onClick={() => navigate("/admin/providers")}
@@ -131,13 +133,13 @@ export default function AdminDashboard() {
         {/* Stats Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white/20 backdrop-blur-lg border border-white/30 p-6 rounded-2xl hover:bg-white/30 transition-all duration-300">
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-heading-h3 mb-2">
               Total Users
             </h3>
             <p className="text-4xl font-bold text-blue-400">{users.length}</p>
           </div>
           <div className="bg-white/20 backdrop-blur-lg border border-white/30 p-6 rounded-2xl hover:bg-white/30 transition-all duration-300">
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-heading-h3 mb-2">
               Total Providers
             </h3>
             <p className="text-4xl font-bold text-green-400">
@@ -145,7 +147,7 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="bg-white/20 backdrop-blur-lg border border-white/30 p-6 rounded-2xl hover:bg-white/30 transition-all duration-300">
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-heading-h3 mb-2">
               Total Appointments
             </h3>
             <p className="text-4xl font-bold text-purple-400">
@@ -156,7 +158,7 @@ export default function AdminDashboard() {
 
         {/* Users Section */}
         <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-4 text-white">
+          <h2 className="text-2xl font-semibold mb-4 text-heading-h2">
             Users Management
           </h2>
           <div className="overflow-x-auto">
@@ -192,7 +194,7 @@ export default function AdminDashboard() {
 
         {/* Providers Section */}
         <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-4 text-white">
+          <h2 className="text-2xl font-semibold mb-4 text-heading-h2">
             Providers Management
           </h2>
           <div className="overflow-x-auto">
@@ -230,7 +232,7 @@ export default function AdminDashboard() {
 
         {/* Appointments Section */}
         <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6">
-          <h2 className="text-2xl font-semibold mb-4 text-white">
+          <h2 className="text-2xl font-semibold mb-4 text-heading-h2">
             Appointments Management
           </h2>
           <div className="overflow-x-auto">

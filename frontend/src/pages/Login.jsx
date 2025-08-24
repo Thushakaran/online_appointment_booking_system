@@ -75,10 +75,17 @@ export default function Login() {
       if (token && role === "PROVIDER") {
         try {
           // Check if provider has a profile
-          await api.get("/api/providers/me");
-          navigate("/provider-dashboard");
-        } catch {
-          // If provider doesn't have a profile, redirect to setup
+          const response = await api.get("/api/providers/me");
+          if (response.status === 200) {
+            navigate("/provider-dashboard");
+          } else {
+            navigate("/provider-setup");
+          }
+        } catch (error) {
+          // If provider doesn't have a profile (404) or any other error, redirect to setup
+          console.log(
+            "Provider profile not found or error occurred, redirecting to setup"
+          );
           navigate("/provider-setup");
         }
       } else if (token) {
@@ -102,7 +109,7 @@ export default function Login() {
           onSubmit={handleSubmit}
           className="bg-white/20 backdrop-blur-lg border border-white/30 p-8 rounded-2xl shadow-2xl w-96 flex flex-col items-center transition-all duration-300 transform hover:scale-105"
         >
-          <h2 className="text-3xl font-extrabold mb-6 text-white drop-shadow-md">
+          <h2 className="text-3xl font-extrabold mb-6 text-heading-h2 drop-shadow-md">
             Welcome Back
           </h2>
 

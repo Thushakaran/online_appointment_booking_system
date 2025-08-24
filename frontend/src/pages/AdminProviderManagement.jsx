@@ -101,7 +101,9 @@ export default function AdminProviderManagement() {
     <VideoBackground>
       <div className="p-8 max-w-7xl mx-auto">
         <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Provider Management</h1>
+          <h1 className="text-3xl font-bold text-heading-h1">
+            Provider Management
+          </h1>
           <button
             onClick={() => navigate("/admin-dashboard")}
             className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
@@ -124,7 +126,7 @@ export default function AdminProviderManagement() {
         {/* Add Provider Section */}
         <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold text-white">
+            <h2 className="text-2xl font-semibold text-heading-h2">
               Add New Provider
             </h2>
             <button
@@ -202,7 +204,7 @@ export default function AdminProviderManagement() {
 
         {/* Providers List */}
         <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6">
-          <h2 className="text-2xl font-semibold mb-4 text-white">
+          <h2 className="text-2xl font-semibold mb-4 text-heading-h2">
             All Providers
           </h2>
           <div className="overflow-x-auto">

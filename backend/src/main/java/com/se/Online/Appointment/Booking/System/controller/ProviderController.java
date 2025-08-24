@@ -94,19 +94,7 @@ public class ProviderController {
         provider.setState(providerDetails.getState());
         provider.setZipCode(providerDetails.getZipCode());
         provider.setCountry(providerDetails.getCountry());
-        provider.setBusinessHours(providerDetails.getBusinessHours());
-        provider.setSpecializations(providerDetails.getSpecializations());
-        provider.setEducation(providerDetails.getEducation());
-        provider.setCertifications(providerDetails.getCertifications());
-        provider.setExperience(providerDetails.getExperience());
-        provider.setWebsite(providerDetails.getWebsite());
-        provider.setLinkedin(providerDetails.getLinkedin());
-        provider.setTwitter(providerDetails.getTwitter());
-        provider.setFacebook(providerDetails.getFacebook());
         provider.setServicePricing(providerDetails.getServicePricing());
-        provider.setAcceptedInsurance(providerDetails.getAcceptedInsurance());
-        provider.setLanguages(providerDetails.getLanguages());
-        provider.setProfileCompleted(providerDetails.getProfileCompleted());
 
         Provider updatedProvider = providerService.saveProvider(provider);
         return ResponseEntity.ok(updatedProvider);
@@ -126,7 +114,12 @@ public class ProviderController {
         Provider provider = providerService.getAllProviders().stream()
                 .filter(p -> p.getUser().getUsername().equals(username))
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Provider not found for user: " + username));
+                .orElse(null);
+
+        if (provider == null) {
+            return ResponseEntity.notFound().build();
+        }
+
         return ResponseEntity.ok(provider);
     }
 
