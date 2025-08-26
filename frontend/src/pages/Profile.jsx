@@ -36,10 +36,19 @@ export default function Profile() {
 
         // Fetch appointments
         try {
-          const appointmentsRes = await api.get(
-            `/api/appointments/user/${userRes.data.id}`
-          );
-          setAppointments(appointmentsRes.data);
+          if (role === "PROVIDER") {
+            // For providers, get appointments where they are the provider
+            const appointmentsRes = await api.get(
+              "/api/appointments/my-appointments"
+            );
+            setAppointments(appointmentsRes.data);
+          } else {
+            // For regular users, get appointments where they are the client
+            const appointmentsRes = await api.get(
+              `/api/appointments/user/${userRes.data.id}`
+            );
+            setAppointments(appointmentsRes.data);
+          }
         } catch {
           console.log("No appointments found or error fetching appointments");
         }

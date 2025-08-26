@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { logout } from "../features/auth/authSlice";
 import dayjs from "dayjs";
-import VideoBackground from "../components/VideoBackground";
 import Pagination from "../components/Pagination";
+import videoBackground from "../assets/video.mp4";
 
 export default function AdminDashboard() {
   const { token, role } = useSelector((state) => state.auth);
@@ -167,8 +167,21 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
-      <VideoBackground />
+    <div className="min-h-[calc(100vh-5rem)] relative">
+      {/* Full Page Video Background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed inset-0 w-full h-full object-cover z-0"
+      >
+        <source src={videoBackground} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+
+      {/* Overlay for readability */}
+      <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 z-10 pointer-events-none"></div>
 
       <div className="relative z-10 max-w-7xl mx-auto p-8">
         {/* Header */}
