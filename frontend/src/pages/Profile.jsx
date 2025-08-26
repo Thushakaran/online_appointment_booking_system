@@ -48,13 +48,17 @@ export default function Profile() {
           try {
             const providerRes = await api.get("/api/providers/me");
             setProvider(providerRes.data);
-            
+
             // Fetch availabilities for providers
             try {
-              const availabilitiesRes = await api.get("/api/availabilities/my-availabilities");
+              const availabilitiesRes = await api.get(
+                "/api/availabilities/my-availabilities"
+              );
               setAvailabilities(availabilitiesRes.data || []);
             } catch {
-              console.log("No availabilities found or error fetching availabilities");
+              console.log(
+                "No availabilities found or error fetching availabilities"
+              );
               setAvailabilities([]);
             }
           } catch {
@@ -272,9 +276,7 @@ export default function Profile() {
                         </div>
                         <div className="bg-white/10 rounded-lg p-4 text-center">
                           <div className="text-2xl font-bold text-green-400 mb-1">
-                            {availabilities.filter(
-                              (a) => a.status === "AVAILABLE"
-                            ).length}
+                            {availabilities.length - appointments.length}
                           </div>
                           <div className="text-green-400 text-sm">
                             Available
@@ -290,7 +292,11 @@ export default function Profile() {
                         </div>
                         <div className="bg-white/10 rounded-lg p-4 text-center">
                           <div className="text-2xl font-bold text-purple-400 mb-1">
-                            Active
+                            {provider
+                              ? availabilities.length > 0
+                                ? "Active"
+                                : "Setup"
+                              : "Inactive"}
                           </div>
                           <div className="text-white/80 text-sm">Status</div>
                         </div>

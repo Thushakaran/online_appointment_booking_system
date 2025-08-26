@@ -1132,7 +1132,7 @@ export default function ProviderDashboard() {
   const dashboardStats = useMemo(
     () => ({
       totalSlots: availabilities.length,
-      availableSlots: availabilities.filter((a) => !a.isBooked).length,
+      availableSlots: availabilities.length - appointments.length,
       totalBookings: appointments.length,
       status: provider?.serviceName ? "Active" : "Setup",
     }),
