@@ -1,5 +1,6 @@
 package com.se.Online.Appointment.Booking.System.controller;
 
+import com.se.Online.Appointment.Booking.System.dto.PaginationResponse;
 import com.se.Online.Appointment.Booking.System.dto.request.AppointmentRequest;
 import com.se.Online.Appointment.Booking.System.model.Appointment;
 import com.se.Online.Appointment.Booking.System.model.Provider;
@@ -70,6 +71,15 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getAllAppointments());
     }
 
+    // Get all appointments with pagination (Admin only)
+    @GetMapping("/paginated")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PaginationResponse<Appointment>> getAllAppointmentsPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(appointmentService.getAllAppointmentsPaginated(page, size));
+    }
+
     // Get appointment by ID
     @GetMapping("/{id}")
     public ResponseEntity<Appointment> getAppointmentById(@PathVariable Long id) {
@@ -84,6 +94,18 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getAppointmentByUser(user));
     }
 
+    // Get appointments by user with pagination
+    @GetMapping("/user/{userId}/paginated")
+    public ResponseEntity<PaginationResponse<Appointment>> getAppointmentByUserPaginated(
+            @PathVariable Long userId,
+            Authentication auth,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        User user = new User();
+        user.setId(userId);
+        return ResponseEntity.ok(appointmentService.getAppointmentByUserPaginated(user, page, size));
+    }
+
     // Get appointments by provider
     @GetMapping("/provider/{providerId}")
     @PreAuthorize("hasRole('PROVIDER')")
@@ -93,28 +115,80 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getAppointmentByProvider(provider));
     }
 
+    // Get appointments by provider with pagination
+    @GetMapping("/provider/{providerId}/paginated")
+    @PreAuthorize("hasRole('PROVIDER')")
+    public ResponseEntity<PaginationResponse<Appointment>> getAppointmentByProviderPaginated(
+            @PathVariable Long providerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Provider provider = new Provider();
+        provider.setId(providerId);
+        return ResponseEntity.ok(appointmentService.getAppointmentByProviderPaginated(provider, page, size));
+    }
+
     // Get appointments for current provider (authenticated provider)
     @GetMapping("/my-appointments")
     @PreAuthorize("hasRole('PROVIDER')")
     public ResponseEntity<List<Appointment>> getMyAppointments(Authentication authentication) {
         String username = authentication.getName();
-        List<Appointment> appointments = appointmentService.getAppointmentsByProviderUsername(username);
-        return ResponseEntity.ok(appointments);
+        return ResponseEntity.ok(appointmentService.getAppointmentsByProviderUsername(username));
+    }
+
+    // Get appointments for current provider with pagination
+    @GetMapping("/my-appointments/paginated")
+    @PreAuthorize("hasRole('PROVIDER')")
+    public ResponseEntity<PaginationResponse<Appointment>> getMyAppointmentsPaginated(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        String username = authentication.getName();
+        return ResponseEntity.ok(appointmentService.getAppointmentsByProviderUsernamePaginated(username, page, size));
     }
 
     // Update appointment status
     @PutMapping("/{id}/status")
-    public ResponseEntity<Appointment> updateAppointmentStatus(@PathVariable Long id,
-            @RequestBody AppointmentRequest request) {
-        Appointment updated = appointmentService.updateAppointmentStatus(id, request.getStatus());
-        return ResponseEntity.ok(updated);
+    @PreAuthorize("hasRole('PROVIDER')")
+    public ResponseEntity<Appointment> updateAppointmentStatus(@PathVariable Long id, @RequestBody String status) {
+        Appointment updatedAppointment = appointmentService.updateAppointmentStatus(id, status);
+        return ResponseEntity.ok(updatedAppointment);
     }
 
-    // Delete appointment (Admin only)
+    // Cancel appointment (for users to cancel their own appointments)
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<Appointment> cancelAppointment(@PathVariable Long id, Authentication authentication) {
+        Appointment appointment = appointmentService.getAppointmentById(id);
+
+        // Check if the authenticated user is the owner of this appointment
+        String currentUsername = authentication.getName();
+        if (!appointment.getUser().getUsername().equals(currentUsername)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Appointment updatedAppointment = appointmentService.updateAppointmentStatus(id, "CANCELLED");
+        return ResponseEntity.ok(updatedAppointment);
+    }
+
+    // Confirm appointment (for users to confirm their own appointments)
+    @PutMapping("/{id}/confirm")
+    public ResponseEntity<Appointment> confirmAppointment(@PathVariable Long id, Authentication authentication) {
+        Appointment appointment = appointmentService.getAppointmentById(id);
+
+        // Check if the authenticated user is the owner of this appointment
+        String currentUsername = authentication.getName();
+        if (!appointment.getUser().getUsername().equals(currentUsername)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Appointment updatedAppointment = appointmentService.updateAppointmentStatus(id, "CONFIRMED");
+        return ResponseEntity.ok(updatedAppointment);
+    }
+
+    // Delete appointment
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteAppointment(@PathVariable Long id) {
         appointmentService.deleteAppointment(id);
-        return ResponseEntity.ok("Appointment deleted successfully");
+        return ResponseEntity.ok("Appointment deleted successfully.");
     }
 }

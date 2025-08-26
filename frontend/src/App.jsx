@@ -12,6 +12,7 @@ import ProviderSetup from "./pages/ProviderSetup";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProviderManagement from "./pages/AdminProviderManagement";
 import Providers from "./pages/Providers";
+import BookAppointment from "./pages/BookAppointment";
 import Appointments from "./pages/Appointment";
 import Profile from "./pages/Profile";
 
@@ -26,6 +27,10 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/providers" element={<Providers />} />
+          <Route
+            path="/book-appointment/:providerId"
+            element={<BookAppointment />}
+          />
 
           {/* User-protected routes */}
           <Route

@@ -43,12 +43,14 @@ export default function ProviderSetup() {
 
   const checkExistingProfile = async () => {
     try {
+      console.log("Checking existing profile...");
       const response = await api.get("/api/providers/me");
 
       if (response.status === 200) {
+        console.log("Provider data received:", response.data);
         setExistingProvider(response.data);
         setIsNewProvider(false);
-        setForm({
+        const formData = {
           serviceName: response.data.serviceName || "",
           description: response.data.description || "",
           profileImage: response.data.profileImage || "",
@@ -59,24 +61,95 @@ export default function ProviderSetup() {
           zipCode: response.data.zipCode || "",
           country: response.data.country || "",
           servicePricing: response.data.servicePricing || "",
-        });
+        };
+        console.log("Setting form data:", formData);
+        setForm(formData);
       }
     } catch (err) {
-      // Provider profile doesn't exist yet (404) or other error, which is fine for new providers
-      setIsNewProvider(true);
-      // Ensure form is empty for new providers
-      setForm({
-        serviceName: "",
-        description: "",
-        profileImage: "",
-        phoneNumber: "",
-        address: "",
-        city: "",
-        state: "",
-        zipCode: "",
-        country: "",
-        servicePricing: "",
-      });
+      console.error("Error fetching provider profile:", err);
+      console.error("Error status:", err.response?.status);
+
+      // Try fallback to general providers list
+      if (err.response?.status === 404 || err.response?.status === 403) {
+        console.log("Trying fallback to general providers list...");
+        try {
+          const allProvidersRes = await api.get("/api/providers");
+          const currentUser = localStorage.getItem("username");
+
+          console.log("Current user:", currentUser);
+          console.log("All providers:", allProvidersRes.data);
+
+          const userProvider = allProvidersRes.data.find(
+            (p) => p.user && p.user.username === currentUser
+          );
+
+          if (userProvider) {
+            console.log("Found provider in general list:", userProvider);
+            setExistingProvider(userProvider);
+            setIsNewProvider(false);
+            const formData = {
+              serviceName: userProvider.serviceName || "",
+              description: userProvider.description || "",
+              profileImage: userProvider.profileImage || "",
+              phoneNumber: userProvider.phoneNumber || "",
+              address: userProvider.address || "",
+              city: userProvider.city || "",
+              state: userProvider.state || "",
+              zipCode: userProvider.zipCode || "",
+              country: userProvider.country || "",
+              servicePricing: userProvider.servicePricing || "",
+            };
+            console.log("Setting form data from fallback:", formData);
+            setForm(formData);
+          } else {
+            console.log("No provider found for user:", currentUser);
+            setIsNewProvider(true);
+            setForm({
+              serviceName: "",
+              description: "",
+              profileImage: "",
+              phoneNumber: "",
+              address: "",
+              city: "",
+              state: "",
+              zipCode: "",
+              country: "",
+              servicePricing: "",
+            });
+          }
+        } catch (fallbackErr) {
+          console.error("Fallback also failed:", fallbackErr);
+          setIsNewProvider(true);
+          setForm({
+            serviceName: "",
+            description: "",
+            profileImage: "",
+            phoneNumber: "",
+            address: "",
+            city: "",
+            state: "",
+            zipCode: "",
+            country: "",
+            servicePricing: "",
+          });
+        }
+      } else {
+        // Provider profile doesn't exist yet (404) or other error, which is fine for new providers
+        setIsNewProvider(true);
+        // Ensure form is empty for new providers
+        setForm({
+          serviceName: "",
+          description: "",
+          profileImage: "",
+          phoneNumber: "",
+          address: "",
+          city: "",
+          state: "",
+          zipCode: "",
+          country: "",
+          servicePricing: "",
+        });
+      }
     } finally {
       setIsLoadingProfile(false);
     }
@@ -93,10 +166,15 @@ export default function ProviderSetup() {
         ...form,
       };
 
+      console.log("Submitting provider data:", providerData);
+      console.log("Existing provider:", existingProvider);
+
       if (existingProvider) {
+        console.log("Updating provider with ID:", existingProvider.id);
         await api.put(`/api/providers/${existingProvider.id}`, providerData);
         setSuccess("Provider profile updated successfully!");
       } else {
+        console.log("Creating new provider");
         await api.post("/api/providers", providerData);
         setSuccess("Provider profile created successfully!");
       }
@@ -105,9 +183,22 @@ export default function ProviderSetup() {
         navigate("/provider-dashboard");
       }, 2000);
     } catch (err) {
-      setError(
-        err?.response?.data?.message || "Failed to save provider profile"
-      );
+      console.error("Provider update error:", err);
+      if (err?.response?.status === 403) {
+        setError(
+          "You don't have permission to update this provider profile. Please contact support."
+        );
+      } else if (err?.response?.status === 401) {
+        setError("Your session has expired. Please log in again.");
+        // Redirect to login after a delay
+        setTimeout(() => {
+          navigate("/");
+        }, 3000);
+      } else {
+        setError(
+          err?.response?.data?.message || "Failed to save provider profile"
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -116,9 +207,28 @@ export default function ProviderSetup() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Check file size (limit to 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        setError(
+          "Image file size must be less than 5MB. Please choose a smaller image."
+        );
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith("image/")) {
+        setError("Please select a valid image file.");
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setForm({ ...form, profileImage: reader.result });
+        setError(""); // Clear any previous errors
+      };
+      reader.onerror = () => {
+        setError("Failed to read the image file. Please try again.");
       };
       reader.readAsDataURL(file);
     }
@@ -133,10 +243,22 @@ export default function ProviderSetup() {
       "city",
       "state",
     ];
-    const completedFields = requiredFields.filter((field) =>
+    const optionalFields = ["zipCode", "country", "servicePricing"];
+
+    const completedRequired = requiredFields.filter((field) =>
       form[field]?.trim()
     );
-    return Math.round((completedFields.length / requiredFields.length) * 100);
+    const completedOptional = optionalFields.filter((field) =>
+      form[field]?.trim()
+    );
+
+    // Calculate completion: 70% for required fields, 30% for optional fields
+    const requiredCompletion =
+      (completedRequired.length / requiredFields.length) * 70;
+    const optionalCompletion =
+      (completedOptional.length / optionalFields.length) * 30;
+
+    return Math.round(requiredCompletion + optionalCompletion);
   };
 
   const nextStep = () => {

@@ -12,6 +12,7 @@ export default function Profile() {
   const [me, setMe] = useState(null);
   const [provider, setProvider] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [availabilities, setAvailabilities] = useState([]);
   const [err, setErr] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
@@ -47,6 +48,15 @@ export default function Profile() {
           try {
             const providerRes = await api.get("/api/providers/me");
             setProvider(providerRes.data);
+            
+            // Fetch availabilities for providers
+            try {
+              const availabilitiesRes = await api.get("/api/availabilities/my-availabilities");
+              setAvailabilities(availabilitiesRes.data || []);
+            } catch {
+              console.log("No availabilities found or error fetching availabilities");
+              setAvailabilities([]);
+            }
           } catch {
             // Provider profile doesn't exist yet
           }
@@ -243,9 +253,6 @@ export default function Profile() {
                             className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-lg text-white resize-none"
                           />
                         </div>
-                        <button className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors">
-                          Update Info
-                        </button>
                       </div>
                     </div>
 
@@ -257,7 +264,7 @@ export default function Profile() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-white/10 rounded-lg p-4 text-center">
                           <div className="text-2xl font-bold text-white mb-1">
-                            0
+                            {availabilities.length}
                           </div>
                           <div className="text-white/80 text-sm">
                             Total Slots
@@ -265,7 +272,9 @@ export default function Profile() {
                         </div>
                         <div className="bg-white/10 rounded-lg p-4 text-center">
                           <div className="text-2xl font-bold text-green-400 mb-1">
-                            0
+                            {availabilities.filter(
+                              (a) => a.status === "AVAILABLE"
+                            ).length}
                           </div>
                           <div className="text-green-400 text-sm">
                             Available
@@ -273,7 +282,7 @@ export default function Profile() {
                         </div>
                         <div className="bg-white/10 rounded-lg p-4 text-center">
                           <div className="text-2xl font-bold text-white mb-1">
-                            0
+                            {appointments.length}
                           </div>
                           <div className="text-white/80 text-sm">
                             Total Bookings

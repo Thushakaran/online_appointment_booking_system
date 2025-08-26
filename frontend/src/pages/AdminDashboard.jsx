@@ -5,6 +5,7 @@ import api from "../api/axios";
 import { logout } from "../features/auth/authSlice";
 import dayjs from "dayjs";
 import VideoBackground from "../components/VideoBackground";
+import Pagination from "../components/Pagination";
 
 export default function AdminDashboard() {
   const { token, role } = useSelector((state) => state.auth);
@@ -16,6 +17,30 @@ export default function AdminDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Pagination state for users
+  const [usersPage, setUsersPage] = useState(0);
+  const [usersPageSize, setUsersPageSize] = useState(10);
+  const [usersTotalElements, setUsersTotalElements] = useState(0);
+  const [usersTotalPages, setUsersTotalPages] = useState(0);
+  const [usersHasNext, setUsersHasNext] = useState(false);
+  const [usersHasPrevious, setUsersHasPrevious] = useState(false);
+
+  // Pagination state for providers
+  const [providersPage, setProvidersPage] = useState(0);
+  const [providersPageSize, setProvidersPageSize] = useState(10);
+  const [providersTotalElements, setProvidersTotalElements] = useState(0);
+  const [providersTotalPages, setProvidersTotalPages] = useState(0);
+  const [providersHasNext, setProvidersHasNext] = useState(false);
+  const [providersHasPrevious, setProvidersHasPrevious] = useState(false);
+
+  // Pagination state for appointments
+  const [appointmentsPage, setAppointmentsPage] = useState(0);
+  const [appointmentsPageSize, setAppointmentsPageSize] = useState(10);
+  const [appointmentsTotalElements, setAppointmentsTotalElements] = useState(0);
+  const [appointmentsTotalPages, setAppointmentsTotalPages] = useState(0);
+  const [appointmentsHasNext, setAppointmentsHasNext] = useState(false);
+  const [appointmentsHasPrevious, setAppointmentsHasPrevious] = useState(false);
 
   // Redirect if not logged in or not admin
   useEffect(() => {
@@ -32,13 +57,36 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       const [usersRes, providersRes, appointmentsRes] = await Promise.all([
-        api.get("/api/users"),
-        api.get("/api/providers"),
-        api.get("/api/appointments"),
+        api.get(`/api/users/paginated?page=${usersPage}&size=${usersPageSize}`),
+        api.get(
+          `/api/providers/paginated?page=${providersPage}&size=${providersPageSize}`
+        ),
+        api.get(
+          `/api/appointments/paginated?page=${appointmentsPage}&size=${appointmentsPageSize}`
+        ),
       ]);
-      setUsers(usersRes.data || []);
-      setProviders(providersRes.data || []);
-      setAppointments(appointmentsRes.data || []);
+
+      // Set users data
+      setUsers(usersRes.data.content || []);
+      setUsersTotalElements(usersRes.data.totalElements || 0);
+      setUsersTotalPages(usersRes.data.totalPages || 0);
+      setUsersHasNext(usersRes.data.hasNext || false);
+      setUsersHasPrevious(usersRes.data.hasPrevious || false);
+
+      // Set providers data
+      setProviders(providersRes.data.content || []);
+      setProvidersTotalElements(providersRes.data.totalElements || 0);
+      setProvidersTotalPages(providersRes.data.totalPages || 0);
+      setProvidersHasNext(providersRes.data.hasNext || false);
+      setProvidersHasPrevious(providersRes.data.hasPrevious || false);
+
+      // Set appointments data
+      setAppointments(appointmentsRes.data.content || []);
+      setAppointmentsTotalElements(appointmentsRes.data.totalElements || 0);
+      setAppointmentsTotalPages(appointmentsRes.data.totalPages || 0);
+      setAppointmentsHasNext(appointmentsRes.data.hasNext || false);
+      setAppointmentsHasPrevious(appointmentsRes.data.hasPrevious || false);
+
       setError("");
     } catch (err) {
       console.error(err);
@@ -52,7 +100,15 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchAdminData();
-  }, [token]);
+  }, [
+    token,
+    usersPage,
+    usersPageSize,
+    providersPage,
+    providersPageSize,
+    appointmentsPage,
+    appointmentsPageSize,
+  ]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -60,107 +116,109 @@ export default function AdminDashboard() {
   };
 
   const deleteUser = async (userId) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        await api.delete(`/api/users/${userId}`);
-        fetchAdminData(); // Refresh data
-      } catch (err) {
-        setError("Failed to delete user");
-      }
+    try {
+      await api.delete(`/api/users/${userId}`);
+      fetchAdminData(); // Refresh data
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete user");
     }
   };
 
   const deleteProvider = async (providerId) => {
-    if (window.confirm("Are you sure you want to delete this provider?")) {
-      try {
-        await api.delete(`/api/providers/${providerId}`);
-        fetchAdminData(); // Refresh data
-      } catch (err) {
-        setError("Failed to delete provider");
-      }
+    try {
+      await api.delete(`/api/providers/${providerId}`);
+      fetchAdminData(); // Refresh data
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete provider");
     }
   };
 
   const deleteAppointment = async (appointmentId) => {
-    if (window.confirm("Are you sure you want to delete this appointment?")) {
-      try {
-        await api.delete(`/api/appointments/${appointmentId}`);
-        fetchAdminData(); // Refresh data
-      } catch (err) {
-        setError("Failed to delete appointment");
-      }
+    try {
+      await api.delete(`/api/appointments/${appointmentId}`);
+      fetchAdminData(); // Refresh data
+    } catch (err) {
+      console.error(err);
+      setError("Failed to delete appointment");
     }
   };
 
-  if (loading)
+  // Pagination handlers
+  const handleUsersPageChange = (page) => {
+    setUsersPage(page);
+  };
+
+  const handleProvidersPageChange = (page) => {
+    setProvidersPage(page);
+  };
+
+  const handleAppointmentsPageChange = (page) => {
+    setAppointmentsPage(page);
+  };
+
+  if (loading) {
     return (
-      <VideoBackground>
-        <div className="flex items-center justify-center min-h-screen">
-          <p className="text-white text-xl">Loading...</p>
-        </div>
-      </VideoBackground>
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
     );
+  }
 
   return (
-    <VideoBackground>
-      <div className="p-8 max-w-7xl mx-auto">
-        <header className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-heading-h1">
-            Admin Dashboard
-          </h1>
-          <div className="flex gap-4">
-            <button
-              onClick={() => navigate("/admin/providers")}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-            >
-              Manage Providers
-            </button>
-            <button
-              onClick={handleLogout}
-              className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-            >
-              Logout
-            </button>
-          </div>
-        </header>
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+      <VideoBackground />
+
+      <div className="relative z-10 max-w-7xl mx-auto p-8">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold text-white">Admin Dashboard</h1>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Logout
+          </button>
+        </div>
 
         {error && (
-          <p className="text-red-400 mb-4 bg-red-900/20 p-4 rounded-lg border border-red-500/30">
+          <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-lg mb-6">
             {error}
-          </p>
+          </div>
         )}
 
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/20 backdrop-blur-lg border border-white/30 p-6 rounded-2xl hover:bg-white/30 transition-all duration-300">
-            <h3 className="text-xl font-semibold text-heading-h3 mb-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6">
+            <h3 className="text-xl font-semibold text-white mb-2">
               Total Users
             </h3>
-            <p className="text-4xl font-bold text-blue-400">{users.length}</p>
-          </div>
-          <div className="bg-white/20 backdrop-blur-lg border border-white/30 p-6 rounded-2xl hover:bg-white/30 transition-all duration-300">
-            <h3 className="text-xl font-semibold text-heading-h3 mb-2">
-              Total Providers
-            </h3>
-            <p className="text-4xl font-bold text-green-400">
-              {providers.length}
+            <p className="text-3xl font-bold text-purple-300">
+              {usersTotalElements}
             </p>
           </div>
-          <div className="bg-white/20 backdrop-blur-lg border border-white/30 p-6 rounded-2xl hover:bg-white/30 transition-all duration-300">
-            <h3 className="text-xl font-semibold text-heading-h3 mb-2">
+          <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6">
+            <h3 className="text-xl font-semibold text-white mb-2">
+              Total Providers
+            </h3>
+            <p className="text-3xl font-bold text-blue-300">
+              {providersTotalElements}
+            </p>
+          </div>
+          <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6">
+            <h3 className="text-xl font-semibold text-white mb-2">
               Total Appointments
             </h3>
-            <p className="text-4xl font-bold text-purple-400">
-              {appointments.length}
+            <p className="text-3xl font-bold text-green-300">
+              {appointmentsTotalElements}
             </p>
           </div>
         </div>
 
         {/* Users Section */}
         <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-4 text-heading-h2">
-            Users Management
-          </h2>
+          <h2 className="text-2xl font-semibold mb-4 text-white">Users</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-white/10">
@@ -180,7 +238,7 @@ export default function AdminDashboard() {
                     <td className="p-3">
                       <button
                         onClick={() => deleteUser(user.id)}
-                        className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs hover:shadow-lg transition-all duration-300"
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs"
                       >
                         Delete
                       </button>
@@ -190,20 +248,27 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={usersPage}
+            totalPages={usersTotalPages}
+            onPageChange={handleUsersPageChange}
+            hasNext={usersHasNext}
+            hasPrevious={usersHasPrevious}
+            totalElements={usersTotalElements}
+            pageSize={usersPageSize}
+          />
         </div>
 
         {/* Providers Section */}
         <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 mb-8">
-          <h2 className="text-2xl font-semibold mb-4 text-heading-h2">
-            Providers Management
-          </h2>
+          <h2 className="text-2xl font-semibold mb-4 text-white">Providers</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="bg-white/10">
                 <tr>
                   <th className="text-left p-3 text-white">Username</th>
-                  <th className="text-left p-3 text-white">Service Name</th>
-                  <th className="text-left p-3 text-white">Description</th>
+                  <th className="text-left p-3 text-white">Service</th>
+                  <th className="text-left p-3 text-white">City</th>
                   <th className="text-left p-3 text-white">Actions</th>
                 </tr>
               </thead>
@@ -214,11 +279,11 @@ export default function AdminDashboard() {
                       {provider.user?.username}
                     </td>
                     <td className="p-3 text-white">{provider.serviceName}</td>
-                    <td className="p-3 text-white">{provider.description}</td>
+                    <td className="p-3 text-white">{provider.city}</td>
                     <td className="p-3">
                       <button
                         onClick={() => deleteProvider(provider.id)}
-                        className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs hover:shadow-lg transition-all duration-300"
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs"
                       >
                         Delete
                       </button>
@@ -228,12 +293,21 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={providersPage}
+            totalPages={providersTotalPages}
+            onPageChange={handleProvidersPageChange}
+            hasNext={providersHasNext}
+            hasPrevious={providersHasPrevious}
+            totalElements={providersTotalElements}
+            pageSize={providersPageSize}
+          />
         </div>
 
         {/* Appointments Section */}
         <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6">
-          <h2 className="text-2xl font-semibold mb-4 text-heading-h2">
-            Appointments Management
+          <h2 className="text-2xl font-semibold mb-4 text-white">
+            Appointments
           </h2>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -253,20 +327,18 @@ export default function AdminDashboard() {
                       {appointment.user?.username}
                     </td>
                     <td className="p-3 text-white">
-                      {appointment.provider?.user?.username}
+                      {appointment.provider?.serviceName}
                     </td>
                     <td className="p-3 text-white">
-                      {appointment.appointmentDate
-                        ? dayjs(appointment.appointmentDate).format(
-                            "YYYY-MM-DD HH:mm"
-                          )
-                        : "N/A"}
+                      {dayjs(appointment.appointmentDate).format(
+                        "MMM DD, YYYY"
+                      )}
                     </td>
                     <td className="p-3 text-white">{appointment.status}</td>
                     <td className="p-3">
                       <button
                         onClick={() => deleteAppointment(appointment.id)}
-                        className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 py-1 rounded-full text-xs hover:shadow-lg transition-all duration-300"
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs"
                       >
                         Delete
                       </button>
@@ -276,8 +348,17 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={appointmentsPage}
+            totalPages={appointmentsTotalPages}
+            onPageChange={handleAppointmentsPageChange}
+            hasNext={appointmentsHasNext}
+            hasPrevious={appointmentsHasPrevious}
+            totalElements={appointmentsTotalElements}
+            pageSize={appointmentsPageSize}
+          />
         </div>
       </div>
-    </VideoBackground>
+    </div>
   );
 }

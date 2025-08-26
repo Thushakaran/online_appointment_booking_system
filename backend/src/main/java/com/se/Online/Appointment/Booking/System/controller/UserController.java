@@ -1,5 +1,6 @@
 package com.se.Online.Appointment.Booking.System.controller;
 
+import com.se.Online.Appointment.Booking.System.dto.PaginationResponse;
 import com.se.Online.Appointment.Booking.System.exception.ResourceNotFoundException;
 import com.se.Online.Appointment.Booking.System.model.Role;
 import com.se.Online.Appointment.Booking.System.model.User;
@@ -31,7 +32,7 @@ public class UserController {
 
     // Create user (register)
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<User> createUser(@RequestBody User user) {
         if (user.getRole() == null) {
             user.setRole(Role.USER);
@@ -39,11 +40,20 @@ public class UserController {
         return ResponseEntity.ok(userService.saveUser(user));
     }
 
-    // Get all user
+    // Get all users (Admin only)
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<User>> getAllUser() {
         return ResponseEntity.ok(userService.getAllUser());
+    }
+
+    // Get all users with pagination (Admin only)
+    @GetMapping("/paginated")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<PaginationResponse<User>> getAllUsersPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(userService.getAllUsersPaginated(page, size));
     }
 
     // Get user by id
@@ -98,18 +108,10 @@ public class UserController {
 
     // Change password endpoint
     @PostMapping("/change-password")
-    public ResponseEntity<Map<String, String>> changePassword(
-            @RequestBody Map<String, String> passwordRequest,
+    public ResponseEntity<Map<String, String>> changePassword(@RequestBody Map<String, String> request,
             Authentication auth) {
-
-        String currentPassword = passwordRequest.get("currentPassword");
-        String newPassword = passwordRequest.get("newPassword");
-
-        if (currentPassword == null || newPassword == null) {
-            Map<String, String> response = new HashMap<>();
-            response.put("error", "Current password and new password are required");
-            return ResponseEntity.badRequest().body(response);
-        }
+        String currentPassword = request.get("currentPassword");
+        String newPassword = request.get("newPassword");
 
         User user = userService.findByUsername(auth.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + auth.getName()));

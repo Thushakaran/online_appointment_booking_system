@@ -41,6 +41,13 @@ public class AuthController {
         if (userRepository.existsByEmail(user.getEmail())) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email already in use"));
         }
+
+        // Security: Prevent ADMIN role registration through public endpoint
+        if (user.getRole() == Role.ADMIN) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Admin role cannot be registered through public endpoint"));
+        }
+
         if (user.getRole() == null) {
             user.setRole(Role.USER);
         }

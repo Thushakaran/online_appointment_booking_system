@@ -225,9 +225,6 @@ export default function Register() {
             <option value="PROVIDER" className="bg-gray-800">
               🏥 Provider (Offer services)
             </option>
-            <option value="ADMIN" className="bg-gray-800">
-              🔧 Admin (System management)
-            </option>
           </select>
 
           {form.role === "PROVIDER" && (

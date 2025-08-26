@@ -1,3 +1,67 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom heading styles for better visibility */
+@layer components {
+  .text-heading-h1 {
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .text-heading-h2 {
+    color: #e0e7ff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .text-heading-h3 {
+    color: #f3e8ff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .text-heading-h4 {
+    color: #fef3c7 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .text-heading-h5 {
+    color: #fecaca !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .text-heading-h6 {
+    color: #d1d5db !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Custom select dropdown styles */
+  select {
+    position: relative;
+    z-index: 50;
+    appearance: auto;
+    -webkit-appearance: auto;
+    -moz-appearance: auto;
+  }
+
+  select option {
+    background-color: #1f2937 !important;
+    color: white !important;
+    padding: 8px 12px;
+  }
+
+  select:focus {
+    z-index: 60;
+  }
+
+  /* Ensure dropdown is above all other elements */
+  select:focus-within {
+    z-index: 9999;
+  }
+}

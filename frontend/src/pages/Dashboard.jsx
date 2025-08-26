@@ -1,7 +1,41 @@
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import videoBackground from "../assets/video.mp4";
+import { dashboardAPI } from "../api/dashboard";
 
 export default function Dashboard() {
+  const [stats, setStats] = useState({
+    totalProviders: 0,
+    totalAppointments: 0,
+    upcomingAppointments: 0,
+    totalUsers: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        console.log('Dashboard: Starting to fetch stats...');
+        const data = await dashboardAPI.getStats();
+        console.log('Dashboard: Received stats data:', data);
+        setStats(data);
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+        // Set default values if API fails
+        setStats({
+          totalProviders: 0,
+          totalAppointments: 0,
+          upcomingAppointments: 0,
+          totalUsers: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="min-h-[calc(100vh-5rem)] relative">
       {/* Full Page Video Background */}
@@ -56,6 +90,43 @@ export default function Dashboard() {
           {/* Floating elements */}
           <div className="absolute top-10 right-10 w-20 h-20 bg-blue-400/30 rounded-full blur-xl animate-pulse"></div>
           <div className="absolute bottom-20 right-20 w-32 h-32 bg-purple-400/30 rounded-full blur-xl animate-pulse delay-1000"></div>
+        </div>
+
+        {/* Statistics Section */}
+        <div className="mb-12 px-8">
+          <div className="grid md:grid-cols-4 gap-6">
+            {/* Providers Stats */}
+            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center">
+              <div className="text-3xl font-bold text-blue-400 mb-2">
+                {loading ? "..." : stats.totalProviders}+
+              </div>
+              <div className="text-gray-100 text-sm">Providers</div>
+            </div>
+
+            {/* Total Appointments Stats */}
+            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center">
+              <div className="text-3xl font-bold text-green-400 mb-2">
+                {loading ? "..." : stats.totalAppointments}+
+              </div>
+              <div className="text-gray-100 text-sm">Bookings</div>
+            </div>
+
+            {/* Upcoming Appointments Stats */}
+            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center">
+              <div className="text-3xl font-bold text-purple-400 mb-2">
+                {loading ? "..." : stats.upcomingAppointments}
+              </div>
+              <div className="text-gray-100 text-sm">Upcoming</div>
+            </div>
+
+            {/* Total Users Stats */}
+            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center">
+              <div className="text-3xl font-bold text-orange-400 mb-2">
+                {loading ? "..." : stats.totalUsers}+
+              </div>
+              <div className="text-gray-100 text-sm">Users</div>
+            </div>
+          </div>
         </div>
 
         {/* Dashboard Cards */}
@@ -219,6 +290,104 @@ export default function Dashboard() {
                 24/7 Available
               </h3>
               <p>Access your appointments anytime, anywhere.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Service Features Section */}
+        <div className="mt-16 px-4 md:px-0">
+          <h2 className="text-3xl font-bold text-heading-h2 mb-8 text-center">
+            Our Services
+          </h2>
+          <div className="grid md:grid-cols-4 gap-6">
+            {/* Find Specialists */}
+            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center hover:bg-white/30 transition-all duration-300 transform hover:-translate-y-2">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-xl mb-4 flex items-center justify-center mx-auto">
+                <svg
+                  className="w-6 h-6 text-blue-400"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-white">
+                Find Specialists
+              </h3>
+              <p className="text-gray-100 text-sm">
+                Search by specialty or location
+              </p>
+            </div>
+
+            {/* Emergency Booking */}
+            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center hover:bg-white/30 transition-all duration-300 transform hover:-translate-y-2">
+              <div className="w-12 h-12 bg-green-500/20 rounded-xl mb-4 flex items-center justify-center mx-auto">
+                <svg
+                  className="w-6 h-6 text-green-400"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-white">
+                Emergency Booking
+              </h3>
+              <p className="text-gray-100 text-sm">Book urgent appointments</p>
+            </div>
+
+            {/* Reschedule */}
+            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center hover:bg-white/30 transition-all duration-300 transform hover:-translate-y-2">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-xl mb-4 flex items-center justify-center mx-auto">
+                <svg
+                  className="w-6 h-6 text-purple-400"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-white">Reschedule</h3>
+              <p className="text-gray-100 text-sm">
+                Change existing appointments
+              </p>
+            </div>
+
+            {/* Telemedicine */}
+            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center hover:bg-white/30 transition-all duration-300 transform hover:-translate-y-2">
+              <div className="w-12 h-12 bg-orange-500/20 rounded-xl mb-4 flex items-center justify-center mx-auto">
+                <svg
+                  className="w-6 h-6 text-orange-400"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold mb-2 text-white">
+                Telemedicine
+              </h3>
+              <p className="text-gray-100 text-sm">Virtual consultations</p>
             </div>
           </div>
         </div>

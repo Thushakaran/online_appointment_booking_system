@@ -32,9 +32,16 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/providers").permitAll() // Allow viewing providers without auth
-                        .requestMatchers("/api/availabilities/provider/**").permitAll() // Allow viewing availability
-                                                                                        // without auth
+                        // Allow public access to provider browsing and search
+                        .requestMatchers("/api/providers").permitAll()
+                        .requestMatchers("/api/providers/paginated").permitAll()
+                        .requestMatchers("/api/providers/search/**").permitAll()
+                        .requestMatchers("/api/providers/{id}").permitAll() // Allow viewing individual providers
+                        // Allow viewing availability without auth
+                        .requestMatchers("/api/availabilities/provider/**").permitAll()
+                        // Allow public access to dashboard statistics
+                        .requestMatchers("/api/dashboard/**").permitAll()
+                        // Protected endpoints
                         .requestMatchers("/api/users/me").authenticated()
                         .requestMatchers("/api/providers/me").authenticated()
                         .requestMatchers("/api/appointments/**").authenticated()

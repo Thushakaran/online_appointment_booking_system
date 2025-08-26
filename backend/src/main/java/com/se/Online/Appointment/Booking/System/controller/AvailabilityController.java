@@ -158,6 +158,13 @@ public class AvailabilityController {
             System.out.println("=== End Delete Availability Debug ===");
 
             return ResponseEntity.ok("Availability deleted successfully");
+        } catch (RuntimeException e) {
+            System.err.println("Runtime error in deleteAvailability: " + e.getMessage());
+            // Check if it's a business logic error (like having associated appointments)
+            if (e.getMessage().contains("associated appointment")) {
+                return ResponseEntity.status(400).body(e.getMessage());
+            }
+            return ResponseEntity.status(500).body("Internal server error: " + e.getMessage());
         } catch (Exception e) {
             System.err.println("Error in deleteAvailability: " + e.getMessage());
             e.printStackTrace();

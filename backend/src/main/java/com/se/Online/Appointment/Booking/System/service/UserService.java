@@ -1,5 +1,6 @@
 package com.se.Online.Appointment.Booking.System.service;
 
+import com.se.Online.Appointment.Booking.System.dto.PaginationResponse;
 import com.se.Online.Appointment.Booking.System.model.User;
 
 import java.util.List;
@@ -14,7 +15,12 @@ public interface UserService {
 
     List<User> getAllUser();
 
+    PaginationResponse<User> getAllUsersPaginated(int page, int size);
+
     User updateUser(Long id, User userDetails);
 
     void deleteUser(Long id);
+
+    // Dashboard statistics
+    long getTotalUsersCount();
 }

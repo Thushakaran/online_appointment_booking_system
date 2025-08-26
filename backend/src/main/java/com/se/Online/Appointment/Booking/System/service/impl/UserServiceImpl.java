@@ -1,9 +1,13 @@
 package com.se.Online.Appointment.Booking.System.service.impl;
 
+import com.se.Online.Appointment.Booking.System.dto.PaginationResponse;
 import com.se.Online.Appointment.Booking.System.exception.ResourceNotFoundException;
 import com.se.Online.Appointment.Booking.System.model.User;
 import com.se.Online.Appointment.Booking.System.repository.UserRepository;
 import com.se.Online.Appointment.Booking.System.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +24,6 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
-
 
     @Override
     public User saveUser(User user) {
@@ -47,6 +50,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public PaginationResponse<User> getAllUsersPaginated(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<User> userPage = userRepository.findAll(pageable);
+
+        return new PaginationResponse<>(
+                userPage.getContent(),
+                userPage.getNumber(),
+                userPage.getSize(),
+                userPage.getTotalElements());
+    }
+
+    @Override
     public User updateUser(Long id, User userDetails) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -70,5 +85,10 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         userRepository.delete(user);
+    }
+
+    @Override
+    public long getTotalUsersCount() {
+        return userRepository.count();
     }
 }

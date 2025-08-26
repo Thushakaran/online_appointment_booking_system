@@ -3,6 +3,7 @@ package com.se.Online.Appointment.Booking.System.service.impl;
 import com.se.Online.Appointment.Booking.System.exception.ResourceNotFoundException;
 import com.se.Online.Appointment.Booking.System.model.Availability;
 import com.se.Online.Appointment.Booking.System.repository.AvailabilityRepository;
+import com.se.Online.Appointment.Booking.System.repository.AppointmentRepository;
 import com.se.Online.Appointment.Booking.System.service.AvailabilityService;
 import org.springframework.stereotype.Service;
 
@@ -11,9 +12,12 @@ import java.util.List;
 @Service
 public class AvailabilityServiceImpl implements AvailabilityService {
     private final AvailabilityRepository availabilityRepository;
+    private final AppointmentRepository appointmentRepository;
 
-    public AvailabilityServiceImpl(AvailabilityRepository availabilityRepository) {
+    public AvailabilityServiceImpl(AvailabilityRepository availabilityRepository,
+            AppointmentRepository appointmentRepository) {
         this.availabilityRepository = availabilityRepository;
+        this.appointmentRepository = appointmentRepository;
     }
 
     @Override
@@ -69,6 +73,17 @@ public class AvailabilityServiceImpl implements AvailabilityService {
     @Override
     public void deleteAvailability(Long id) {
         Availability availability = getAvailabilityById(id);
+
+        // Check if there are any appointments associated with this availability
+        List<com.se.Online.Appointment.Booking.System.model.Appointment> appointments = appointmentRepository
+                .findByAvailabilityId(id);
+
+        if (!appointments.isEmpty()) {
+            throw new RuntimeException("Cannot delete availability because it has " + appointments.size()
+                    + " associated appointment(s). Please cancel or delete the appointments first.");
+        }
+
+        // If no appointments are associated, proceed with deletion
         availabilityRepository.delete(availability);
     }
 }
