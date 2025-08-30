@@ -112,6 +112,19 @@ export default function Navbar() {
                 </>
               )}
 
+              {/* User Profile - Show for all users except admin */}
+              {role !== "ADMIN" && (
+                <div className="flex items-center gap-2 ml-3 pl-3 border-l border-gray-500">
+                  <Link
+                    to="/profile"
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-purple-300 hover:text-purple-400 transition-colors"
+                  >
+                    <FaUser />
+                    <span className="font-medium">{user}</span>
+                  </Link>
+                </div>
+              )}
+
               {/* Logout button */}
               <div className="flex items-center gap-2 ml-3 pl-3 border-l border-gray-500">
                 <button
