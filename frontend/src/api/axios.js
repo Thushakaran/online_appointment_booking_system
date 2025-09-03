@@ -23,8 +23,6 @@ api.interceptors.response.use(
             // Handle authentication errors
             if (status === 401) {
                 console.log(`Authentication error (${status}):`, error.response.data);
-                // Token is invalid or expired
-                // Clear localStorage and redirect to login page
                 localStorage.removeItem("userId");
                 localStorage.removeItem("username");
                 localStorage.removeItem("role");
@@ -33,10 +31,6 @@ api.interceptors.response.use(
                 window.location.href = "/";
             } else if (status === 403) {
                 console.log(`Authorization error (${status}):`, error.response.data);
-                // User doesn't have permission for this specific action
-                // Don't clear authentication, just reject the promise
-                // This allows the calling code to handle the error appropriately
-                // Don't redirect - let the component handle it
             }
         }
         return Promise.reject(error);
