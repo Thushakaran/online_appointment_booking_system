@@ -6,6 +6,8 @@ import com.se.Online.Appointment.Booking.System.model.Appointment;
 import com.se.Online.Appointment.Booking.System.model.Provider;
 import com.se.Online.Appointment.Booking.System.model.User;
 import com.se.Online.Appointment.Booking.System.service.AppointmentService;
+import com.se.Online.Appointment.Booking.System.service.ProviderService;
+import com.se.Online.Appointment.Booking.System.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -18,9 +20,14 @@ import java.util.List;
 @RequestMapping("/api/appointments")
 public class AppointmentController {
     private final AppointmentService appointmentService;
+    private final ProviderService providerService;
+    private final UserService userService;
 
-    public AppointmentController(AppointmentService appointmentService) {
+    public AppointmentController(AppointmentService appointmentService, ProviderService providerService,
+            UserService userService) {
         this.appointmentService = appointmentService;
+        this.providerService = providerService;
+        this.userService = userService;
     }
 
     // Book new appointment
@@ -48,6 +55,10 @@ public class AppointmentController {
             if (appointment.getAvailability() == null || appointment.getAvailability().getId() == null) {
                 throw new IllegalArgumentException("Availability slot is required");
             }
+
+            User authenticatedUser = userService.findByUsername(authentication.getName())
+                    .orElseThrow(() -> new IllegalArgumentException("Authenticated user was not found"));
+            appointment.setUser(authenticatedUser);
 
             Appointment saved = appointmentService.bookAppointment(appointment);
             System.out.println("Appointment saved successfully with ID: " + saved.getId());
@@ -82,13 +93,21 @@ public class AppointmentController {
 
     // Get appointment by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Appointment> getAppointmentById(@PathVariable Long id) {
-        return ResponseEntity.ok(appointmentService.getAppointmentById(id));
+    public ResponseEntity<Appointment> getAppointmentById(@PathVariable Long id, Authentication auth) {
+        Appointment appointment = appointmentService.getAppointmentById(id);
+        if (!canAccessAppointment(appointment, auth)) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(appointment);
     }
 
     // Get appointments by user
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Appointment>> getAppointmentByUser(@PathVariable Long userId, Authentication auth) {
+        if (!isAdmin(auth) && !userService.findByUsername(auth.getName())
+                .map(user -> user.getId().equals(userId)).orElse(false)) {
+            return ResponseEntity.status(403).build();
+        }
         User user = new User();
         user.setId(userId);
         return ResponseEntity.ok(appointmentService.getAppointmentByUser(user));
@@ -101,6 +120,10 @@ public class AppointmentController {
             Authentication auth,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        if (!isAdmin(auth) && !userService.findByUsername(auth.getName())
+                .map(user -> user.getId().equals(userId)).orElse(false)) {
+            return ResponseEntity.status(403).build();
+        }
         User user = new User();
         user.setId(userId);
         return ResponseEntity.ok(appointmentService.getAppointmentByUserPaginated(user, page, size));
@@ -109,7 +132,11 @@ public class AppointmentController {
     // Get appointments by provider
     @GetMapping("/provider/{providerId}")
     @PreAuthorize("hasRole('PROVIDER')")
-    public ResponseEntity<List<Appointment>> getAppointmentByProvider(@PathVariable Long providerId) {
+    public ResponseEntity<List<Appointment>> getAppointmentByProvider(@PathVariable Long providerId,
+            Authentication auth) {
+        if (!providerService.getProviderByUsername(auth.getName()).getId().equals(providerId)) {
+            return ResponseEntity.status(403).build();
+        }
         Provider provider = new Provider();
         provider.setId(providerId);
         return ResponseEntity.ok(appointmentService.getAppointmentByProvider(provider));
@@ -120,8 +147,12 @@ public class AppointmentController {
     @PreAuthorize("hasRole('PROVIDER')")
     public ResponseEntity<PaginationResponse<Appointment>> getAppointmentByProviderPaginated(
             @PathVariable Long providerId,
+            Authentication auth,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        if (!providerService.getProviderByUsername(auth.getName()).getId().equals(providerId)) {
+            return ResponseEntity.status(403).build();
+        }
         Provider provider = new Provider();
         provider.setId(providerId);
         return ResponseEntity.ok(appointmentService.getAppointmentByProviderPaginated(provider, page, size));
@@ -149,13 +180,21 @@ public class AppointmentController {
     // Update appointment status
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('PROVIDER')")
-    public ResponseEntity<Appointment> updateAppointmentStatus(@PathVariable Long id, @RequestBody String status) {
+    public ResponseEntity<Appointment> updateAppointmentStatus(@PathVariable Long id, @RequestBody String status,
+            Authentication auth) {
+        Appointment appointment = appointmentService.getAppointmentById(id);
+        if (appointment.getProvider() == null ||
+                !providerService.getProviderByUsername(auth.getName()).getId()
+                        .equals(appointment.getProvider().getId())) {
+            return ResponseEntity.status(403).build();
+        }
         Appointment updatedAppointment = appointmentService.updateAppointmentStatus(id, status);
         return ResponseEntity.ok(updatedAppointment);
     }
 
     // Cancel appointment (for users to cancel their own appointments)
     @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Appointment> cancelAppointment(@PathVariable Long id, Authentication authentication) {
         Appointment appointment = appointmentService.getAppointmentById(id);
 
@@ -171,6 +210,7 @@ public class AppointmentController {
 
     // Confirm appointment (for users to confirm their own appointments)
     @PutMapping("/{id}/confirm")
+    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<Appointment> confirmAppointment(@PathVariable Long id, Authentication authentication) {
         Appointment appointment = appointmentService.getAppointmentById(id);
 
@@ -190,5 +230,24 @@ public class AppointmentController {
     public ResponseEntity<String> deleteAppointment(@PathVariable Long id) {
         appointmentService.deleteAppointment(id);
         return ResponseEntity.ok("Appointment deleted successfully.");
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    private boolean canAccessAppointment(Appointment appointment, Authentication authentication) {
+        if (isAdmin(authentication)) return true;
+        if (appointment.getUser() != null && authentication.getName().equals(appointment.getUser().getUsername())) {
+            return true;
+        }
+        if (appointment.getProvider() == null) return false;
+        try {
+            return providerService.getProviderByUsername(authentication.getName()).getId()
+                    .equals(appointment.getProvider().getId());
+        } catch (RuntimeException ex) {
+            return false;
+        }
     }
 }

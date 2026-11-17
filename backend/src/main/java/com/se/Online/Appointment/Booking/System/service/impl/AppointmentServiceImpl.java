@@ -43,7 +43,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         // If appointment has availability, mark it as booked
         if (appointment.getAvailability() != null) {
             System.out.println("Checking availability ID: " + appointment.getAvailability().getId());
-            Availability availability = availabilityRepository.findById(appointment.getAvailability().getId())
+            Availability availability = availabilityRepository.findByIdForUpdate(appointment.getAvailability().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Availability not found"));
 
             System.out.println("Found availability - ID: " + availability.getId() + ", Date: "
@@ -51,6 +51,18 @@ public class AppointmentServiceImpl implements AppointmentService {
             if (availability.isBooked()) {
                 throw new RuntimeException("This time slot is already booked");
             }
+
+            if (appointment.getUser() == null || appointment.getProvider() == null ||
+                    appointment.getProvider().getId() == null || availability.getProvider() == null ||
+                    !availability.getProvider().getId().equals(appointment.getProvider().getId())) {
+                throw new IllegalArgumentException("The selected slot does not belong to this provider");
+            }
+
+            Provider provider = providerRepository.findById(appointment.getProvider().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Provider not found"));
+            appointment.setProvider(provider);
+            appointment.setAvailability(availability);
+            appointment.setAppointmentDate(availability.getAvailableDate());
 
             availability.setBooked(true);
             availabilityRepository.save(availability);
@@ -163,13 +175,22 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     public Appointment updateAppointmentStatus(Long id, String status) {
         Appointment appointment = getAppointmentById(id);
-        appointment.setStatus(AppointmentStatus.valueOf(status.toUpperCase()));
+        AppointmentStatus nextStatus = AppointmentStatus.valueOf(status.trim().replace("\"", "").toUpperCase());
+        appointment.setStatus(nextStatus);
+        if (nextStatus == AppointmentStatus.CANCELLED && appointment.getAvailability() != null) {
+            appointment.getAvailability().setBooked(false);
+            availabilityRepository.save(appointment.getAvailability());
+        }
         return appointmentRepository.save(appointment);
     }
 
     @Override
     public void deleteAppointment(Long id) {
         Appointment appointment = getAppointmentById(id);
+        if (appointment.getAvailability() != null) {
+            appointment.getAvailability().setBooked(false);
+            availabilityRepository.save(appointment.getAvailability());
+        }
         appointmentRepository.delete(appointment);
     }
 

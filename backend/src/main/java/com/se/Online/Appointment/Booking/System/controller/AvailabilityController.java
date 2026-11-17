@@ -111,6 +111,7 @@ public class AvailabilityController {
 
     // Mark availability as booked
     @PutMapping("/{id}/book")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Availability> markAsBooked(@PathVariable Long id) {
         Availability booked = availabilityService.markAsBooked(id);
         return ResponseEntity.ok(booked);

@@ -62,11 +62,11 @@ public class UserController {
         User user = userService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
-        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")) ||
-                auth.getName().equals(user.getUsername())) {
-            return ResponseEntity.ok(user);
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin && !auth.getName().equals(user.getUsername())) {
+            return ResponseEntity.status(403).build();
         }
-
         return ResponseEntity.ok(user);
     }
 
@@ -113,6 +113,10 @@ public class UserController {
         String currentPassword = request.get("currentPassword");
         String newPassword = request.get("newPassword");
 
+        if (currentPassword == null || newPassword == null || newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body(Map.of("error", "New password must be at least 6 characters"));
+        }
+
         User user = userService.findByUsername(auth.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + auth.getName()));
 
@@ -124,7 +128,8 @@ public class UserController {
         }
 
         // Update password
-        user.setPassword(passwordEncoder.encode(newPassword));
+        // UserService encodes passwords before persisting, so pass the raw value here.
+        user.setPassword(newPassword);
         userService.saveUser(user);
 
         Map<String, String> response = new HashMap<>();

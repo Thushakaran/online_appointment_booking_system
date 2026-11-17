@@ -594,6 +594,9 @@ export default function mockApiPlugin() {
         if (!currentUser) return sendJson(res, 401, { error: "Unauthorized" });
 
         if (method === "GET") {
+          if (currentUser.role !== "ADMIN" && currentUser.id !== uid) {
+            return sendJson(res, 403, { error: "Forbidden" });
+          }
           return sendJson(res, 200, sanitizeUser(store.users[idx]));
         }
         if (method === "PUT") {
@@ -691,19 +694,23 @@ export default function mockApiPlugin() {
 
       // Appointments
       if (pathname === "/api/appointments" && method === "POST") {
-        if (!currentUser) return sendJson(res, 401, { error: "Unauthorized" });
+        if (!currentUser || currentUser.role !== "USER") {
+          return sendJson(res, 403, { error: "Client access required" });
+        }
         const pid = Number(body.provider?.id);
         const aid = Number(body.availability?.id);
-        const uid = Number(body.user?.id || currentUser.id);
         const slot = store.availabilities.find((a) => a.id === aid);
         if (!slot) return sendJson(res, 400, { message: "Invalid availability slot" });
+        if (slot.providerId !== pid) {
+          return sendJson(res, 400, { message: "The selected slot does not belong to this provider" });
+        }
         if (slot.isBooked) {
           return sendJson(res, 409, { message: "This time slot is already booked." });
         }
         slot.isBooked = true;
         const created = {
           id: store.nextAppointmentId++,
-          userId: uid,
+          userId: currentUser.id,
           providerId: pid,
           availabilityId: aid,
           appointmentDate: body.appointmentDate || slot.availableDate,
@@ -738,6 +745,9 @@ export default function mockApiPlugin() {
       if (apptUserMatch && method === "GET") {
         if (!currentUser) return sendJson(res, 401, { error: "Unauthorized" });
         const uid = Number(apptUserMatch[1]);
+        if (currentUser.role !== "ADMIN" && currentUser.id !== uid) {
+          return sendJson(res, 403, { error: "Forbidden" });
+        }
         const list = store.appointments
           .filter((a) => a.userId === uid)
           .map((a) => hydrateAppointment(store, a));
@@ -783,20 +793,29 @@ export default function mockApiPlugin() {
 
       const apptConfirmMatch = pathname.match(/^\/api\/appointments\/(\d+)\/confirm$/);
       if (apptConfirmMatch && method === "PUT") {
-        if (!currentUser) return sendJson(res, 401, { error: "Unauthorized" });
+        if (!currentUser || currentUser.role !== "USER") {
+          return sendJson(res, 403, { error: "Client access required" });
+        }
         const id = Number(apptConfirmMatch[1]);
         const appt = store.appointments.find((a) => a.id === id);
         if (!appt) return sendJson(res, 404, { error: "Appointment not found" });
+        if (appt.userId !== currentUser.id) return sendJson(res, 403, { error: "Forbidden" });
         appt.status = "CONFIRMED";
         return sendJson(res, 200, hydrateAppointment(store, appt));
       }
 
       const apptStatusMatch = pathname.match(/^\/api\/appointments\/(\d+)\/status$/);
       if (apptStatusMatch && method === "PUT") {
-        if (!currentUser) return sendJson(res, 401, { error: "Unauthorized" });
+        if (!currentUser || currentUser.role !== "PROVIDER") {
+          return sendJson(res, 403, { error: "Provider access required" });
+        }
         const id = Number(apptStatusMatch[1]);
         const appt = store.appointments.find((a) => a.id === id);
         if (!appt) return sendJson(res, 404, { error: "Appointment not found" });
+        const provider = store.providers.find((p) => p.userId === currentUser.id);
+        if (!provider || appt.providerId !== provider.id) {
+          return sendJson(res, 403, { error: "Forbidden" });
+        }
         let nextStatus = typeof body === "string" ? body : body?.status;
         nextStatus = String(nextStatus || "").replace(/^"|"$/g, "").trim().toUpperCase();
         if (!["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"].includes(nextStatus)) {
