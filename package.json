@@ -1,24 +1,5 @@
 {
-  "name": "online-appointment-booking-system",
-  "private": true,
-  "type": "module",
-  "workspaces": [
-    "frontend"
-  ],
-  "scripts": {
-    "dev": "node server.js",
-    "build": "npm run build --workspace=frontend",
-    "start": "NODE_ENV=production node server.js",
-    "lint": "npm run lint --workspace=frontend"
-  },
   "dependencies": {
-    "axios": "^1.11.0",
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "express": "^5.3.0",
-    "jsonwebtoken": "^9.0.3"
-  },
-  "devDependencies": {
-    "vite": "^8.3.8"
+    "axios": "^1.11.0"
   }
 }

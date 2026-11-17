@@ -1,22 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import AppShell from "../components/AppShell";
-import FeedbackBanner from "../components/FeedbackBanner";
-import {
-  FiBriefcase,
-  FiMapPin,
-  FiUpload,
-  FiArrowLeft,
-  FiArrowRight,
-  FiCheck,
-  FiTrash2,
-} from "react-icons/fi";
+import VideoBackground from "../components/VideoBackground";
 
 export default function ProviderSetup() {
   const navigate = useNavigate();
-  const { token, role, user } = useSelector((state) => state.auth);
+  const { token, role, userId } = useSelector((state) => state.auth);
 
   const [form, setForm] = useState({
     serviceName: "",
@@ -39,60 +29,131 @@ export default function ProviderSetup() {
   const [isNewProvider, setIsNewProvider] = useState(true);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
-  const applyProviderToForm = (data) => ({
-    serviceName: data.serviceName || "",
-    description: data.description || "",
-    profileImage: data.profileImage || "",
-    phoneNumber: data.phoneNumber || "",
-    address: data.address || "",
-    city: data.city || "",
-    state: data.state || "",
-    zipCode: data.zipCode || "",
-    country: data.country || "",
-    servicePricing: data.servicePricing || "",
-  });
+  // Redirect if not logged in or not a provider
+  useEffect(() => {
+    if (!token) {
+      navigate("/");
+    } else if (role !== "PROVIDER") {
+      navigate("/");
+    } else {
+      // Check if provider profile already exists
+      checkExistingProfile();
+    }
+  }, [token, role, navigate]);
 
-  const checkExistingProfile = useCallback(async () => {
+  const checkExistingProfile = async () => {
     try {
+      console.log("Checking existing profile...");
       const response = await api.get("/api/providers/me");
-      if (response.status === 200 && response.data) {
+
+      if (response.status === 200) {
+        console.log("Provider data received:", response.data);
         setExistingProvider(response.data);
         setIsNewProvider(false);
-        setForm(applyProviderToForm(response.data));
+        const formData = {
+          serviceName: response.data.serviceName || "",
+          description: response.data.description || "",
+          profileImage: response.data.profileImage || "",
+          phoneNumber: response.data.phoneNumber || "",
+          address: response.data.address || "",
+          city: response.data.city || "",
+          state: response.data.state || "",
+          zipCode: response.data.zipCode || "",
+          country: response.data.country || "",
+          servicePricing: response.data.servicePricing || "",
+        };
+        console.log("Setting form data:", formData);
+        setForm(formData);
       }
     } catch (err) {
+      console.error("Error fetching provider profile:", err);
+      console.error("Error status:", err.response?.status);
+
+      // Try fallback to general providers list
       if (err.response?.status === 404 || err.response?.status === 403) {
+        console.log("Trying fallback to general providers list...");
         try {
           const allProvidersRes = await api.get("/api/providers");
-          const currentUser = user || localStorage.getItem("username");
-          const userProvider = (allProvidersRes.data || []).find(
+          const currentUser = localStorage.getItem("username");
+
+          console.log("Current user:", currentUser);
+          console.log("All providers:", allProvidersRes.data);
+
+          const userProvider = allProvidersRes.data.find(
             (p) => p.user && p.user.username === currentUser
           );
+
           if (userProvider) {
+            console.log("Found provider in general list:", userProvider);
             setExistingProvider(userProvider);
             setIsNewProvider(false);
-            setForm(applyProviderToForm(userProvider));
+            const formData = {
+              serviceName: userProvider.serviceName || "",
+              description: userProvider.description || "",
+              profileImage: userProvider.profileImage || "",
+              phoneNumber: userProvider.phoneNumber || "",
+              address: userProvider.address || "",
+              city: userProvider.city || "",
+              state: userProvider.state || "",
+              zipCode: userProvider.zipCode || "",
+              country: userProvider.country || "",
+              servicePricing: userProvider.servicePricing || "",
+            };
+            console.log("Setting form data from fallback:", formData);
+            setForm(formData);
           } else {
+            console.log("No provider found for user:", currentUser);
             setIsNewProvider(true);
+            setForm({
+              serviceName: "",
+              description: "",
+              profileImage: "",
+              phoneNumber: "",
+              address: "",
+              city: "",
+              state: "",
+              zipCode: "",
+              country: "",
+              servicePricing: "",
+            });
           }
-        } catch {
+        } catch (fallbackErr) {
+          console.error("Fallback also failed:", fallbackErr);
           setIsNewProvider(true);
+          setForm({
+            serviceName: "",
+            description: "",
+            profileImage: "",
+            phoneNumber: "",
+            address: "",
+            city: "",
+            state: "",
+            zipCode: "",
+            country: "",
+            servicePricing: "",
+          });
         }
       } else {
+        // Provider profile doesn't exist yet (404) or other error, which is fine for new providers
         setIsNewProvider(true);
+        // Ensure form is empty for new providers
+        setForm({
+          serviceName: "",
+          description: "",
+          profileImage: "",
+          phoneNumber: "",
+          address: "",
+          city: "",
+          state: "",
+          zipCode: "",
+          country: "",
+          servicePricing: "",
+        });
       }
     } finally {
       setIsLoadingProfile(false);
     }
-  }, [user]);
-
-  useEffect(() => {
-    if (!token || role !== "PROVIDER") {
-      navigate("/login");
-      return;
-    }
-    checkExistingProfile();
-  }, [token, role, navigate, checkExistingProfile]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -101,31 +162,41 @@ export default function ProviderSetup() {
     setSuccess("");
 
     try {
-      const providerData = { ...form };
+      const providerData = {
+        ...form,
+      };
+
+      console.log("Submitting provider data:", providerData);
+      console.log("Existing provider:", existingProvider);
+
       if (existingProvider) {
+        console.log("Updating provider with ID:", existingProvider.id);
         await api.put(`/api/providers/${existingProvider.id}`, providerData);
-        setSuccess("Provider profile updated successfully.");
+        setSuccess("Provider profile updated successfully!");
       } else {
+        console.log("Creating new provider");
         await api.post("/api/providers", providerData);
-        setSuccess("Provider profile created successfully.");
+        setSuccess("Provider profile created successfully!");
       }
 
       setTimeout(() => {
         navigate("/provider-dashboard");
-      }, 1500);
+      }, 2000);
     } catch (err) {
+      console.error("Provider update error:", err);
       if (err?.response?.status === 403) {
         setError(
-          "You do not have permission to update this provider profile."
+          "You don't have permission to update this provider profile. Please contact support."
         );
       } else if (err?.response?.status === 401) {
         setError("Your session has expired. Please log in again.");
+        // Redirect to login after a delay
         setTimeout(() => {
-          navigate("/login");
-        }, 2500);
+          navigate("/");
+        }, 3000);
       } else {
         setError(
-          err?.response?.data?.message || "Failed to save provider profile."
+          err?.response?.data?.message || "Failed to save provider profile"
         );
       }
     } finally {
@@ -134,28 +205,33 @@ export default function ProviderSetup() {
   };
 
   const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files[0];
+    if (file) {
+      // Check file size (limit to 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        setError(
+          "Image file size must be less than 5MB. Please choose a smaller image."
+        );
+        return;
+      }
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setError("Image file size must be less than 5MB.");
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file.");
-      return;
-    }
+      // Check file type
+      if (!file.type.startsWith("image/")) {
+        setError("Please select a valid image file.");
+        return;
+      }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setForm((prev) => ({ ...prev, profileImage: reader.result }));
-      setError("");
-    };
-    reader.onerror = () => {
-      setError("Failed to read the image file. Please try again.");
-    };
-    reader.readAsDataURL(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm({ ...form, profileImage: reader.result });
+        setError(""); // Clear any previous errors
+      };
+      reader.onerror = () => {
+        setError("Failed to read the image file. Please try again.");
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const calculateProfileCompletion = () => {
@@ -169,9 +245,14 @@ export default function ProviderSetup() {
     ];
     const optionalFields = ["zipCode", "country", "servicePricing"];
 
-    const completedRequired = requiredFields.filter((f) => form[f]?.trim());
-    const completedOptional = optionalFields.filter((f) => form[f]?.trim());
+    const completedRequired = requiredFields.filter((field) =>
+      form[field]?.trim()
+    );
+    const completedOptional = optionalFields.filter((field) =>
+      form[field]?.trim()
+    );
 
+    // Calculate completion: 70% for required fields, 30% for optional fields
     const requiredCompletion =
       (completedRequired.length / requiredFields.length) * 70;
     const optionalCompletion =
@@ -180,160 +261,223 @@ export default function ProviderSetup() {
     return Math.round(requiredCompletion + optionalCompletion);
   };
 
+  const nextStep = () => {
+    if (currentStep < 2) setCurrentStep(currentStep + 1);
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  if (!token || role !== "PROVIDER") {
+    return <div className="p-4">Loading...</div>;
+  }
+
+  if (isLoadingProfile) {
+    return (
+      <VideoBackground>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="bg-white rounded-lg p-8 shadow-lg">
+            <div className="flex items-center space-x-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <span className="text-gray-700">Loading provider profile...</span>
+            </div>
+          </div>
+        </div>
+      </VideoBackground>
+    );
+  }
+
   const profileCompletion = calculateProfileCompletion();
 
   return (
-    <AppShell title="Business Profile Setup" breadcrumb="Business Profile">
-      <div className="max-w-3xl mx-auto space-y-6">
-        {isLoadingProfile ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-10 text-center">
-            <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-sm text-slate-600">Loading provider profile...</p>
-          </div>
-        ) : (
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-            {/* Header & Progress */}
-            <div className="p-6 sm:p-8 border-b border-slate-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-display font-bold text-slate-900">
-                    {isNewProvider
-                      ? "Set Up Your Business Profile"
-                      : "Update Business Profile"}
-                  </h1>
-                  <p className="text-sm text-slate-600 mt-1">
-                    {isNewProvider
-                      ? "Add your service details, location, and pricing to start accepting bookings."
-                      : "Keep your public service details and pricing up to date for clients."}
-                  </p>
+    <VideoBackground>
+      <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            {/* Blue Banner Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-10 text-white">
+              <h1 className="text-3xl font-bold text-center mb-3 text-heading-h1">
+                {isNewProvider
+                  ? "Complete Your Provider Profile"
+                  : "Update Your Provider Profile"}
+              </h1>
+              <p className="text-center text-blue-100 mb-6">
+                {isNewProvider
+                  ? "Set up your professional profile to start accepting appointments."
+                  : "Update your professional profile to continue accepting appointments."}
+              </p>
+
+              {/* Progress Bar */}
+              <div className="max-w-md mx-auto">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-blue-100">Profile Completion</span>
+                  <span className="text-blue-100">{profileCompletion}%</span>
                 </div>
-                <div className="sm:text-right shrink-0">
-                  <div className="text-xs font-medium text-slate-500">
-                    Profile completion
-                  </div>
-                  <div className="text-lg font-display font-bold text-indigo-600 tabular-nums">
-                    {profileCompletion}%
-                  </div>
+                <div className="w-full bg-blue-500 rounded-full h-3 shadow-inner">
+                  <div
+                    className="bg-gradient-to-r from-white to-blue-100 h-3 rounded-full transition-all duration-500 shadow-sm"
+                    style={{ width: `${profileCompletion}%` }}
+                  ></div>
                 </div>
-              </div>
-
-              <div className="mt-4 w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${profileCompletion}%` }}
-                />
-              </div>
-
-              {/* Step Switcher */}
-              <div className="grid grid-cols-2 gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(1)}
-                  className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-colors ${
-                    currentStep === 1
-                      ? "bg-indigo-50 border-indigo-200 text-indigo-900"
-                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  <div
-                    className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-semibold shrink-0 ${
-                      currentStep === 1
-                        ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    1
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      Service & Profile
-                    </div>
-                    <div className="text-xs text-slate-500 truncate">
-                      Name, contact & bio
-                    </div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep(2)}
-                  className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-colors ${
-                    currentStep === 2
-                      ? "bg-indigo-50 border-indigo-200 text-indigo-900"
-                      : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
-                  <div
-                    className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-semibold shrink-0 ${
-                      currentStep === 2
-                        ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    2
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      Location & Pricing
-                    </div>
-                    <div className="text-xs text-slate-500 truncate">
-                      Address & session rate
-                    </div>
-                  </div>
-                </button>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
-              {isNewProvider && (
-                <FeedbackBanner
-                  variant="info"
-                  message="Welcome! Complete both steps below so clients can discover your practice in the provider directory."
-                />
+            {/* Welcome Message for New Providers */}
+            {isNewProvider && (
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mx-8 mt-6">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-5 w-5 text-blue-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-blue-700">
+                      <strong>Welcome!</strong> Please complete your provider
+                      profile to start accepting appointments. This information
+                      will help clients find and book your services.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step Navigation */}
+            <div className="bg-gray-50 px-8 py-6 border-b border-gray-200">
+              <div className="flex justify-center space-x-12">
+                {/* Step 1: Basic Info */}
+                <div className="flex items-center space-x-3">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
+                      currentStep === 1
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
+                        : "bg-gray-300 text-gray-600"
+                    }`}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <span
+                    className={`font-medium ${
+                      currentStep === 1 ? "text-blue-600" : "text-gray-600"
+                    }`}
+                  >
+                    Basic Info
+                  </span>
+                </div>
+
+                {/* Step 2: Location & Pricing */}
+                <div className="flex items-center space-x-3">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
+                      currentStep === 2
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md"
+                        : "bg-gray-300 text-gray-600"
+                    }`}
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  </div>
+                  <span
+                    className={`font-medium ${
+                      currentStep === 2 ? "text-blue-600" : "text-gray-600"
+                    }`}
+                  >
+                    Location & Pricing
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-8">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">
+                  {error}
+                </div>
               )}
 
-              <FeedbackBanner
-                variant="error"
-                message={error}
-                onDismiss={() => setError("")}
-              />
-              <FeedbackBanner
-                variant="success"
-                message={success}
-                onDismiss={() => setSuccess("")}
-              />
+              {success && (
+                <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg mb-6">
+                  {success}
+                </div>
+              )}
 
-              {currentStep === 1 ? (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 text-slate-900 font-display font-semibold">
-                    <FiBriefcase className="w-4 h-4 text-indigo-600" />
-                    <h2>Basic Information</h2>
-                  </div>
+              {/* Step 1: Basic Information */}
+              {currentStep === 1 && (
+                <div className="space-y-8">
+                  <h2 className="text-2xl font-bold text-heading-h2">
+                    Basic Information
+                  </h2>
 
-                  {/* Profile Image Upload */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="w-20 h-20 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
+                  {/* Profile Photo */}
+                  <div className="flex items-center space-x-6">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center overflow-hidden border-4 border-blue-200">
                       {form.profileImage ? (
                         <img
                           src={form.profileImage}
-                          alt="Provider profile"
+                          alt="Profile"
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <FiBriefcase className="w-7 h-7 text-slate-300" />
+                        <svg
+                          className="w-12 h-12 text-blue-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-slate-900">
-                        Profile Image
-                      </div>
-                      <p className="text-xs text-slate-500 mt-0.5 mb-3">
-                        PNG, JPG, or WEBP up to 5MB.
-                      </p>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <label className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
-                          <FiUpload className="w-3.5 h-3.5" />
-                          <span>Upload photo</span>
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Profile Photo
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <label className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg cursor-pointer hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg">
+                          Choose File
                           <input
                             type="file"
                             accept="image/*"
@@ -341,36 +485,25 @@ export default function ProviderSetup() {
                             className="hidden"
                           />
                         </label>
-                        {form.profileImage && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setForm((prev) => ({ ...prev, profileImage: "" }))
-                            }
-                            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                          >
-                            <FiTrash2 className="w-3.5 h-3.5" />
-                            <span>Remove</span>
-                          </button>
-                        )}
+                        <span className="text-sm text-gray-500">
+                          {form.profileImage
+                            ? "File selected"
+                            : "No file chosen"}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label
-                        htmlFor="service-name"
-                        className="block text-sm font-medium text-slate-700 mb-1.5"
-                      >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Service Name *
                       </label>
                       <input
-                        id="service-name"
                         type="text"
                         required
-                        className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="e.g., General Medical Consultation"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-300"
+                        placeholder="e.g., Medical Consultation, Legal Advice, Beauty Services"
                         value={form.serviceName}
                         onChange={(e) =>
                           setForm({ ...form, serviceName: e.target.value })
@@ -379,17 +512,13 @@ export default function ProviderSetup() {
                     </div>
 
                     <div>
-                      <label
-                        htmlFor="phone-number"
-                        className="block text-sm font-medium text-slate-700 mb-1.5"
-                      >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Phone Number *
                       </label>
                       <input
-                        id="phone-number"
                         type="tel"
                         required
-                        className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-300"
                         placeholder="+1 (555) 123-4567"
                         value={form.phoneNumber}
                         onChange={(e) =>
@@ -400,18 +529,14 @@ export default function ProviderSetup() {
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="service-description"
-                      className="block text-sm font-medium text-slate-700 mb-1.5"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Service Description *
                     </label>
                     <textarea
-                      id="service-description"
                       required
                       rows={4}
-                      className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="Describe your specialties, qualifications, and what clients can expect..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-300"
+                      placeholder="Describe your services, qualifications, experience, and what makes you unique..."
                       value={form.description}
                       onChange={(e) =>
                         setForm({ ...form, description: e.target.value })
@@ -419,26 +544,24 @@ export default function ProviderSetup() {
                     />
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 text-slate-900 font-display font-semibold">
-                    <FiMapPin className="w-4 h-4 text-indigo-600" />
-                    <h2>Location & Pricing</h2>
-                  </div>
+              )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="md:col-span-2">
-                      <label
-                        htmlFor="provider-address"
-                        className="block text-sm font-medium text-slate-700 mb-1.5"
-                      >
-                        Street Address *
+              {/* Step 2: Location & Pricing */}
+              {currentStep === 2 && (
+                <div className="space-y-8">
+                  <h2 className="text-2xl font-bold text-heading-h2">
+                    Location & Pricing
+                  </h2>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Address *
                       </label>
                       <input
-                        id="provider-address"
                         type="text"
                         required
-                        className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-300"
                         placeholder="123 Main Street"
                         value={form.address}
                         onChange={(e) =>
@@ -448,17 +571,13 @@ export default function ProviderSetup() {
                     </div>
 
                     <div>
-                      <label
-                        htmlFor="provider-city"
-                        className="block text-sm font-medium text-slate-700 mb-1.5"
-                      >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         City *
                       </label>
                       <input
-                        id="provider-city"
                         type="text"
                         required
-                        className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-300"
                         placeholder="New York"
                         value={form.city}
                         onChange={(e) =>
@@ -468,17 +587,13 @@ export default function ProviderSetup() {
                     </div>
 
                     <div>
-                      <label
-                        htmlFor="provider-state"
-                        className="block text-sm font-medium text-slate-700 mb-1.5"
-                      >
-                        State / Province *
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        State/Province *
                       </label>
                       <input
-                        id="provider-state"
                         type="text"
                         required
-                        className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-300"
                         placeholder="NY"
                         value={form.state}
                         onChange={(e) =>
@@ -488,16 +603,12 @@ export default function ProviderSetup() {
                     </div>
 
                     <div>
-                      <label
-                        htmlFor="provider-zip"
-                        className="block text-sm font-medium text-slate-700 mb-1.5"
-                      >
-                        ZIP / Postal Code
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        ZIP/Postal Code
                       </label>
                       <input
-                        id="provider-zip"
                         type="text"
-                        className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-300"
                         placeholder="10001"
                         value={form.zipCode}
                         onChange={(e) =>
@@ -507,16 +618,12 @@ export default function ProviderSetup() {
                     </div>
 
                     <div>
-                      <label
-                        htmlFor="provider-country"
-                        className="block text-sm font-medium text-slate-700 mb-1.5"
-                      >
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         Country
                       </label>
                       <input
-                        id="provider-country"
                         type="text"
-                        className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-300"
                         placeholder="United States"
                         value={form.country}
                         onChange={(e) =>
@@ -527,17 +634,13 @@ export default function ProviderSetup() {
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="provider-pricing"
-                      className="block text-sm font-medium text-slate-700 mb-1.5"
-                    >
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Service Pricing
                     </label>
-                    <input
-                      id="provider-pricing"
-                      type="text"
-                      className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                      placeholder="e.g., 120 or $120 per consultation"
+                    <textarea
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 hover:border-blue-300"
+                      placeholder="Describe your pricing structure, consultation fees, packages..."
                       value={form.servicePricing}
                       onChange={(e) =>
                         setForm({ ...form, servicePricing: e.target.value })
@@ -547,61 +650,63 @@ export default function ProviderSetup() {
                 </div>
               )}
 
-              {/* Footer Actions */}
-              <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-slate-200">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => navigate("/provider-dashboard")}
-                    className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
-                  >
-                    Back to dashboard
-                  </button>
-                </div>
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-10 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  Previous
+                </button>
 
-                <div className="flex items-center justify-end gap-3">
-                  {currentStep === 2 && (
-                    <button
-                      type="button"
-                      onClick={() => setCurrentStep(1)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-                    >
-                      <FiArrowLeft className="w-4 h-4" />
-                      <span>Previous</span>
-                    </button>
-                  )}
-
+                <div className="flex space-x-4">
                   {currentStep < 2 ? (
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(2)}
-                      className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                      onClick={nextStep}
+                      className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
                     >
-                      <span>Next step</span>
-                      <FiArrowRight className="w-4 h-4" />
+                      Next
                     </button>
                   ) : (
                     <button
                       type="submit"
                       disabled={loading}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                      className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
                     >
-                      <FiCheck className="w-4 h-4" />
-                      <span>
-                        {loading
-                          ? "Saving..."
-                          : existingProvider
-                          ? "Save changes"
-                          : "Create provider profile"}
-                      </span>
+                      {loading
+                        ? "Saving..."
+                        : existingProvider
+                        ? "Update Profile"
+                        : "Create Profile"}
                     </button>
                   )}
                 </div>
               </div>
+
+              {/* Skip Button */}
+              <div className="text-center mt-6">
+                <button
+                  type="button"
+                  onClick={() => navigate("/provider-dashboard")}
+                  className="text-sm text-gray-500 hover:text-gray-700 mr-6 transition-colors"
+                >
+                  Skip for now
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/")}
+                  className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  Back to Home
+                </button>
+              </div>
             </form>
           </div>
-        )}
+        </div>
       </div>
-    </AppShell>
+    </VideoBackground>
   );
 }
