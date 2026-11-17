@@ -1,8 +1,13 @@
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 /** @type {import('tailwindcss').Config} */
+const configDir = dirname(fileURLToPath(import.meta.url))
+
 export default {
     content: [
-        "./index.html",
-        "./src/**/*.{js,ts,jsx,tsx}",
+        resolve(configDir, "index.html"),
+        resolve(configDir, "src/**/*.{js,ts,jsx,tsx}"),
     ],
     theme: {
         extend: {
