@@ -1,4 +1,14 @@
 {
+  "name": "online-application-booking-system",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace frontend -- --host 0.0.0.0",
+    "build": "npm run build --workspace frontend",
+    "preview": "npm run preview --workspace frontend -- --host 0.0.0.0"
+  },
   "dependencies": {
     "axios": "^1.11.0"
   }
