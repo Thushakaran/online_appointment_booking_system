@@ -105,9 +105,20 @@ export default function AdminDashboard() {
       setAppointmentsHasPrevious(appointmentsRes.data.hasPrevious || false);
 
       setError("");
-    } catch {
+    } catch (requestError) {
+      console.error("Failed to load administrative records:", requestError);
+      const endpoint = requestError?.config?.url;
+      const status = requestError?.response?.status;
+      const detail = requestError?.response?.data?.message || requestError?.response?.data?.error;
       setError(
-        "Failed to fetch administrative records. Verify your admin session."
+        [
+          "Failed to fetch administrative records.",
+          endpoint ? `Request: ${endpoint}.` : "",
+          status ? `HTTP ${status}.` : "",
+          detail || "Verify your admin session and backend connection.",
+        ]
+          .filter(Boolean)
+          .join(" ")
       );
     } finally {
       setLoading(false);

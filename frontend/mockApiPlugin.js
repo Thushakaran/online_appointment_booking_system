@@ -283,6 +283,13 @@ function tryProxyToSpringBoot(req, res, rawBodyBuffer) {
   }
 
   return new Promise((resolve) => {
+    const proxyHeaders = { ...req.headers };
+    // This is a server-side proxy; forwarding the browser Origin makes Spring
+    // treat the proxied request as cross-origin and reject unconfigured hosts.
+    delete proxyHeaders.origin;
+    delete proxyHeaders["access-control-request-method"];
+    delete proxyHeaders["access-control-request-headers"];
+
     const proxyReq = http.request(
       {
         hostname: url.hostname,
@@ -290,10 +297,10 @@ function tryProxyToSpringBoot(req, res, rawBodyBuffer) {
         path: url.pathname + url.search,
         method: req.method,
         headers: {
-          ...req.headers,
+          ...proxyHeaders,
           host: url.host,
         },
-        timeout: 450,
+        timeout: 5000,
       },
       (proxyRes) => {
         res.statusCode = proxyRes.statusCode || 200;
@@ -349,12 +356,21 @@ export default function mockApiPlugin() {
       }
 
       const rawBuffer = await readRawBody(req);
+      const body = parseJsonBuffer(rawBuffer);
+      const requestPath = new URL(req.url, "http://localhost:3000").pathname;
+      const authorization = req.headers.authorization || "";
+      const isMockSession = authorization.startsWith("Bearer spring-compat.");
+      const isMockLogin = requestPath === "/api/auth/login" &&
+        (req.method || "").toUpperCase() === "POST" &&
+        store.users.some((user) => user.username === body.username && user.password === body.password);
 
-      // If a real Spring Boot backend is running on localhost:8081 (or BACKEND_URL), proxy to it
-      const proxied = await tryProxyToSpringBoot(req, res, rawBuffer);
+      // Keep mock-issued sessions on the mock API; Spring cannot validate their tokens.
+      // Other requests use the real backend when it responds.
+      const proxied = isMockSession || isMockLogin
+        ? false
+        : await tryProxyToSpringBoot(req, res, rawBuffer);
       if (proxied) return;
 
-      const body = parseJsonBuffer(rawBuffer);
       const urlObj = new URL(req.url, "http://localhost:3000");
       const pathname = urlObj.pathname;
       const params = urlObj.searchParams;
