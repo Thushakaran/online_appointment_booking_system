@@ -639,7 +639,20 @@ export default function mockApiPlugin() {
           if (currentUser.role !== "ADMIN") {
             return sendJson(res, 403, { error: "Admin access required" });
           }
+          if (currentUser.id === uid) {
+            return sendJson(res, 400, { error: "Cannot delete your own active admin account." });
+          }
           store.users.splice(idx, 1);
+          const ownedProviderIds = store.providers
+            .filter((p) => p.userId === uid)
+            .map((p) => p.id);
+          store.providers = store.providers.filter((p) => p.userId !== uid);
+          store.availabilities = store.availabilities.filter(
+            (av) => !ownedProviderIds.includes(av.providerId)
+          );
+          store.appointments = store.appointments.filter(
+            (ap) => ap.userId !== uid && !ownedProviderIds.includes(ap.providerId)
+          );
           return sendJson(res, 200, { message: "User deleted successfully." });
         }
       }
@@ -768,6 +781,26 @@ export default function mockApiPlugin() {
           .filter((a) => a.userId === uid)
           .map((a) => hydrateAppointment(store, a));
         if (apptUserMatch[2]) {
+          return sendJson(res, 200, paginate(list, params.get("page"), params.get("size")));
+        }
+        return sendJson(res, 200, list);
+      }
+
+      const apptProviderMatch = pathname.match(/^\/api\/appointments\/provider\/(\d+)(\/paginated)?$/);
+      if (apptProviderMatch && method === "GET") {
+        if (!currentUser) return sendJson(res, 401, { error: "Unauthorized" });
+        const pid = Number(apptProviderMatch[1]);
+        const prov = store.providers.find((p) => p.id === pid);
+        if (
+          currentUser.role !== "ADMIN" &&
+          (!prov || prov.userId !== currentUser.id)
+        ) {
+          return sendJson(res, 403, { error: "Forbidden" });
+        }
+        const list = store.appointments
+          .filter((a) => a.providerId === pid)
+          .map((a) => hydrateAppointment(store, a));
+        if (apptProviderMatch[2]) {
           return sendJson(res, 200, paginate(list, params.get("page"), params.get("size")));
         }
         return sendJson(res, 200, list);

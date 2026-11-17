@@ -9,10 +9,24 @@ import {
   FiX,
   FiCheck,
   FiBriefcase,
+  FiRefreshCw,
 } from "react-icons/fi";
 import api from "../api/axios";
 import DashboardShell from "../components/DashboardShell";
 import ConfirmModal from "../components/ui/ConfirmModal";
+
+const EMPTY_FORM = {
+  userId: "",
+  serviceName: "",
+  description: "",
+  phoneNumber: "",
+  address: "",
+  city: "",
+  state: "",
+  zipCode: "",
+  country: "",
+  servicePricing: "",
+};
 
 export default function AdminProviderManagement() {
   const navigate = useNavigate();
@@ -27,25 +41,10 @@ export default function AdminProviderManagement() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const [showAddForm, setShowAddForm] = useState(false);
-  const [form, setForm] = useState({
-    userId: "",
-    serviceName: "",
-    description: "",
-    city: "",
-    state: "",
-    phoneNumber: "",
-    servicePricing: "",
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const [editTarget, setEditTarget] = useState(null);
-  const [editForm, setEditForm] = useState({
-    serviceName: "",
-    description: "",
-    city: "",
-    state: "",
-    phoneNumber: "",
-    servicePricing: "",
-  });
+  const [editForm, setEditForm] = useState(EMPTY_FORM);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -67,8 +66,20 @@ export default function AdminProviderManagement() {
       setProviders(providersRes.data || []);
       setUsers(usersRes.data || []);
       setError("");
-    } catch {
-      setError("Failed to fetch provider directory.");
+    } catch (requestError) {
+      const status = requestError?.response?.status;
+      const detail =
+        requestError?.response?.data?.message ||
+        requestError?.response?.data?.error;
+      setError(
+        [
+          "Failed to fetch provider directory.",
+          status ? `HTTP ${status}.` : "",
+          detail || "",
+        ]
+          .filter(Boolean)
+          .join(" ")
+      );
     } finally {
       setLoading(false);
     }
@@ -91,19 +102,21 @@ export default function AdminProviderManagement() {
       setError("");
       await api.post("/api/providers", form);
       setMessage("Provider onboarded successfully.");
-      setForm({
-        userId: "",
-        serviceName: "",
-        description: "",
-        city: "",
-        state: "",
-        phoneNumber: "",
-        servicePricing: "",
-      });
+      setForm(EMPTY_FORM);
       setShowAddForm(false);
       await fetchData();
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to add provider.");
+      if (err?.response?.status === 403) {
+        setError(
+          "Your backend restricts provider creation to Provider-role accounts. Have the provider register and complete Service Setup from their portal."
+        );
+      } else {
+        setError(
+          err?.response?.data?.message ||
+            err?.response?.data?.error ||
+            "Failed to add provider."
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -112,12 +125,17 @@ export default function AdminProviderManagement() {
   const openEditModal = (provider) => {
     setEditTarget(provider);
     setEditForm({
+      userId: provider.user?.id || "",
       serviceName: provider.serviceName || "",
       description: provider.description || "",
+      phoneNumber: provider.phoneNumber || "",
+      address: provider.address || "",
       city: provider.city || "",
       state: provider.state || "",
-      phoneNumber: provider.phoneNumber || "",
+      zipCode: provider.zipCode || "",
+      country: provider.country || "",
       servicePricing: provider.servicePricing || "",
+      profileImage: provider.profileImage || "",
     });
   };
 
@@ -131,8 +149,18 @@ export default function AdminProviderManagement() {
       setMessage(`Updated "${editForm.serviceName}".`);
       setEditTarget(null);
       await fetchData();
-    } catch {
-      setError("Failed to update provider details.");
+    } catch (err) {
+      if (err?.response?.status === 403) {
+        setError(
+          "Your backend restricts editing provider listings to the owning Provider account."
+        );
+      } else {
+        setError(
+          err?.response?.data?.message ||
+            err?.response?.data?.error ||
+            "Failed to update provider details."
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -146,8 +174,12 @@ export default function AdminProviderManagement() {
       setMessage(`Provider "${deleteTarget.serviceName}" removed.`);
       setDeleteTarget(null);
       await fetchData();
-    } catch {
-      setError("Failed to delete provider.");
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Failed to delete provider."
+      );
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -167,7 +199,8 @@ export default function AdminProviderManagement() {
         (p.serviceName || "").toLowerCase().includes(q) ||
         (p.user?.username || "").toLowerCase().includes(q) ||
         (p.user?.email || "").toLowerCase().includes(q) ||
-        (p.city || "").toLowerCase().includes(q)
+        (p.city || "").toLowerCase().includes(q) ||
+        (p.state || "").toLowerCase().includes(q)
     );
   }, [providers, searchQuery]);
 
@@ -196,15 +229,28 @@ export default function AdminProviderManagement() {
     >
       <div className="space-y-6">
         {error && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
+          <div
+            role="alert"
+            className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
             <span>{error}</span>
-            <button
-              type="button"
-              onClick={() => setError("")}
-              aria-label="Dismiss error"
-            >
-              <FiX className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={fetchData}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-medium"
+              >
+                <FiRefreshCw className="w-3.5 h-3.5" />
+                <span>Retry</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setError("")}
+                aria-label="Dismiss error"
+              >
+                <FiX className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
@@ -230,7 +276,7 @@ export default function AdminProviderManagement() {
                   Onboard New Service Provider
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Promote a client account to a listed service provider.
+                  Promote an existing client account to a listed service provider.
                 </p>
               </div>
               <button
@@ -243,125 +289,194 @@ export default function AdminProviderManagement() {
               </button>
             </div>
 
-            <form onSubmit={handleAddProvider} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    htmlFor="add-prov-user"
-                    className="block text-sm font-medium text-slate-700 mb-1.5"
-                  >
-                    User Account *
-                  </label>
-                  <select
-                    id="add-prov-user"
-                    required
-                    value={form.userId}
-                    onChange={(e) => setForm({ ...form, userId: e.target.value })}
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="">Select user account...</option>
-                    {eligibleUsers.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.username} ({u.email})
-                      </option>
-                    ))}
-                  </select>
+            {eligibleUsers.length === 0 ? (
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-600">
+                No eligible client accounts are available to promote. Register a
+                new account first.
+              </div>
+            ) : (
+              <form onSubmit={handleAddProvider} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="add-prov-user"
+                      className="block text-sm font-medium text-slate-700 mb-1.5"
+                    >
+                      User Account *
+                    </label>
+                    <select
+                      id="add-prov-user"
+                      required
+                      value={form.userId}
+                      onChange={(e) =>
+                        setForm({ ...form, userId: e.target.value })
+                      }
+                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    >
+                      <option value="">Select user account...</option>
+                      {eligibleUsers.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.username} ({u.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="add-prov-service"
+                      className="block text-sm font-medium text-slate-700 mb-1.5"
+                    >
+                      Service Name *
+                    </label>
+                    <input
+                      id="add-prov-service"
+                      type="text"
+                      required
+                      value={form.serviceName}
+                      onChange={(e) =>
+                        setForm({ ...form, serviceName: e.target.value })
+                      }
+                      placeholder="e.g., Medical Consultation"
+                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="add-prov-phone"
+                      className="block text-sm font-medium text-slate-700 mb-1.5"
+                    >
+                      Phone Number
+                    </label>
+                    <input
+                      id="add-prov-phone"
+                      type="tel"
+                      value={form.phoneNumber}
+                      onChange={(e) =>
+                        setForm({ ...form, phoneNumber: e.target.value })
+                      }
+                      placeholder="+1 (555) 123-4567"
+                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="add-prov-pricing"
+                      className="block text-sm font-medium text-slate-700 mb-1.5"
+                    >
+                      Pricing
+                    </label>
+                    <input
+                      id="add-prov-pricing"
+                      type="text"
+                      value={form.servicePricing}
+                      onChange={(e) =>
+                        setForm({ ...form, servicePricing: e.target.value })
+                      }
+                      placeholder="150 / 45-min session"
+                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="add-prov-address"
+                      className="block text-sm font-medium text-slate-700 mb-1.5"
+                    >
+                      Street Address
+                    </label>
+                    <input
+                      id="add-prov-address"
+                      type="text"
+                      value={form.address}
+                      onChange={(e) =>
+                        setForm({ ...form, address: e.target.value })
+                      }
+                      placeholder="123 Main Street"
+                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label
+                        htmlFor="add-prov-city"
+                        className="block text-sm font-medium text-slate-700 mb-1.5"
+                      >
+                        City
+                      </label>
+                      <input
+                        id="add-prov-city"
+                        type="text"
+                        value={form.city}
+                        onChange={(e) =>
+                          setForm({ ...form, city: e.target.value })
+                        }
+                        placeholder="San Francisco"
+                        className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="add-prov-state"
+                        className="block text-sm font-medium text-slate-700 mb-1.5"
+                      >
+                        State
+                      </label>
+                      <input
+                        id="add-prov-state"
+                        type="text"
+                        value={form.state}
+                        onChange={(e) =>
+                          setForm({ ...form, state: e.target.value })
+                        }
+                        placeholder="CA"
+                        className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>
                   <label
-                    htmlFor="add-prov-service"
+                    htmlFor="add-prov-desc"
                     className="block text-sm font-medium text-slate-700 mb-1.5"
                   >
-                    Service Name *
+                    Description
                   </label>
-                  <input
-                    id="add-prov-service"
-                    type="text"
-                    required
-                    value={form.serviceName}
+                  <textarea
+                    id="add-prov-desc"
+                    rows={3}
+                    value={form.description}
                     onChange={(e) =>
-                      setForm({ ...form, serviceName: e.target.value })
+                      setForm({ ...form, description: e.target.value })
                     }
-                    placeholder="e.g., Medical Consultation"
+                    placeholder="Describe the service..."
                     className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="add-prov-city"
-                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                <div className="flex items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    City
-                  </label>
-                  <input
-                    id="add-prov-city"
-                    type="text"
-                    value={form.city}
-                    onChange={(e) => setForm({ ...form, city: e.target.value })}
-                    placeholder="San Francisco"
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="add-prov-pricing"
-                    className="block text-sm font-medium text-slate-700 mb-1.5"
+                    <FiCheck className="w-4 h-4" />
+                    <span>{submitting ? "Adding..." : "Create Provider"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(false)}
+                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50"
                   >
-                    Pricing
-                  </label>
-                  <input
-                    id="add-prov-pricing"
-                    type="text"
-                    value={form.servicePricing}
-                    onChange={(e) =>
-                      setForm({ ...form, servicePricing: e.target.value })
-                    }
-                    placeholder="150 / 45-min session"
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
+                    Cancel
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="add-prov-desc"
-                  className="block text-sm font-medium text-slate-700 mb-1.5"
-                >
-                  Description
-                </label>
-                <textarea
-                  id="add-prov-desc"
-                  rows={3}
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  placeholder="Describe the service..."
-                  className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  <FiCheck className="w-4 h-4" />
-                  <span>{submitting ? "Adding..." : "Create Provider"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
           </div>
         )}
 
@@ -407,12 +522,22 @@ export default function AdminProviderManagement() {
               <p className="text-xs text-slate-500 mt-1">
                 Try clearing your search or onboard a new provider above.
               </p>
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="mt-4 px-3.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Clear search
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                    <th className="text-left py-3 px-4">ID</th>
                     <th className="text-left py-3 px-4">Account</th>
                     <th className="text-left py-3 px-4">Service Name</th>
                     <th className="text-left py-3 px-4">Location</th>
@@ -423,6 +548,9 @@ export default function AdminProviderManagement() {
                 <tbody className="divide-y divide-slate-100">
                   {filteredProviders.map((provider) => (
                     <tr key={provider.id} className="hover:bg-slate-50/70">
+                      <td className="py-3.5 px-4 font-mono text-xs text-slate-400 tabular-nums">
+                        #{provider.id}
+                      </td>
                       <td className="py-3.5 px-4">
                         <p className="font-medium text-slate-900">
                           {provider.user?.username || "—"}
@@ -441,12 +569,12 @@ export default function AdminProviderManagement() {
                           </p>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600">
+                      <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
                         {[provider.city, provider.state]
                           .filter(Boolean)
                           .join(", ") || "—"}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600 font-mono text-xs tabular-nums">
+                      <td className="py-3.5 px-4 text-slate-600 font-mono text-xs tabular-nums whitespace-nowrap">
                         {provider.servicePricing
                           ? `$${provider.servicePricing}`
                           : "—"}
@@ -456,7 +584,7 @@ export default function AdminProviderManagement() {
                           <button
                             type="button"
                             onClick={() => openEditModal(provider)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
                           >
                             <FiEdit2 className="w-3.5 h-3.5" />
                             <span>Edit</span>
@@ -464,7 +592,7 @@ export default function AdminProviderManagement() {
                           <button
                             type="button"
                             onClick={() => setDeleteTarget(provider)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-colors whitespace-nowrap"
                           >
                             <FiTrash2 className="w-3.5 h-3.5" />
                             <span>Delete</span>
@@ -488,7 +616,7 @@ export default function AdminProviderManagement() {
           aria-modal="true"
           aria-labelledby="edit-provider-title"
         >
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full p-6">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3
                 id="edit-provider-title"
@@ -522,6 +650,20 @@ export default function AdminProviderManagement() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Street Address
+                </label>
+                <input
+                  type="text"
+                  value={editForm.address}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, address: e.target.value })
+                  }
+                  className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -545,6 +687,35 @@ export default function AdminProviderManagement() {
                     value={editForm.state}
                     onChange={(e) =>
                       setEditForm({ ...editForm, state: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    ZIP / Postal Code
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.zipCode}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, zipCode: e.target.value })
+                    }
+                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Country
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.country}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, country: e.target.value })
                     }
                     className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
