@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Link } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -16,11 +16,58 @@ import BookAppointment from "./pages/BookAppointment";
 import Appointments from "./pages/Appointment";
 import Profile from "./pages/Profile";
 
-function App() {
+const WORKSPACE_ROUTES = [
+  "/dashboard",
+  "/appointments",
+  "/profile",
+  "/provider-dashboard",
+  "/provider-setup",
+  "/admin-dashboard",
+  "/admin/providers",
+];
+
+function NotFoundPage() {
   return (
-    <BrowserRouter>
-      <Navbar />
-      <div className="pt-20 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-md w-full text-center">
+        <p className="text-xs font-mono font-semibold text-indigo-600 uppercase tracking-wider">
+          404
+        </p>
+        <h1 className="font-display text-2xl font-bold text-slate-900 mt-2">
+          Page not found
+        </h1>
+        <p className="text-sm text-slate-600 mt-2">
+          The page you requested does not exist or may have moved.
+        </p>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <Link
+            to="/"
+            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+          >
+            Back to Home
+          </Link>
+          <Link
+            to="/providers"
+            className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+          >
+            Browse Providers
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AppShell() {
+  const location = useLocation();
+  const isWorkspaceRoute = WORKSPACE_ROUTES.some((prefix) =>
+    location.pathname.startsWith(prefix)
+  );
+
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      {!isWorkspaceRoute && <Navbar />}
+      <div className={isWorkspaceRoute ? "flex-1" : "flex-1"}>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
@@ -95,10 +142,18 @@ function App() {
           />
 
           {/* Fallback route */}
-          <Route path="*" element={<div>Page not found</div>} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
-      <Footer />
+      {!isWorkspaceRoute && <Footer />}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppShell />
     </BrowserRouter>
   );
 }

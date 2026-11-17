@@ -1,9 +1,25 @@
-import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
-import videoBackground from "../assets/video.mp4";
+import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useSelector } from "react-redux";
+import dayjs from "dayjs";
+import {
+  FiCalendar,
+  FiClock,
+  FiUsers,
+  FiCheckCircle,
+  FiArrowRight,
+  FiSearch,
+  FiShield,
+  FiSliders,
+  FiXCircle,
+} from "react-icons/fi";
 import { dashboardAPI } from "../api/dashboard";
+import api from "../api/axios";
+import DashboardShell from "../components/DashboardShell";
+import StatusBadge from "../components/ui/StatusBadge";
 
-export default function Dashboard() {
+function PublicLanding() {
+  const { token, role } = useSelector((state) => state.auth);
   const [stats, setStats] = useState({
     totalProviders: 0,
     totalAppointments: 0,
@@ -15,383 +31,522 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        console.log('Dashboard: Starting to fetch stats...');
         const data = await dashboardAPI.getStats();
-        console.log('Dashboard: Received stats data:', data);
         setStats(data);
-      } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
-        // Set default values if API fails
+      } catch {
         setStats({
           totalProviders: 0,
           totalAppointments: 0,
           upcomingAppointments: 0,
-          totalUsers: 0
+          totalUsers: 0,
         });
       } finally {
         setLoading(false);
       }
     };
-
     fetchStats();
   }, []);
 
+  const primaryCta = useMemo(() => {
+    if (!token) return { to: "/providers", label: "Browse Providers" };
+    if (role === "PROVIDER") return { to: "/provider-dashboard", label: "Open Provider Dashboard" };
+    if (role === "ADMIN") return { to: "/admin-dashboard", label: "Open Admin Console" };
+    return { to: "/dashboard", label: "Open My Dashboard" };
+  }, [token, role]);
+
   return (
-    <div className="min-h-[calc(100vh-5rem)] relative">
-      {/* Full Page Video Background */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="fixed inset-0 w-full h-full object-cover z-0"
-      >
-        <source src={videoBackground} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-
-      {/* Overlay for readability */}
-      <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 z-10"></div>
-
-      <div className="relative z-20 max-w-7xl mx-auto">
-        {/* Hero Section */}
-        <div className="relative mb-10 h-96 md:h-[500px]">
-          <div className="h-full flex items-center p-8 md:p-12">
-            <div className="max-w-2xl text-white">
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight text-heading-h1">
-                Welcome to{" "}
-                <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  Appointment Booking
-                </span>
-              </h1>
-              <p className="text-lg md:text-xl mb-8 text-gray-100 leading-relaxed">
-                Experience seamless appointment scheduling with our intuitive
-                platform. Browse providers, check real-time availability, and
-                book your appointments with ease.
+    <div className="bg-slate-50 text-slate-900">
+      {/* Hero Section */}
+      <section className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-stretch">
+            <div className="lg:col-span-6 flex flex-col justify-center">
+              <p className="text-sm font-semibold text-indigo-600 mb-3">
+                Appointment Scheduling Platform
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 leading-[1.12] text-balance">
+                Schedule trusted specialists without the back-and-forth
+              </h1>
+              <p className="mt-5 text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
+                Discover verified service providers, inspect live time slots, and
+                confirm appointments in seconds—with dedicated portals for clients,
+                providers, and administrators.
+              </p>
+
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <Link
+                  to={primaryCta.to}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                >
+                  <span>{primaryCta.label}</span>
+                  <FiArrowRight className="w-4 h-4" aria-hidden="true" />
+                </Link>
+                {token ? (
+                  role !== "PROVIDER" && (
+                    <Link
+                      to="/appointments"
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors whitespace-nowrap"
+                    >
+                      My Appointments
+                    </Link>
+                  )
+                ) : (
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors whitespace-nowrap"
+                  >
+                    Create Free Account
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            <div className="lg:col-span-6 flex">
+              <div className="w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-100 min-h-[280px] lg:min-h-[380px]">
+                <img
+                  src="/assets/images/hero_scheduling_clinic_1794912360931.jpg"
+                  alt="Modern appointment consultation workspace"
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 4-Column Live Platform KPI Strip */}
+          <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+              <p className="text-xs font-medium text-slate-500">
+                Active Providers
+              </p>
+              <p className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900 font-mono tabular-nums">
+                {loading ? "—" : stats.totalProviders}
+              </p>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+              <p className="text-xs font-medium text-slate-500">
+                Total Bookings
+              </p>
+              <p className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900 font-mono tabular-nums">
+                {loading ? "—" : stats.totalAppointments}
+              </p>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+              <p className="text-xs font-medium text-slate-500">
+                Upcoming Sessions
+              </p>
+              <p className="mt-2 text-2xl sm:text-3xl font-bold text-indigo-600 font-mono tabular-nums">
+                {loading ? "—" : stats.upcomingAppointments}
+              </p>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+              <p className="text-xs font-medium text-slate-500">
+                Registered Users
+              </p>
+              <p className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900 font-mono tabular-nums">
+                {loading ? "—" : stats.totalUsers}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Core Workflows */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-2xl mb-10">
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-slate-900">
+            Built for every role in the booking lifecycle
+          </h2>
+          <p className="mt-2 text-slate-600">
+            Clear workflows for clients booking care, providers managing open
+            slots, and administrators overseeing operations.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between">
+            <div>
+              <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+                <FiSearch className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Browse & Book Providers
+              </h3>
+              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                Search verified specialists by service name, city, or specialty,
+                inspect real-time open slots, and confirm in one flow.
+              </p>
+            </div>
+            <Link
+              to="/providers"
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+            >
+              <span>Explore directory</span>
+              <FiArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between">
+            <div>
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+                <FiSliders className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Provider Schedule Control
+              </h3>
+              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                Publish available time windows, edit or retire open slots, view
+                client contact details, and confirm or complete bookings.
+              </p>
+            </div>
+            <Link
+              to={role === "PROVIDER" ? "/provider-dashboard" : "/register"}
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+            >
+              <span>{role === "PROVIDER" ? "Open provider portal" : "Register as provider"}</span>
+              <FiArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between">
+            <div>
+              <div className="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center mb-4">
+                <FiShield className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Centralized Administration
+              </h3>
+              <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                Monitor platform activity, manage user accounts, onboard service
+                providers, and oversee appointment statuses from one console.
+              </p>
+            </div>
+            <Link
+              to={role === "ADMIN" ? "/admin-dashboard" : "/login"}
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+            >
+              <span>{role === "ADMIN" ? "Open admin console" : "Sign in to portal"}</span>
+              <FiArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function UserWorkspaceDashboard() {
+  const { userId, user } = useSelector((state) => state.auth);
+  const [appointments, setAppointments] = useState([]);
+  const [providers, setProviders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const [apptRes, provRes] = await Promise.all([
+          userId ? api.get(`/api/appointments/user/${userId}`) : Promise.resolve({ data: [] }),
+          api.get("/api/providers/paginated?page=0&size=3"),
+        ]);
+        setAppointments(apptRes.data || []);
+        setProviders(provRes.data?.content || []);
+        setError("");
+      } catch {
+        setError("Unable to load your dashboard data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [userId]);
+
+  const upcoming = useMemo(
+    () =>
+      appointments
+        .filter((a) => a.status === "PENDING" || a.status === "CONFIRMED")
+        .sort((a, b) => new Date(a.appointmentDate) - new Date(b.appointmentDate)),
+    [appointments]
+  );
+
+  const history = useMemo(
+    () =>
+      appointments
+        .filter((a) => a.status === "COMPLETED" || a.status === "CANCELLED")
+        .sort((a, b) => new Date(b.appointmentDate) - new Date(a.appointmentDate)),
+    [appointments]
+  );
+
+  const notifications = useMemo(
+    () =>
+      upcoming.slice(0, 5).map((a) => ({
+        id: `appt-${a.id}`,
+        title: `${a.provider?.serviceName || "Appointment"} (${a.status})`,
+        detail: dayjs(a.appointmentDate).format("MMM D, YYYY · h:mm A"),
+      })),
+    [upcoming]
+  );
+
+  const stats = useMemo(
+    () => ({
+      total: appointments.length,
+      upcoming: upcoming.length,
+      confirmed: appointments.filter((a) => a.status === "CONFIRMED").length,
+      completed: appointments.filter((a) => a.status === "COMPLETED").length,
+    }),
+    [appointments, upcoming]
+  );
+
+  return (
+    <DashboardShell
+      title="Client Overview"
+      breadcrumb="Dashboard"
+      notifications={notifications}
+      actions={
+        <Link
+          to="/providers"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+        >
+          <FiCalendar className="w-4 h-4" aria-hidden="true" />
+          <span>Book Appointment</span>
+        </Link>
+      }
+    >
+      <div className="space-y-6">
+        {/* Welcome Banner */}
+        <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display text-xl font-bold text-slate-900">
+              Welcome back, {user}
+            </h2>
+            <p className="text-sm text-slate-600 mt-1">
+              Track your upcoming bookings, review past visits, or schedule a new consultation.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <Link
+              to="/appointments"
+              className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
+            >
+              Manage Bookings
+            </Link>
+            <Link
+              to="/profile"
+              className="px-4 py-2 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors whitespace-nowrap"
+            >
+              Edit Profile
+            </Link>
+          </div>
+        </div>
+
+        {error && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-500">Total Bookings</span>
+              <FiCalendar className="w-4 h-4 text-slate-400" aria-hidden="true" />
+            </div>
+            <p className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
+              {loading ? "—" : stats.total}
+            </p>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-500">Upcoming</span>
+              <FiClock className="w-4 h-4 text-amber-500" aria-hidden="true" />
+            </div>
+            <p className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
+              {loading ? "—" : stats.upcoming}
+            </p>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-500">Confirmed</span>
+              <FiCheckCircle className="w-4 h-4 text-emerald-500" aria-hidden="true" />
+            </div>
+            <p className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
+              {loading ? "—" : stats.confirmed}
+            </p>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-xl p-5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-500">Completed</span>
+              <FiUsers className="w-4 h-4 text-sky-500" aria-hidden="true" />
+            </div>
+            <p className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
+              {loading ? "—" : stats.completed}
+            </p>
+          </div>
+        </div>
+
+        {/* Upcoming & History Split */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Upcoming Appointments */}
+          <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900">Upcoming Appointments</h3>
+              <Link
+                to="/appointments"
+                className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+              >
+                View all
+              </Link>
+            </div>
+
+            {loading ? (
+              <div className="p-6 space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            ) : upcoming.length === 0 ? (
+              <div className="p-8 text-center">
+                <FiCalendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm font-medium text-slate-900">No upcoming appointments</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Browse providers to schedule your next session.
+                </p>
                 <Link
                   to="/providers"
-                  className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 text-center cursor-pointer border-none"
+                  className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700"
                 >
-                  <span className="relative z-10">View Providers</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                </Link>
-                <Link
-                  to="/appointments"
-                  className="group bg-white/20 backdrop-blur-sm border border-white/30 text-white font-semibold px-8 py-4 rounded-full hover:bg-white/30 transition-all duration-300 text-center cursor-pointer"
-                >
-                  My Appointments
+                  Find a Provider
                 </Link>
               </div>
-            </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {upcoming.slice(0, 5).map((appt) => (
+                  <div
+                    key={appt.id}
+                    className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {appt.provider?.serviceName || "Consultation"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5 tabular-nums">
+                        {appt.provider?.user?.username || "Provider"} ·{" "}
+                        {dayjs(appt.appointmentDate).format("MMM D, YYYY · h:mm A")}
+                      </p>
+                    </div>
+                    <StatusBadge status={appt.status} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Floating elements */}
-          <div className="absolute top-10 right-10 w-20 h-20 bg-blue-400/30 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute bottom-20 right-20 w-32 h-32 bg-purple-400/30 rounded-full blur-xl animate-pulse delay-1000"></div>
-        </div>
-
-        {/* Statistics Section */}
-        <div className="mb-12 px-8">
-          <div className="grid md:grid-cols-4 gap-6">
-            {/* Providers Stats */}
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center">
-              <div className="text-3xl font-bold text-blue-400 mb-2">
-                {loading ? "..." : stats.totalProviders}+
-              </div>
-              <div className="text-gray-100 text-sm">Providers</div>
+          {/* Recent History */}
+          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900">Appointment History</h3>
+              <span className="text-xs text-slate-500 tabular-nums">
+                {history.length} past
+              </span>
             </div>
 
-            {/* Total Appointments Stats */}
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center">
-              <div className="text-3xl font-bold text-green-400 mb-2">
-                {loading ? "..." : stats.totalAppointments}+
+            {loading ? (
+              <div className="p-6 space-y-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-14 bg-slate-100 rounded-lg animate-pulse" />
+                ))}
               </div>
-              <div className="text-gray-100 text-sm">Bookings</div>
-            </div>
-
-            {/* Upcoming Appointments Stats */}
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center">
-              <div className="text-3xl font-bold text-purple-400 mb-2">
-                {loading ? "..." : stats.upcomingAppointments}
+            ) : history.length === 0 ? (
+              <div className="p-8 text-center">
+                <FiXCircle className="w-7 h-7 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-600">No completed or cancelled bookings yet.</p>
               </div>
-              <div className="text-gray-100 text-sm">Upcoming</div>
-            </div>
-
-            {/* Total Users Stats */}
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center">
-              <div className="text-3xl font-bold text-orange-400 mb-2">
-                {loading ? "..." : stats.totalUsers}+
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {history.slice(0, 5).map((appt) => (
+                  <div key={appt.id} className="px-6 py-4 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">
+                        {appt.provider?.serviceName || "Service"}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5 tabular-nums">
+                        {dayjs(appt.appointmentDate).format("MMM D, YYYY")}
+                      </p>
+                    </div>
+                    <StatusBadge status={appt.status} />
+                  </div>
+                ))}
               </div>
-              <div className="text-gray-100 text-sm">Users</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Dashboard Cards */}
-        <div className="grid md:grid-cols-3 gap-6 p-8">
-          {/* Providers Card */}
-          <Link
-            to="/providers"
-            className="group relative bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-8 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl mb-4 flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3 text-heading-h3 group-hover:text-blue-400 transition-colors">
-                Providers
-              </h3>
-              <p className="text-gray-100 leading-relaxed">
-                Discover qualified providers and explore their available time
-                slots.
-              </p>
-            </div>
-          </Link>
-
-          {/* Appointments Card */}
-          <Link
-            to="/appointments"
-            className="group relative bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-8 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl mb-4 flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3 text-heading-h3 group-hover:text-green-400 transition-colors">
-                My Appointments
-              </h3>
-              <p className="text-gray-100 leading-relaxed">
-                View, manage, and track all your upcoming and past appointments.
-              </p>
-            </div>
-          </Link>
-
-          {/* Profile Card */}
-          <Link
-            to="/profile"
-            className="group relative bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-8 hover:bg-white/30 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl mb-4 flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold mb-3 text-heading-h3 group-hover:text-purple-400 transition-colors">
-                Profile
-              </h3>
-              <p className="text-gray-100 leading-relaxed">
-                Manage your account details, preferences, and personal
-                information.
-              </p>
-            </div>
-          </Link>
-        </div>
-
-        {/* Stats / Features Section */}
-        <div className="mt-16 text-center px-4 md:px-0">
-          <h2 className="text-3xl font-bold text-heading-h2 mb-4">
-            Why Choose Our Platform?
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8 mt-12">
-            {/* Lightning Fast */}
-            <div className="text-center text-white">
-              <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-blue-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-heading-h3">
-                Lightning Fast
-              </h3>
-              <p>
-                Book appointments in seconds with our streamlined interface.
-              </p>
-            </div>
-
-            {/* 100% Reliable */}
-            <div className="text-center text-white">
-              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-green-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-heading-h3">
-                100% Reliable
-              </h3>
-              <p>Trusted by thousands of users for secure booking.</p>
-            </div>
-
-            {/* 24/7 Available */}
-            <div className="text-center text-white">
-              <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-purple-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-heading-h3">
-                24/7 Available
-              </h3>
-              <p>Access your appointments anytime, anywhere.</p>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Service Features Section */}
-        <div className="mt-16 px-4 md:px-0">
-          <h2 className="text-3xl font-bold text-heading-h2 mb-8 text-center">
-            Our Services
-          </h2>
-          <div className="grid md:grid-cols-4 gap-6">
-            {/* Find Specialists */}
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center hover:bg-white/30 transition-all duration-300 transform hover:-translate-y-2">
-              <div className="w-12 h-12 bg-blue-500/20 rounded-xl mb-4 flex items-center justify-center mx-auto">
-                <svg
-                  className="w-6 h-6 text-blue-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.35-4.35" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-white">
-                Find Specialists
-              </h3>
-              <p className="text-gray-100 text-sm">
-                Search by specialty or location
+        {/* Recommended Providers for Quick Booking */}
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold text-slate-900">Featured Providers</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Select a provider to view open time slots and book immediately.
               </p>
             </div>
+            <Link
+              to="/providers"
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1"
+            >
+              <span>All providers</span>
+              <FiArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
 
-            {/* Emergency Booking */}
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center hover:bg-white/30 transition-all duration-300 transform hover:-translate-y-2">
-              <div className="w-12 h-12 bg-green-500/20 rounded-xl mb-4 flex items-center justify-center mx-auto">
-                <svg
-                  className="w-6 h-6 text-green-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-white">
-                Emergency Booking
-              </h3>
-              <p className="text-gray-100 text-sm">Book urgent appointments</p>
-            </div>
-
-            {/* Reschedule */}
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center hover:bg-white/30 transition-all duration-300 transform hover:-translate-y-2">
-              <div className="w-12 h-12 bg-purple-500/20 rounded-xl mb-4 flex items-center justify-center mx-auto">
-                <svg
-                  className="w-6 h-6 text-purple-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-white">Reschedule</h3>
-              <p className="text-gray-100 text-sm">
-                Change existing appointments
-              </p>
-            </div>
-
-            {/* Telemedicine */}
-            <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 text-center hover:bg-white/30 transition-all duration-300 transform hover:-translate-y-2">
-              <div className="w-12 h-12 bg-orange-500/20 rounded-xl mb-4 flex items-center justify-center mx-auto">
-                <svg
-                  className="w-6 h-6 text-orange-400"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  viewBox="0 0 24 24"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-white">
-                Telemedicine
-              </h3>
-              <p className="text-gray-100 text-sm">Virtual consultations</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {providers.map((provider) => (
+              <Link
+                key={provider.id}
+                to={`/book-appointment/${provider.id}`}
+                state={{ provider }}
+                className="border border-slate-200 rounded-xl p-4 hover:border-indigo-300 hover:bg-slate-50/60 transition-colors flex flex-col justify-between"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {provider.serviceName}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {provider.user?.username || "Specialist"}
+                    {provider.city ? ` · ${provider.city}` : ""}
+                  </p>
+                  {provider.description && (
+                    <p className="text-xs text-slate-600 mt-2 line-clamp-2">
+                      {provider.description}
+                    </p>
+                  )}
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-medium">
+                  <span className="text-slate-700 font-mono tabular-nums">
+                    {provider.servicePricing ? `$${provider.servicePricing}` : "Standard rate"}
+                  </span>
+                  <span className="text-indigo-600 inline-flex items-center gap-1">
+                    Book slot <FiArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </div>
-    </div>
+    </DashboardShell>
   );
+}
+
+export default function Dashboard() {
+  const location = useLocation();
+  const { token, role } = useSelector((state) => state.auth);
+
+  if (location.pathname === "/dashboard" && token && role === "USER") {
+    return <UserWorkspaceDashboard />;
+  }
+
+  return <PublicLanding />;
 }

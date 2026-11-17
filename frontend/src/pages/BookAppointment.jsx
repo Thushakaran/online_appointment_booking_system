@@ -1,9 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSelector } from "react-redux";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import api from "../api/axios";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import dayjs from "dayjs";
-import VideoBackground from "../components/VideoBackground";
+import {
+  FiArrowLeft,
+  FiCalendar,
+  FiClock,
+  FiMapPin,
+  FiPhone,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiBriefcase,
+} from "react-icons/fi";
+import api from "../api/axios";
 
 export default function BookAppointment() {
   const navigate = useNavigate();
@@ -13,10 +22,40 @@ export default function BookAppointment() {
 
   const [provider, setProvider] = useState(location.state?.provider || null);
   const [availabilities, setAvailabilities] = useState([]);
+  const [selectedDateKey, setSelectedDateKey] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [confirmedBooking, setConfirmedBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  const [imgFailed, setImgFailed] = useState(false);
+
+  const loadProviderAndAvailabilities = useCallback(async () => {
+    try {
+      setLoading(true);
+      if (!provider) {
+        const providerRes = await api.get(`/api/providers/${providerId}`);
+        setProvider(providerRes.data);
+      }
+      const availabilitiesRes = await api.get(
+        `/api/availabilities/provider/${providerId}`
+      );
+      const slots = (availabilitiesRes.data || []).sort(
+        (a, b) => new Date(a.availableDate) - new Date(b.availableDate)
+      );
+      setAvailabilities(slots);
+      if (slots.length > 0) {
+        const firstDay = dayjs(slots[0].availableDate).format("YYYY-MM-DD");
+        setSelectedDateKey((prev) => prev || firstDay);
+      } else {
+        setSelectedDateKey("");
+      }
+    } catch {
+      setErr("Failed to load provider details and availability.");
+    } finally {
+      setLoading(false);
+    }
+  }, [providerId, provider]);
 
   useEffect(() => {
     if (!token) {
@@ -27,88 +66,68 @@ export default function BookAppointment() {
     }
 
     if (role !== "USER") {
-      setErr("Only users can book appointments");
+      setErr("Only client accounts can book appointments.");
+      setLoading(false);
       return;
     }
 
     loadProviderAndAvailabilities();
-  }, [providerId, token, role, navigate]);
+  }, [providerId, token, role, navigate, loadProviderAndAvailabilities]);
 
-  const loadProviderAndAvailabilities = async () => {
-    try {
-      setLoading(true);
+  const groupedByDate = useMemo(() => {
+    const map = {};
+    availabilities.forEach((slot) => {
+      if (!slot.availableDate) return;
+      const key = dayjs(slot.availableDate).format("YYYY-MM-DD");
+      if (!map[key]) map[key] = [];
+      map[key].push(slot);
+    });
+    return map;
+  }, [availabilities]);
 
-      // If we don't have provider data from navigation state, fetch it
-      if (!provider) {
-        const providerRes = await api.get(`/api/providers/${providerId}`);
-        setProvider(providerRes.data);
-      }
+  const dateKeys = useMemo(() => Object.keys(groupedByDate).sort(), [groupedByDate]);
+  const slotsForSelectedDate = groupedByDate[selectedDateKey] || [];
 
-      // Fetch availabilities for this provider
-      const availabilitiesRes = await api.get(
-        `/api/availabilities/provider/${providerId}`
-      );
-      setAvailabilities(availabilitiesRes.data || []);
-    } catch (error) {
-      console.error("Error loading provider data:", error);
-      setErr("Failed to load provider information");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const bookAppointment = async (slot) => {
+  const handleConfirmBooking = async () => {
+    if (!selectedSlot) return;
     if (!userId || !token) {
-      setErr("Please login to book appointments");
+      setErr("Please sign in to book appointments.");
       return;
     }
 
     setBookingLoading(true);
     setErr("");
-    setMsg("");
 
     try {
       const payload = {
         user: { id: Number(userId) },
         provider: { id: Number(provider.id) },
-        availability: { id: Number(slot.id) },
-        appointmentDate: slot.availableDate,
+        availability: { id: Number(selectedSlot.id) },
+        appointmentDate: selectedSlot.availableDate,
       };
 
       const response = await api.post("/api/appointments", payload, {
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
-      setMsg("Successfully booked appointment!");
-
-      // Refresh availabilities to remove the booked slot
+      setConfirmedBooking({
+        ...(response.data || {}),
+        slotDate: selectedSlot.availableDate,
+      });
+      setSelectedSlot(null);
       await loadProviderAndAvailabilities();
-
-      // Clear message after 5 seconds
-      setTimeout(() => setMsg(""), 5000);
     } catch (error) {
-      console.error("Booking error:", error);
-
       let errorMessage = "Booking failed. Please try again.";
-
       if (error?.response?.status === 403) {
-        errorMessage = "Access denied. Please check your permissions.";
+        errorMessage = "Access denied. Only client accounts can book appointments.";
       } else if (error?.response?.status === 401) {
-        errorMessage = "Authentication failed. Please login again.";
-      } else if (error?.response?.status === 400) {
-        errorMessage =
-          "Bad request. " + (error?.response?.data?.message || "Invalid data.");
+        errorMessage = "Session expired. Please sign in again.";
       } else if (error?.response?.status === 409) {
-        errorMessage =
-          "This time slot is already booked. Please choose another slot.";
+        errorMessage = "This time slot was just booked. Please select another slot.";
       } else if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
       }
-
       setErr(errorMessage);
-      setTimeout(() => setErr(""), 8000);
     } finally {
       setBookingLoading(false);
     }
@@ -116,223 +135,306 @@ export default function BookAppointment() {
 
   if (loading) {
     return (
-      <VideoBackground>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-8">
-            <div className="flex items-center space-x-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <span className="text-white">
-                Loading provider information...
-              </span>
-            </div>
+      <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-10 px-4">
+        <div className="max-w-5xl mx-auto space-y-6 animate-pulse">
+          <div className="h-44 bg-white border border-slate-200 rounded-xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7 h-72 bg-white border border-slate-200 rounded-xl" />
+            <div className="lg:col-span-5 h-72 bg-white border border-slate-200 rounded-xl" />
           </div>
         </div>
-      </VideoBackground>
+      </div>
     );
   }
 
   if (!provider) {
     return (
-      <VideoBackground>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-8 text-center">
-            <div className="text-white text-lg mb-4">Provider not found</div>
-            <button
-              onClick={() => navigate("/providers")}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-            >
-              Back to Providers
-            </button>
-          </div>
+      <div className="min-h-[calc(100vh-4rem)] bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-md w-full text-center">
+          <FiAlertCircle className="w-8 h-8 text-rose-500 mx-auto mb-3" />
+          <h1 className="text-lg font-semibold text-slate-900">Provider not found</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {err || "We could not locate this service provider."}
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/providers")}
+            className="mt-5 px-5 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+          >
+            Back to Providers
+          </button>
         </div>
-      </VideoBackground>
+      </div>
     );
   }
 
   return (
-    <VideoBackground>
-      <div className="max-w-4xl mx-auto py-8 px-4">
-        {/* Back Button */}
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto space-y-6">
         <button
+          type="button"
           onClick={() => navigate("/providers")}
-          className="flex items-center text-white/80 hover:text-white mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
         >
-          <svg
-            className="w-5 h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Back to Providers
+          <FiArrowLeft className="w-4 h-4" />
+          <span>Back to Providers</span>
         </button>
 
-        {/* Error and Success Messages */}
         {err && (
-          <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-lg mb-6">
-            {err}
-          </div>
-        )}
-        {msg && (
-          <div className="bg-green-900/20 border border-green-500/30 text-green-400 p-4 rounded-lg mb-6">
-            {msg}
+          <div
+            role="alert"
+            className="flex items-start gap-2.5 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm"
+          >
+            <FiAlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{err}</span>
           </div>
         )}
 
-        {/* Provider Details */}
-        <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-8 mb-8">
-          <div className="flex flex-col md:flex-row items-start space-y-6 md:space-y-0 md:space-x-8">
-            {/* Provider Image */}
-            <div className="w-full md:w-48 h-48 rounded-xl overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center flex-shrink-0">
-              {provider.profileImage ? (
+        {/* Confirmed Success Banner */}
+        {confirmedBooking && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <FiCheckCircle className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <h2 className="text-base font-semibold text-emerald-950">
+                  Appointment Requested Successfully
+                </h2>
+                <p className="text-sm text-emerald-800 mt-0.5 tabular-nums">
+                  {provider.serviceName} with {provider.user?.username || "Provider"} on{" "}
+                  {dayjs(confirmedBooking.slotDate).format("dddd, MMM D, YYYY [at] h:mm A")}.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                to="/appointments"
+                className="px-4 py-2 rounded-lg bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-800 transition-colors whitespace-nowrap"
+              >
+                View My Appointments
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Provider Summary Header Card */}
+        <section className="bg-white border border-slate-200 rounded-xl p-6">
+          <div className="flex flex-col sm:flex-row items-start gap-6">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
+              {provider.profileImage && !imgFailed ? (
                 <img
                   src={provider.profileImage}
-                  alt={provider.user?.username || "Provider"}
+                  alt={provider.serviceName}
+                  referrerPolicy="no-referrer"
+                  onError={() => setImgFailed(true)}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <svg
-                  className="w-20 h-20 text-blue-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
+                <FiBriefcase className="w-8 h-8 text-indigo-600" />
               )}
             </div>
 
-            {/* Provider Information */}
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-heading-h1 mb-2">
-                {provider.user?.username || "Unknown Provider"}
-              </h1>
-              <p className="text-white/80 text-xl mb-3 font-medium">
-                {provider.serviceName || "Service Provider"}
-              </p>
-              <p className="text-white/60 mb-4 leading-relaxed">
-                {provider.description || "No description available."}
-              </p>
-
-              {/* Contact and Location Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {provider.phoneNumber && (
-                  <div className="flex items-center text-white/70">
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                      />
-                    </svg>
-                    {provider.phoneNumber}
-                  </div>
-                )}
-
-                {provider.city && provider.state && (
-                  <div className="flex items-center text-white/70">
-                    <svg
-                      className="w-4 h-4 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    {provider.city}, {provider.state}
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h1 className="font-display text-2xl font-bold text-slate-900">
+                    {provider.serviceName}
+                  </h1>
+                  <p className="text-sm text-slate-500 mt-0.5">
+                    Provided by{" "}
+                    <span className="font-medium text-slate-800">
+                      {provider.user?.username || "Specialist"}
+                    </span>
+                  </p>
+                </div>
+                {provider.servicePricing && (
+                  <div className="text-left sm:text-right">
+                    <span className="text-xs text-slate-500 block">Rate</span>
+                    <span className="text-base font-bold text-slate-900 font-mono tabular-nums">
+                      ${provider.servicePricing}
+                    </span>
                   </div>
                 )}
               </div>
 
-              {/* Pricing */}
-              {provider.servicePricing && (
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                  <h3 className="font-medium text-white mb-2">
-                    Service Pricing
-                  </h3>
-                  <p className="text-white/80">{provider.servicePricing}</p>
-                </div>
+              {provider.description && (
+                <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+                  {provider.description}
+                </p>
               )}
+
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600">
+                {provider.phoneNumber && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <FiPhone className="w-3.5 h-3.5 text-slate-400" />
+                    <span>{provider.phoneNumber}</span>
+                  </span>
+                )}
+                {(provider.city || provider.state) && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <FiMapPin className="w-3.5 h-3.5 text-slate-400" />
+                    <span>
+                      {[provider.address, provider.city, provider.state]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </span>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Available Slots */}
-        <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-8">
-          <h2 className="text-2xl font-bold text-heading-h2 mb-6">
-            Available Appointment Slots
-          </h2>
+        {/* Booking Workspace: Slot Selection + Review Panel */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left: Date & Time Selection */}
+          <section className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6">
+            <h2 className="font-display text-lg font-semibold text-slate-900">
+              1. Select Date & Time Slot
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Choose an available date below to view open time windows.
+            </p>
 
-          {availabilities.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-white/60 text-lg mb-4">
-                No available slots at the moment.
+            {dateKeys.length === 0 ? (
+              <div className="mt-6 py-12 text-center border border-dashed border-slate-200 rounded-xl">
+                <FiCalendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm font-medium text-slate-900">
+                  No open slots available right now
+                </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Please check back later or choose another provider.
+                </p>
               </div>
-              <p className="text-white/40 text-sm">
-                Please check back later or contact the provider directly.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {availabilities.map((slot) => (
-                <div
-                  key={slot.id}
-                  className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:bg-white/20 transition-all duration-300"
-                >
-                  <div className="text-white mb-3">
-                    <div className="font-medium">
-                      {slot.availableDate
-                        ? dayjs(slot.availableDate).format("MMM DD, YYYY")
-                        : "Date: N/A"}
-                    </div>
-                    <div className="text-sm text-white/70">
-                      {slot.availableDate
-                        ? dayjs(slot.availableDate).format("h:mm A")
-                        : "Time: N/A"}
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => bookAppointment(slot)}
-                    disabled={bookingLoading}
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 font-medium"
-                  >
-                    {bookingLoading ? "Booking..." : "Book This Slot"}
-                  </button>
+            ) : (
+              <>
+                {/* Date Picker Strip */}
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {dateKeys.map((dayKey) => {
+                    const active = selectedDateKey === dayKey;
+                    const count = groupedByDate[dayKey]?.length || 0;
+                    return (
+                      <button
+                        key={dayKey}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDateKey(dayKey);
+                          setSelectedSlot(null);
+                        }}
+                        className={`px-3.5 py-2.5 rounded-lg border text-left transition-colors ${
+                          active
+                            ? "bg-indigo-600 text-white border-indigo-600"
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="text-xs font-semibold tabular-nums">
+                          {dayjs(dayKey).format("ddd, MMM D")}
+                        </div>
+                        <div
+                          className={`text-[11px] mt-0.5 tabular-nums ${
+                            active ? "text-indigo-100" : "text-slate-500"
+                          }`}
+                        >
+                          {count} open
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          )}
+
+                {/* Time Slots Grid */}
+                <div className="mt-6 pt-5 border-t border-slate-100">
+                  <p className="text-xs font-medium text-slate-500 mb-3">
+                    Available times for{" "}
+                    <span className="text-slate-900 font-semibold">
+                      {dayjs(selectedDateKey).format("MMMM D, YYYY")}
+                    </span>
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {slotsForSelectedDate.map((slot) => {
+                      const isSelected = selectedSlot?.id === slot.id;
+                      return (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          onClick={() => setSelectedSlot(slot)}
+                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium font-mono tabular-nums transition-colors ${
+                            isSelected
+                              ? "bg-indigo-50 text-indigo-700 border-indigo-600 ring-1 ring-indigo-600"
+                              : "bg-white text-slate-800 border-slate-200 hover:border-indigo-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          <FiClock className="w-3.5 h-3.5 shrink-0" />
+                          <span>{dayjs(slot.availableDate).format("h:mm A")}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
+
+          {/* Right: Booking Summary & Confirmation */}
+          <aside className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6">
+            <h2 className="font-display text-lg font-semibold text-slate-900">
+              2. Review & Confirm
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Verify your appointment details before submitting.
+            </p>
+
+            <dl className="mt-5 divide-y divide-slate-100 text-sm">
+              <div className="py-3 flex justify-between gap-4">
+                <dt className="text-slate-500">Service</dt>
+                <dd className="font-medium text-slate-900 text-right">
+                  {provider.serviceName}
+                </dd>
+              </div>
+              <div className="py-3 flex justify-between gap-4">
+                <dt className="text-slate-500">Provider</dt>
+                <dd className="font-medium text-slate-900 text-right">
+                  {provider.user?.username || "Specialist"}
+                </dd>
+              </div>
+              <div className="py-3 flex justify-between gap-4">
+                <dt className="text-slate-500">Date</dt>
+                <dd className="font-medium text-slate-900 text-right tabular-nums">
+                  {selectedSlot
+                    ? dayjs(selectedSlot.availableDate).format("MMM D, YYYY")
+                    : "Not selected"}
+                </dd>
+              </div>
+              <div className="py-3 flex justify-between gap-4">
+                <dt className="text-slate-500">Time</dt>
+                <dd className="font-medium text-slate-900 text-right font-mono tabular-nums">
+                  {selectedSlot
+                    ? dayjs(selectedSlot.availableDate).format("h:mm A")
+                    : "Not selected"}
+                </dd>
+              </div>
+              <div className="py-3 flex justify-between gap-4">
+                <dt className="text-slate-500">Pricing</dt>
+                <dd className="font-semibold text-slate-900 text-right font-mono tabular-nums">
+                  {provider.servicePricing ? `$${provider.servicePricing}` : "Standard"}
+                </dd>
+              </div>
+            </dl>
+
+            <button
+              type="button"
+              disabled={!selectedSlot || bookingLoading || role !== "USER"}
+              onClick={handleConfirmBooking}
+              className="mt-6 w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {bookingLoading
+                ? "Confirming Appointment..."
+                : selectedSlot
+                ? "Confirm Booking"
+                : "Select a Time Slot First"}
+            </button>
+          </aside>
         </div>
       </div>
-    </VideoBackground>
+    </div>
   );
 }

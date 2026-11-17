@@ -1,4 +1,4 @@
-import React from "react";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 const Pagination = ({
   currentPage,
@@ -9,6 +9,10 @@ const Pagination = ({
   totalElements,
   pageSize,
 }) => {
+  if (totalPages <= 1) {
+    return null;
+  }
+
   const startItem = currentPage * pageSize + 1;
   const endItem = Math.min((currentPage + 1) * pageSize, totalElements);
 
@@ -23,36 +27,37 @@ const Pagination = ({
       startPage = Math.max(0, endPage - maxVisiblePages + 1);
     }
 
-    // Add first page and ellipsis if needed
     if (startPage > 0) {
       pages.push(
         <button
           key="first"
+          type="button"
           onClick={() => onPageChange(0)}
-          className="px-3 py-2 text-sm font-medium text-white bg-white/10 border border-white/20 rounded-l-lg hover:bg-white/20 transition-colors"
+          className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors tabular-nums"
         >
           1
         </button>
       );
       if (startPage > 1) {
         pages.push(
-          <span key="ellipsis1" className="px-3 py-2 text-sm text-white">
+          <span key="ellipsis1" className="px-2 py-1.5 text-sm text-slate-400">
             ...
           </span>
         );
       }
     }
 
-    // Add visible page numbers
     for (let i = startPage; i <= endPage; i++) {
       pages.push(
         <button
           key={i}
+          type="button"
           onClick={() => onPageChange(i)}
-          className={`px-3 py-2 text-sm font-medium transition-colors ${
+          aria-current={i === currentPage ? "page" : undefined}
+          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors tabular-nums ${
             i === currentPage
-              ? "text-purple-600 bg-purple-100 border border-purple-300"
-              : "text-white bg-white/10 border border-white/20 hover:bg-white/20"
+              ? "bg-indigo-600 text-white border-indigo-600"
+              : "text-slate-700 bg-white border-slate-200 hover:bg-slate-50"
           }`}
         >
           {i + 1}
@@ -60,11 +65,10 @@ const Pagination = ({
       );
     }
 
-    // Add last page and ellipsis if needed
     if (endPage < totalPages - 1) {
       if (endPage < totalPages - 2) {
         pages.push(
-          <span key="ellipsis2" className="px-3 py-2 text-sm text-white">
+          <span key="ellipsis2" className="px-2 py-1.5 text-sm text-slate-400">
             ...
           </span>
         );
@@ -72,8 +76,9 @@ const Pagination = ({
       pages.push(
         <button
           key="last"
+          type="button"
           onClick={() => onPageChange(totalPages - 1)}
-          className="px-3 py-2 text-sm font-medium text-white bg-white/10 border border-white/20 rounded-r-lg hover:bg-white/20 transition-colors"
+          className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors tabular-nums"
         >
           {totalPages}
         </button>
@@ -83,46 +88,35 @@ const Pagination = ({
     return pages;
   };
 
-  if (totalPages <= 1) {
-    return null;
-  }
-
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
-      {/* Page info */}
-      <div className="text-sm text-white/80">
-        Showing {startItem} to {endItem} of {totalElements} results
-      </div>
+    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-5 mt-5 border-t border-slate-200">
+      <p className="text-sm text-slate-500 tabular-nums">
+        Showing <span className="font-medium text-slate-900">{startItem}</span> to{" "}
+        <span className="font-medium text-slate-900">{endItem}</span> of{" "}
+        <span className="font-medium text-slate-900">{totalElements}</span> results
+      </p>
 
-      {/* Pagination controls */}
-      <div className="flex items-center space-x-1">
-        {/* Previous button */}
+      <div className="flex items-center gap-1.5">
         <button
+          type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={!hasPrevious}
-          className={`px-3 py-2 text-sm font-medium rounded-l-lg transition-colors ${
-            hasPrevious
-              ? "text-white bg-white/10 border border-white/20 hover:bg-white/20"
-              : "text-white/50 bg-white/5 border border-white/10 cursor-not-allowed"
-          }`}
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
         >
-          Previous
+          <FiChevronLeft className="w-4 h-4" />
+          <span>Previous</span>
         </button>
 
-        {/* Page numbers */}
-        <div className="flex">{renderPageNumbers()}</div>
+        <div className="flex items-center gap-1">{renderPageNumbers()}</div>
 
-        {/* Next button */}
         <button
+          type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={!hasNext}
-          className={`px-3 py-2 text-sm font-medium rounded-r-lg transition-colors ${
-            hasNext
-              ? "text-white bg-white/10 border border-white/20 hover:bg-white/20"
-              : "text-white/50 bg-white/5 border border-white/10 cursor-not-allowed"
-          }`}
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
         >
-          Next
+          <span>Next</span>
+          <FiChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>

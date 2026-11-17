@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://localhost:8081", // adjust backend port
+    baseURL: import.meta.env.VITE_API_URL || "",
 });
 
 // Add token automatically
@@ -19,18 +19,17 @@ api.interceptors.response.use(
     (error) => {
         if (error.response) {
             const { status } = error.response;
+            const requestUrl = error.config?.url || "";
 
-            // Handle authentication errors
-            if (status === 401) {
-                console.log(`Authentication error (${status}):`, error.response.data);
+            // Handle authentication errors for non-auth endpoints
+            if (status === 401 && !requestUrl.includes("/api/auth/")) {
                 localStorage.removeItem("userId");
                 localStorage.removeItem("username");
                 localStorage.removeItem("role");
                 localStorage.removeItem("token");
-                // Redirect to login page
-                window.location.href = "/";
-            } else if (status === 403) {
-                console.log(`Authorization error (${status}):`, error.response.data);
+                if (window.location.pathname !== "/login") {
+                    window.location.href = "/login";
+                }
             }
         }
         return Promise.reject(error);

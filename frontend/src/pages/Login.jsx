@@ -1,95 +1,78 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login, clearError } from "../features/auth/authSlice";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { FiEye, FiEyeOff, FiLock, FiUser, FiAlertCircle } from "react-icons/fi";
 import api from "../api/axios";
-import VideoBackground from "../components/VideoBackground";
 
 export default function Login() {
   const [form, setForm] = useState({ username: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { role, token, loading, error } = useSelector((state) => state.auth);
+  const redirectTarget = location.state?.from;
 
   const validateForm = () => {
     const errors = {};
-
     if (!form.username.trim()) {
       errors.username = "Username is required";
     }
-
     if (!form.password.trim()) {
       errors.password = "Password is required";
     }
-
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Clear any previous errors
     dispatch(clearError());
     setValidationErrors({});
-
-    // Validate form
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      await dispatch(login(form));
-      // navigation happens after Redux updates
-    } catch {
-      // Error is now handled in the Redux slice
-    }
+    if (!validateForm()) return;
+    await dispatch(login(form));
   };
 
-  // Clear error when component unmounts or when user starts typing
   useEffect(() => {
     return () => {
       dispatch(clearError());
     };
   }, [dispatch]);
 
-  // Clear error when user starts typing
   const handleInputChange = (e) => {
-    if (error) {
-      dispatch(clearError());
-    }
+    if (error) dispatch(clearError());
     if (validationErrors[e.target.name]) {
-      setValidationErrors((prev) => ({
-        ...prev,
-        [e.target.name]: "",
-      }));
+      setValidationErrors((prev) => ({ ...prev, [e.target.name]: "" }));
     }
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Redirect based on role when token exists
+  const fillDemo = (username, password) => {
+    dispatch(clearError());
+    setValidationErrors({});
+    setForm({ username, password });
+  };
+
   useEffect(() => {
     const checkProviderProfile = async () => {
       if (token && role === "PROVIDER") {
         try {
-          // Check if provider has a profile
           const response = await api.get("/api/providers/me");
           if (response.status === 200) {
             navigate("/provider-dashboard");
           } else {
             navigate("/provider-setup");
           }
-        } catch (error) {
-          // If provider doesn't have a profile (404) or any other error, redirect to setup
-          console.log(
-            "Provider profile not found or error occurred, redirecting to setup"
-          );
+        } catch {
           navigate("/provider-setup");
         }
       } else if (token) {
-        if (role === "USER") {
+        if (redirectTarget && role === "USER") {
+          navigate(redirectTarget);
+        } else if (role === "USER") {
           navigate("/dashboard");
         } else if (role === "ADMIN") {
           navigate("/admin-dashboard");
@@ -100,88 +83,158 @@ export default function Login() {
     if (token) {
       checkProviderProfile();
     }
-  }, [role, token, navigate]);
+  }, [role, token, navigate, redirectTarget]);
 
   return (
-    <VideoBackground>
-      <div className="flex justify-center items-center min-h-[calc(100vh-5rem)] px-4">
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white/20 backdrop-blur-lg border border-white/30 p-8 rounded-2xl shadow-2xl w-96 flex flex-col items-center transition-all duration-300 transform hover:scale-105"
-        >
-          <h2 className="text-3xl font-extrabold mb-6 text-heading-h2 drop-shadow-md">
-            Welcome Back
-          </h2>
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl shadow-sm p-8">
+        <div className="mb-6">
+          <h1 className="font-display text-2xl font-bold text-slate-900">
+            Sign in to AppointFlow
+          </h1>
+          <p className="mt-1.5 text-sm text-slate-600">
+            Access your appointments, schedule, or administrative workspace.
+          </p>
+        </div>
 
-          {/* Server Error Message */}
-          {error && (
-            <div className="w-full mb-4 p-3 bg-red-500/20 border border-red-400/50 rounded-lg">
-              <p className="text-red-200 text-sm font-medium text-center">
-                {error}
-              </p>
+        {error && (
+          <div
+            role="alert"
+            className="mb-5 flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-700"
+          >
+            <FiAlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="login-username"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
+              Username
+            </label>
+            <div className="relative">
+              <FiUser
+                className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
+                aria-hidden="true"
+              />
+              <input
+                id="login-username"
+                type="text"
+                name="username"
+                autoComplete="username"
+                placeholder="Enter your username"
+                value={form.username}
+                onChange={handleInputChange}
+                disabled={loading}
+                className={`w-full pl-10 pr-3.5 py-2.5 text-sm bg-white border rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors ${
+                  validationErrors.username
+                    ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500"
+                    : "border-slate-300 focus:ring-indigo-500/20 focus:border-indigo-600"
+                }`}
+              />
             </div>
-          )}
-
-          <div className="w-full mb-4">
-            <input
-              type="text"
-              name="username"
-              placeholder="Username"
-              className={`bg-white/20 backdrop-blur-sm border-2 focus:ring-2 focus:ring-blue-400/30 rounded-xl p-3 w-full outline-none transition-all duration-300 text-white placeholder-white/70 ${
-                validationErrors.username
-                  ? "border-red-400 focus:border-red-400"
-                  : "border-white/30 focus:border-blue-400"
-              }`}
-              onChange={handleInputChange}
-              value={form.username}
-              disabled={loading}
-            />
             {validationErrors.username && (
-              <p className="text-red-300 text-xs mt-1 ml-1">
-                {validationErrors.username}
-              </p>
+              <p className="text-rose-600 text-xs mt-1">{validationErrors.username}</p>
             )}
           </div>
 
-          <div className="w-full mb-6">
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              className={`bg-white/20 backdrop-blur-sm border-2 focus:ring-2 focus:ring-blue-400/30 rounded-xl p-3 w-full outline-none transition-all duration-300 text-white placeholder-white/70 ${
-                validationErrors.password
-                  ? "border-red-400 focus:border-red-400"
-                  : "border-white/30 focus:border-blue-400"
-              }`}
-              onChange={handleInputChange}
-              value={form.password}
-              disabled={loading}
-            />
+          <div>
+            <label
+              htmlFor="login-password"
+              className="block text-sm font-medium text-slate-700 mb-1.5"
+            >
+              Password
+            </label>
+            <div className="relative">
+              <FiLock
+                className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
+                aria-hidden="true"
+              />
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                value={form.password}
+                onChange={handleInputChange}
+                disabled={loading}
+                className={`w-full pl-10 pr-10 py-2.5 text-sm bg-white border rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors ${
+                  validationErrors.password
+                    ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500"
+                    : "border-slate-300 focus:ring-indigo-500/20 focus:border-indigo-600"
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
+              </button>
+            </div>
             {validationErrors.password && (
-              <p className="text-red-300 text-xs mt-1 ml-1">
-                {validationErrors.password}
-              </p>
+              <p className="text-rose-600 text-xs mt-1">{validationErrors.password}</p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className={`bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-6 py-3 rounded-xl w-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 ${
-              loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Logging in...
-              </div>
+              <>
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Signing in...</span>
+              </>
             ) : (
-              "Login"
+              "Sign In"
             )}
           </button>
         </form>
+
+        {/* Quick-Fill Demo Credentials */}
+        <div className="mt-6 pt-5 border-t border-slate-200">
+          <p className="text-xs font-medium text-slate-500 mb-2.5">
+            Quick-fill demo account
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => fillDemo("alex_user", "password123")}
+              className="px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              Client
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemo("dr_maya", "password123")}
+              className="px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              Provider
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemo("admin", "admin123")}
+              className="px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              Admin
+            </button>
+          </div>
+        </div>
+
+        <p className="mt-6 text-center text-sm text-slate-600">
+          New to AppointFlow?{" "}
+          <Link to="/register" className="font-semibold text-indigo-600 hover:text-indigo-700">
+            Create an account
+          </Link>
+        </p>
       </div>
-    </VideoBackground>
+    </div>
   );
 }
