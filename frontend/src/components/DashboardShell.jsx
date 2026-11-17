@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/auth/authSlice";
@@ -31,10 +31,37 @@ export default function DashboardShell({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { role, user } = useSelector((state) => state.auth);
+  const { role, user, userId } = useSelector((state) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [readIds, setReadIds] = useState([]);
+  const readStorageKey = `appointflow:read-notifications:${role || "guest"}:${userId || "guest"}`;
+  const [readIds, setReadIds] = useState(() => {
+    try {
+      const stored = localStorage.getItem(readStorageKey);
+      const parsed = stored ? JSON.parse(stored) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(readStorageKey, JSON.stringify(readIds));
+    } catch {
+      // Notification state remains usable for this session if storage is unavailable.
+    }
+  }, [readStorageKey, readIds]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(readStorageKey);
+      const parsed = stored ? JSON.parse(stored) : [];
+      setReadIds(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setReadIds([]);
+    }
+  }, [readStorageKey]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -68,7 +95,13 @@ export default function DashboardShell({
   const unreadCount = notifications.filter((n) => !readIds.includes(n.id)).length;
 
   const markAllRead = () => {
-    setReadIds(notifications.map((n) => n.id));
+    setReadIds((current) => [...new Set([...current, ...notifications.map((n) => n.id)])]);
+  };
+
+  const toggleRead = (id) => {
+    setReadIds((current) =>
+      current.includes(id) ? current.filter((readId) => readId !== id) : [...current, id]
+    );
   };
 
   const renderNavLink = (item) => {
@@ -299,12 +332,27 @@ export default function DashboardShell({
                                 isUnread ? "bg-indigo-50/40" : "bg-white"
                               }`}
                             >
-                              <p className="font-medium text-slate-900">
-                                {n.title}
-                              </p>
-                              <p className="text-xs text-slate-500 mt-0.5">
-                                {n.detail}
-                              </p>
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="font-medium text-slate-900">
+                                    {n.title}
+                                  </p>
+                                  <p className="text-xs text-slate-500 mt-0.5">
+                                    {n.detail}
+                                  </p>
+                                  <span className={`mt-1 inline-block text-[10px] font-semibold uppercase tracking-wide ${isUnread ? "text-indigo-700" : "text-slate-400"}`}>
+                                    {isUnread ? "Unseen" : "Seen"}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleRead(n.id)}
+                                  className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                                  aria-label={`${isUnread ? "Mark as seen" : "Mark as unseen"}: ${n.title}`}
+                                >
+                                  Mark {isUnread ? "seen" : "unseen"}
+                                </button>
+                              </div>
                             </div>
                           );
                         })

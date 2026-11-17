@@ -201,7 +201,7 @@ export default function Profile() {
         .filter((a) => a.status === "PENDING" || a.status === "CONFIRMED")
         .slice(0, 5)
         .map((a) => ({
-          id: `prof-${a.id}`,
+          id: `appointment-${a.id}-${a.status}`,
           title:
             role === "PROVIDER"
               ? `Booking from ${a.user?.username || "Client"} (${a.status})`

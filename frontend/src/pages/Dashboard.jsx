@@ -281,7 +281,7 @@ function UserWorkspaceDashboard() {
   const notifications = useMemo(
     () =>
       upcoming.slice(0, 5).map((a) => ({
-        id: `appt-${a.id}`,
+        id: `appointment-${a.id}-${a.status}`,
         title: `${a.provider?.serviceName || "Appointment"} (${a.status})`,
         detail: dayjs(a.appointmentDate).format("MMM D, YYYY · h:mm A"),
       })),

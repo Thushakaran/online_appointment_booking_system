@@ -360,7 +360,7 @@ export default function AdminDashboard() {
   const notifications = useMemo(
     () =>
       appointments.slice(0, 5).map((a) => ({
-        id: `adm-appt-${a.id}`,
+        id: `appointment-${a.id}-${a.status}`,
         title: `${a.user?.username || "Client"} · ${
           a.provider?.serviceName || "Service"
         }`,

@@ -158,7 +158,7 @@ export default function Appointments() {
         .filter((a) => a.status === "PENDING" || a.status === "CONFIRMED")
         .slice(0, 5)
         .map((a) => ({
-          id: `appt-${a.id}`,
+          id: `appointment-${a.id}-${a.status}`,
           title: `${a.provider?.serviceName || "Consultation"} (${a.status})`,
           detail: dayjs(getAppointmentDate(a)).format("MMM D, YYYY · h:mm A"),
         })),

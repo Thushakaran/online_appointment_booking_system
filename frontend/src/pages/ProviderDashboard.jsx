@@ -235,7 +235,7 @@ export default function ProviderDashboard() {
         .filter((a) => a.status === "PENDING" || a.status === "CONFIRMED")
         .slice(0, 6)
         .map((a) => ({
-          id: `prov-appt-${a.id}`,
+          id: `appointment-${a.id}-${a.status}`,
           title: `${a.user?.username || "Client"} · ${a.status}`,
           detail: dayjs(a.appointmentDate).format("MMM D, YYYY · h:mm A"),
         })),
