@@ -1,8 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import api from "../api/axios";
 import dayjs from "dayjs";
-import VideoBackground from "../components/VideoBackground";
+import AppShell from "../components/AppShell";
+import StatusBadge from "../components/StatusBadge";
+import FeedbackBanner from "../components/FeedbackBanner";
+import {
+  FiCalendar,
+  FiSearch,
+  FiCheck,
+  FiX,
+} from "react-icons/fi";
 
 export default function Appointments() {
   const { userId } = useSelector((state) => state.auth);
@@ -10,207 +19,293 @@ export default function Appointments() {
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState(null);
+
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getAppointmentDate = (appointment) => {
-    if (appointment.appointmentDate) {
-      return new Date(appointment.appointmentDate);
-    }
+    if (appointment.appointmentDate) return new Date(appointment.appointmentDate);
     if (appointment.availability?.availableDate) {
       return new Date(appointment.availability.availableDate);
     }
     return new Date(0);
   };
 
-  const sortAppointments = (appointments) => {
-    return appointments.sort((a, b) => {
-      const statusA = a.status;
-      const statusB = b.status;
-      const isPendingA = statusA === "PENDING";
-      const isPendingB = statusB === "PENDING";
-
-      if (isPendingA && isPendingB) {
-        return getAppointmentDate(a) - getAppointmentDate(b);
-      }
-      if (isPendingA) return -1;
-      if (isPendingB) return 1;
+  const sortAppointments = useCallback((appointments) => {
+    return [...appointments].sort((a, b) => {
+      const isPendingA = a.status === "PENDING";
+      const isPendingB = b.status === "PENDING";
+      if (isPendingA && !isPendingB) return -1;
+      if (!isPendingA && isPendingB) return 1;
       return getAppointmentDate(a) - getAppointmentDate(b);
     });
-  };
+  }, []);
 
-  const load = async (uid) => {
+  const load = useCallback(async () => {
+    if (!userId) {
+      setErr("Please sign in to view your appointments.");
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await api.get(`/api/appointments/user/${uid}`);
-      const sortedAppointments = sortAppointments(res.data || []);
-      setItems(sortedAppointments);
+      setLoading(true);
+      const res = await api.get(`/api/appointments/user/${userId}`);
+      setItems(sortAppointments(res.data || []));
+      setErr("");
     } catch (e) {
-      console.error("Load appointments error:", e);
       if (e?.response?.status === 403) {
-        setErr("Access denied. Please make sure you are logged in.");
+        setErr("Access denied. Please make sure you are signed in.");
       } else if (e?.response?.status === 401) {
-        setErr("Authentication failed. Please login again.");
+        setErr("Authentication expired. Please sign in again.");
       } else {
         setErr("Failed to load appointments. Please try again.");
       }
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [userId, sortAppointments]);
 
   useEffect(() => {
-    if (userId) {
-      load(userId);
-      setLoading(false);
-    } else {
-      setErr("Please login to view your appointments");
-      setLoading(false);
-    }
-  }, [userId]);
+    load();
+  }, [load]);
 
   const updateStatus = async (id, status) => {
+    if (
+      status === "CANCELLED" &&
+      !window.confirm("Are you sure you want to cancel this appointment?")
+    ) {
+      return;
+    }
+
     setErr("");
     setMsg("");
+    setBusyId(id);
     try {
       if (status === "CANCELLED") {
         await api.put(`/api/appointments/${id}/cancel`);
-        setMsg(`Successfully cancelled appointment`);
+        setMsg("Appointment cancelled successfully.");
       } else if (status === "CONFIRMED") {
         await api.put(`/api/appointments/${id}/confirm`);
-        setMsg(`Successfully confirmed appointment`);
+        setMsg("Appointment confirmed successfully.");
       } else {
-        // For other status updates, use the original endpoint (for providers)
         await api.put(`/api/appointments/${id}/status`, { status });
-        setMsg(`Successfully updated appointment to ${status}`);
+        setMsg(`Appointment updated to ${status.toLowerCase()}.`);
       }
-      await load(userId);
+      await load();
     } catch (e) {
-      console.error("Update status error:", e);
       if (e?.response?.status === 403) {
-        setErr("Access denied. Please make sure you are logged in.");
+        setErr("Access denied.");
       } else if (e?.response?.status === 401) {
-        setErr("Authentication failed. Please login again.");
+        setErr("Authentication failed. Please sign in again.");
       } else {
         setErr(
           e?.response?.data?.message ||
             "Failed to update status. Please try again."
         );
       }
+    } finally {
+      setBusyId(null);
     }
   };
 
-  if (loading)
-    return (
-      <VideoBackground>
-        <div className="max-w-6xl mx-auto py-8 px-4">
-          <div className="text-center py-8">
-            <p className="text-white text-xl">Loading appointments...</p>
-          </div>
-        </div>
-      </VideoBackground>
-    );
+  const counts = useMemo(
+    () => ({
+      ALL: items.length,
+      PENDING: items.filter((a) => a.status === "PENDING").length,
+      CONFIRMED: items.filter((a) => a.status === "CONFIRMED").length,
+      COMPLETED: items.filter((a) => a.status === "COMPLETED").length,
+      CANCELLED: items.filter((a) => a.status === "CANCELLED").length,
+    }),
+    [items]
+  );
 
-  if (err)
-    return (
-      <VideoBackground>
-        <div className="max-w-6xl mx-auto py-8 px-4">
-          <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-lg mb-4">
-            {err}
-          </div>
-        </div>
-      </VideoBackground>
-    );
+  const filteredItems = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return items.filter((apt) => {
+      if (statusFilter !== "ALL" && apt.status !== statusFilter) return false;
+      if (!q) return true;
+      const service = (apt.provider?.serviceName || "").toLowerCase();
+      const providerName = (apt.provider?.user?.username || "").toLowerCase();
+      return service.includes(q) || providerName.includes(q);
+    });
+  }, [items, statusFilter, searchQuery]);
+
+  const filterTabs = [
+    { key: "ALL", label: "All" },
+    { key: "PENDING", label: "Pending" },
+    { key: "CONFIRMED", label: "Confirmed" },
+    { key: "COMPLETED", label: "Completed" },
+    { key: "CANCELLED", label: "Cancelled" },
+  ];
 
   return (
-    <VideoBackground>
-      <div className="max-w-6xl mx-auto py-8 px-4">
-        <h2 className="text-3xl font-bold mb-8 text-heading-h2 text-center">
-          My Appointments
-        </h2>
-        {msg && (
-          <div className="bg-green-900/20 border border-green-500/30 text-green-400 p-4 rounded-lg mb-6 text-center">
-            {msg}
-          </div>
-        )}
-
-        {items.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-white text-xl mb-2">No appointments found.</p>
-            <p className="text-white/60">
-              Book your first appointment from the providers page!
+    <AppShell title="My Appointments" breadcrumb="Appointments">
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-display font-bold text-slate-900">
+              My Appointments
+            </h1>
+            <p className="text-sm text-slate-600 mt-1">
+              Review upcoming sessions, confirm pending bookings, or cancel appointments.
             </p>
           </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {items.map((appointment) => (
-              <div
-                key={appointment.id}
-                className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-2xl p-6 flex flex-col justify-between shadow-lg hover:scale-[1.02] hover:bg-white/30 transition-all duration-300"
-              >
-                {/* Header: Title + Status */}
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-heading-h3">
-                    Appointment
-                  </h3>
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      appointment.status === "CONFIRMED"
-                        ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                        : appointment.status === "CANCELLED"
-                        ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                        : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                    }`}
-                  >
-                    {appointment.status}
-                  </span>
-                </div>
+          <Link
+            to="/providers"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap shrink-0"
+          >
+            <FiCalendar className="w-4 h-4" />
+            <span>Book New Appointment</span>
+          </Link>
+        </div>
 
-                {/* Body */}
-                <div className="space-y-1 text-sm text-white/80 mb-4">
-                  <p>
-                    <span className="font-medium">Provider:</span>{" "}
-                    {appointment.provider?.user?.username || "Unknown"}
-                  </p>
-                  <p>
-                    <span className="font-medium">Service:</span>{" "}
-                    {appointment.provider?.serviceName || "N/A"}
-                  </p>
-                  <p className="text-white font-medium mt-2">
-                    📅{" "}
-                    {appointment.appointmentDate
-                      ? dayjs(appointment.appointmentDate).format(
-                          "YYYY-MM-DD HH:mm"
-                        )
-                      : appointment.availability?.availableDate
-                      ? dayjs(appointment.availability.availableDate).format(
-                          "YYYY-MM-DD HH:mm"
-                        )
-                      : "N/A"}
-                  </p>
-                </div>
+        <FeedbackBanner variant="error" message={err} onDismiss={() => setErr("")} />
+        <FeedbackBanner variant="success" message={msg} onDismiss={() => setMsg("")} />
 
-                {/* Footer: Status Change */}
-                <div>
-                  <select
-                    className="w-full bg-white/20 backdrop-blur-sm border-2 border-white/30 focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30 rounded-xl p-2 text-sm outline-none transition-all duration-300 text-white"
-                    defaultValue=""
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val) updateStatus(appointment.id, val);
-                    }}
-                  >
-                    <option value="" className="bg-gray-800">
-                      Change Status...
-                    </option>
-                    <option value="CANCELLED" className="bg-gray-800">
-                      Cancel
-                    </option>
-                    <option value="CONFIRMED" className="bg-gray-800">
-                      Confirm
-                    </option>
-                  </select>
-                </div>
-              </div>
+        {/* Filter & Search Bar */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-lg">
+            {filterTabs.map((tab) => {
+              const active = statusFilter === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setStatusFilter(tab.key)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 tabular-nums ${
+                    active
+                      ? "bg-white text-slate-900 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  {tab.label} ({counts[tab.key]})
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="relative w-full lg:w-72">
+            <FiSearch className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Filter by service or provider..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+            />
+          </div>
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="bg-white border border-slate-200 rounded-xl p-6 space-y-3">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="h-14 bg-slate-100 rounded-lg animate-pulse" />
             ))}
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
+            <FiCalendar className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+            <h2 className="text-base font-display font-semibold text-slate-900">
+              {items.length === 0
+                ? "No appointments scheduled yet"
+                : "No appointments match your filter"}
+            </h2>
+            <p className="text-sm text-slate-500 mt-1 mb-5">
+              {items.length === 0
+                ? "Browse our directory of service providers to book your first session."
+                : "Try selecting a different status filter or clearing your search."}
+            </p>
+            {items.length === 0 ? (
+              <Link
+                to="/providers"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Browse Providers
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusFilter("ALL");
+                  setSearchQuery("");
+                }}
+                className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+              >
+                Reset filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50 text-xs font-medium text-slate-500">
+                  <tr>
+                    <th className="text-left px-6 py-3">Service</th>
+                    <th className="text-left px-6 py-3">Provider</th>
+                    <th className="text-left px-6 py-3">Date & Time</th>
+                    <th className="text-left px-6 py-3">Status</th>
+                    <th className="text-right px-6 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredItems.map((apt) => {
+                    const dt = apt.appointmentDate || apt.availability?.availableDate;
+                    const isMutable =
+                      apt.status !== "CANCELLED" && apt.status !== "COMPLETED";
+                    return (
+                      <tr key={apt.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="px-6 py-4 font-medium text-slate-900">
+                          {apt.provider?.serviceName || "Service"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-600">
+                          {apt.provider?.user?.username || "Unknown"}
+                        </td>
+                        <td className="px-6 py-4 text-slate-600 tabular-nums whitespace-nowrap">
+                          {dt ? dayjs(dt).format("MMM D, YYYY · h:mm A") : "N/A"}
+                        </td>
+                        <td className="px-6 py-4">
+                          <StatusBadge status={apt.status} />
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {isMutable ? (
+                            <div className="inline-flex items-center gap-2">
+                              {apt.status === "PENDING" && (
+                                <button
+                                  type="button"
+                                  disabled={busyId === apt.id}
+                                  onClick={() => updateStatus(apt.id, "CONFIRMED")}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-md hover:bg-emerald-100 disabled:opacity-50 transition-colors"
+                                >
+                                  <FiCheck className="w-3.5 h-3.5" />
+                                  <span>Confirm</span>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                disabled={busyId === apt.id}
+                                onClick={() => updateStatus(apt.id, "CANCELLED")}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 border border-rose-200 rounded-md hover:bg-rose-100 disabled:opacity-50 transition-colors"
+                              >
+                                <FiX className="w-3.5 h-3.5" />
+                                <span>Cancel</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400">No actions</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
-    </VideoBackground>
+    </AppShell>
   );
 }

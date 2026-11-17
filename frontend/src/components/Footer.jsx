@@ -1,70 +1,41 @@
 import { Link } from "react-router-dom";
-import {
-  FaFacebookF,
-  FaTwitter,
-  FaInstagram,
-  FaLinkedinIn,
-} from "react-icons/fa";
 
 export default function Footer() {
   return (
-    <footer className="bg-[linear-gradient(to_right,#1e1e2f,#2a003f)] backdrop-blur-lg border-t border-gray-700 text-white mt-16 relative z-20">
-      <div className="max-w-7xl mx-auto px-6 py-12 grid md:grid-cols-3 gap-8">
-        {/* About Section */}
-        <div>
-          <h3 className="text-xl font-bold mb-4 text-heading-h3">
-            Appointment Booking
-          </h3>
-          <p className="text-gray-300">
-            Seamlessly schedule appointments with providers you trust. Browse
-            slots, manage your bookings, and stay organized.
-          </p>
-        </div>
-
-        {/* Quick Links */}
-        <div>
-          <h3 className="text-xl font-bold mb-4 text-heading-h3">
-            Quick Links
-          </h3>
-          <ul className="space-y-2">
-            {["/", "/providers", "/appointments", "/profile"].map(
-              (path, index) => {
-                const labels = ["Home", "Providers", "Appointments", "Profile"];
-                return (
-                  <li key={index}>
-                    <Link
-                      to={path}
-                      className="text-gray-300 hover:text-purple-400 transition-colors duration-300"
-                    >
-                      {labels[index]}
-                    </Link>
-                  </li>
-                );
-              }
-            )}
-          </ul>
-        </div>
-
-        {/* Social / Contact */}
-        <div>
-          <h3 className="text-xl font-bold mb-4 text-heading-h3">Follow Us</h3>
-          <div className="flex gap-4">
-            {[FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn].map(
-              (Icon, i) => (
-                <a
-                  href="#"
-                  key={i}
-                  className="text-gray-300 hover:text-purple-400 transition-colors duration-300"
-                >
-                  <Icon size={20} />
-                </a>
-              )
-            )}
+    <footer className="bg-white border-t border-slate-200 text-slate-600">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <Link
+              to="/"
+              className="text-base font-display font-bold tracking-tight text-slate-900"
+            >
+              AppointFlow
+            </Link>
+            <p className="text-sm text-slate-500 mt-1 max-w-md">
+              Streamlined appointment scheduling for service providers, clients, and operations teams.
+            </p>
           </div>
-          <p className="mt-6 text-gray-400 text-sm">
-            &copy; {new Date().getFullYear()} Appointment Booking. All rights
-            reserved.
-          </p>
+
+          <div className="flex flex-wrap items-center gap-6 text-sm font-medium text-slate-600">
+            <Link to="/" className="hover:text-slate-900 transition-colors">
+              Overview
+            </Link>
+            <Link to="/providers" className="hover:text-slate-900 transition-colors">
+              Providers
+            </Link>
+            <Link to="/login" className="hover:text-slate-900 transition-colors">
+              Sign in
+            </Link>
+            <Link to="/register" className="hover:text-slate-900 transition-colors">
+              Create account
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-400">
+          <p>&copy; {new Date().getFullYear()} AppointFlow. All rights reserved.</p>
+          <p>Online Appointment Booking Platform</p>
         </div>
       </div>
     </footer>
