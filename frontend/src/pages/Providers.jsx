@@ -564,21 +564,19 @@ export default function Providers() {
         </div>
       );
 
-  if (token) {
+  if (token && role === "ADMIN") {
     return (
       <DashboardShell
         title="Service Providers"
         breadcrumb="Directory"
         actions={
-          role === "USER" ? (
-            <Link
-              to="/appointments"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
-            >
-              <FiCalendar className="w-4 h-4" aria-hidden="true" />
-              <span>My Appointments</span>
-            </Link>
-          ) : null
+          <Link
+            to="/admin-dashboard"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
+          >
+            <FiCalendar className="w-4 h-4" aria-hidden="true" />
+            <span>Admin Console</span>
+          </Link>
         }
       >
         <div className="space-y-6">

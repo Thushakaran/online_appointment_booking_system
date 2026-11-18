@@ -17,18 +17,12 @@ import BookAppointment from "./pages/BookAppointment";
 import Appointments from "./pages/Appointment";
 import Profile from "./pages/Profile";
 
-const WORKSPACE_ROUTES = [
-  "/dashboard",
-  "/appointments",
-  "/profile",
+const ADMIN_PROVIDER_ROUTES = [
   "/provider-dashboard",
   "/provider-setup",
   "/admin-dashboard",
   "/admin/providers",
-  "/book-appointment",
 ];
-
-const AUTH_WORKSPACE_ROUTES = ["/providers"];
 
 function NotFoundPage() {
   return (
@@ -64,11 +58,17 @@ function NotFoundPage() {
 
 function AppShell() {
   const location = useLocation();
-  const { token } = useSelector((state) => state.auth);
+  const { token, role } = useSelector((state) => state.auth);
   const isWorkspaceRoute =
-    WORKSPACE_ROUTES.some((prefix) => location.pathname.startsWith(prefix)) ||
+    ADMIN_PROVIDER_ROUTES.some((prefix) =>
+      location.pathname.startsWith(prefix)
+    ) ||
     (Boolean(token) &&
-      AUTH_WORKSPACE_ROUTES.some((prefix) => location.pathname.startsWith(prefix)));
+      role === "PROVIDER" &&
+      location.pathname.startsWith("/profile")) ||
+    (Boolean(token) &&
+      role === "ADMIN" &&
+      location.pathname.startsWith("/providers"));
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">

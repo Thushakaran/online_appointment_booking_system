@@ -16,7 +16,6 @@ import {
   FiEdit2,
 } from "react-icons/fi";
 import api from "../api/axios";
-import DashboardShell from "../components/DashboardShell";
 import StatusBadge from "../components/ui/StatusBadge";
 import ConfirmModal from "../components/ui/ConfirmModal";
 
@@ -305,35 +304,26 @@ export default function Appointments() {
     });
   }, [items, statusFilter, searchQuery]);
 
-  const notifications = useMemo(
-    () =>
-      items
-        .filter((a) => a.status === "PENDING" || a.status === "CONFIRMED")
-        .slice(0, 5)
-        .map((a) => ({
-          id: `appointment-${a.id}-${a.status}`,
-          title: `${a.provider?.serviceName || "Consultation"} (${a.status})`,
-          detail: dayjs(getAppointmentDate(a)).format("MMM D, YYYY · h:mm A"),
-        })),
-    [items]
-  );
-
   return (
-    <DashboardShell
-      title="My Appointments"
-      breadcrumb="Client Workspace"
-      notifications={notifications}
-      actions={
-        <Link
-          to="/providers"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
-        >
-          <FiCalendar className="w-4 h-4" aria-hidden="true" />
-          <span>Book Appointment</span>
-        </Link>
-      }
-    >
-      <div className="space-y-6">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-900">
+              My Appointments
+            </h1>
+            <p className="text-sm text-slate-600 mt-1">
+              Manage upcoming bookings, reschedule open slots, or review completed visits.
+            </p>
+          </div>
+          <Link
+            to="/providers"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap self-start sm:self-auto"
+          >
+            <FiCalendar className="w-4 h-4" aria-hidden="true" />
+            <span>Book Appointment</span>
+          </Link>
+        </div>
         {err && (
           <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
             <span>{err}</span>
@@ -837,6 +827,6 @@ export default function Appointments() {
           cancelTarget && updateStatus(cancelTarget.id, "CANCELLED")
         }
       />
-    </DashboardShell>
+    </div>
   );
 }

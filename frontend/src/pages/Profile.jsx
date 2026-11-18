@@ -211,24 +211,8 @@ export default function Profile() {
     [appointments, role]
   );
 
-  return (
-    <DashboardShell
-      title="Account Profile"
-      breadcrumb={role === "PROVIDER" ? "Provider Workspace" : "Client Workspace"}
-      notifications={notifications}
-      actions={
-        role === "PROVIDER" ? (
-          <Link
-            to="/provider-setup"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
-          >
-            <FiEdit2 className="w-4 h-4" />
-            <span>{provider ? "Edit Service Profile" : "Complete Service Setup"}</span>
-          </Link>
-        ) : null
-      }
-    >
-      <div className="space-y-6">
+  const content = (
+    <div className="space-y-6">
         {err && (
           <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
             <span>{err}</span>
@@ -682,6 +666,43 @@ export default function Profile() {
           </>
         )}
       </div>
-    </DashboardShell>
+  );
+
+  if (role === "PROVIDER") {
+    return (
+      <DashboardShell
+        title="Account Profile"
+        breadcrumb="Provider Workspace"
+        breadcrumbTo="/provider-dashboard"
+        notifications={notifications}
+        actions={
+          <Link
+            to="/provider-setup"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+          >
+            <FiEdit2 className="w-4 h-4" />
+            <span>{provider ? "Edit Service Profile" : "Complete Service Setup"}</span>
+          </Link>
+        }
+      >
+        {content}
+      </DashboardShell>
+    );
+  }
+
+  return (
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-900">
+            Account Profile
+          </h1>
+          <p className="text-sm text-slate-600 mt-1">
+            Manage your personal details, booking summary, and account password.
+          </p>
+        </div>
+        {content}
+      </div>
+    </div>
   );
 }

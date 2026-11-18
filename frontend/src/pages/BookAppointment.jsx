@@ -14,7 +14,6 @@ import {
   FiStar,
 } from "react-icons/fi";
 import api from "../api/axios";
-import DashboardShell from "../components/DashboardShell";
 
 export default function BookAppointment() {
   const navigate = useNavigate();
@@ -140,11 +139,7 @@ export default function BookAppointment() {
 
   if (loading) {
     return (
-      <DashboardShell
-        title="Book Appointment"
-        breadcrumb="Browse Providers"
-        breadcrumbTo="/providers"
-      >
+      <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-10 px-4">
         <div className="max-w-5xl mx-auto space-y-6 animate-pulse">
           <div className="h-44 bg-white border border-slate-200 rounded-xl" />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -152,53 +147,42 @@ export default function BookAppointment() {
             <div className="lg:col-span-5 h-72 bg-white border border-slate-200 rounded-xl" />
           </div>
         </div>
-      </DashboardShell>
+      </div>
     );
   }
 
   if (!provider) {
     return (
-      <DashboardShell
-        title="Book Appointment"
-        breadcrumb="Browse Providers"
-        breadcrumbTo="/providers"
-      >
-        <div className="min-h-[50vh] flex items-center justify-center">
-          <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-md w-full text-center">
-            <FiAlertCircle className="w-8 h-8 text-rose-500 mx-auto mb-3" />
-            <h1 className="text-lg font-semibold text-slate-900">Provider not found</h1>
-            <p className="text-sm text-slate-500 mt-1">
-              {err || "We could not locate this service provider."}
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate("/providers")}
-              className="mt-5 px-5 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
-            >
-              Back to Providers
-            </button>
-          </div>
+      <div className="min-h-[calc(100vh-4rem)] bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-md w-full text-center">
+          <FiAlertCircle className="w-8 h-8 text-rose-500 mx-auto mb-3" />
+          <h1 className="text-lg font-semibold text-slate-900">Provider not found</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {err || "We could not locate this service provider."}
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/providers")}
+            className="mt-5 px-5 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+          >
+            Back to Providers
+          </button>
         </div>
-      </DashboardShell>
+      </div>
     );
   }
 
   return (
-    <DashboardShell
-      title={provider.serviceName}
-      breadcrumb="Browse Providers"
-      breadcrumbTo="/providers"
-      actions={
-        <Link
-          to="/providers"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <button
+          type="button"
+          onClick={() => navigate("/providers")}
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
         >
           <FiArrowLeft className="w-4 h-4" />
           <span>Back to Providers</span>
-        </Link>
-      }
-    >
-      <div className="max-w-5xl mx-auto space-y-6">
+        </button>
 
         {err && (
           <div
@@ -547,6 +531,6 @@ export default function BookAppointment() {
           )}
         </section>
       </div>
-    </DashboardShell>
+    </div>
   );
 }

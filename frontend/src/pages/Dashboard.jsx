@@ -15,7 +15,6 @@ import {
 } from "react-icons/fi";
 import { dashboardAPI } from "../api/dashboard";
 import api from "../api/axios";
-import DashboardShell from "../components/DashboardShell";
 import StatusBadge from "../components/ui/StatusBadge";
 
 function PublicLanding() {
@@ -278,16 +277,6 @@ function UserWorkspaceDashboard() {
     [appointments]
   );
 
-  const notifications = useMemo(
-    () =>
-      upcoming.slice(0, 5).map((a) => ({
-        id: `appointment-${a.id}-${a.status}`,
-        title: `${a.provider?.serviceName || "Appointment"} (${a.status})`,
-        detail: dayjs(a.appointmentDate).format("MMM D, YYYY · h:mm A"),
-      })),
-    [upcoming]
-  );
-
   const stats = useMemo(
     () => ({
       total: appointments.length,
@@ -299,21 +288,26 @@ function UserWorkspaceDashboard() {
   );
 
   return (
-    <DashboardShell
-      title="Client Overview"
-      breadcrumb="Dashboard"
-      notifications={notifications}
-      actions={
-        <Link
-          to="/providers"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
-        >
-          <FiCalendar className="w-4 h-4" aria-hidden="true" />
-          <span>Book Appointment</span>
-        </Link>
-      }
-    >
-      <div className="space-y-6">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-900">
+              Client Overview
+            </h1>
+            <p className="text-sm text-slate-600 mt-1">
+              Track your upcoming bookings, review past visits, or schedule a new consultation.
+            </p>
+          </div>
+          <Link
+            to="/providers"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap self-start sm:self-auto"
+          >
+            <FiCalendar className="w-4 h-4" aria-hidden="true" />
+            <span>Book Appointment</span>
+          </Link>
+        </div>
+
         {/* Welcome Banner */}
         <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -321,7 +315,7 @@ function UserWorkspaceDashboard() {
               Welcome back, {user}
             </h2>
             <p className="text-sm text-slate-600 mt-1">
-              Track your upcoming bookings, review past visits, or schedule a new consultation.
+              Manage your active bookings or keep your account preferences up to date.
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -536,7 +530,7 @@ function UserWorkspaceDashboard() {
           </div>
         </div>
       </div>
-    </DashboardShell>
+    </div>
   );
 }
 
