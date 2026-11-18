@@ -16,6 +16,8 @@ import {
   FiAward,
   FiMail,
   FiAlertCircle,
+  FiStar,
+  FiMessageSquare,
 } from "react-icons/fi";
 import api from "../api/axios";
 import DashboardShell from "../components/DashboardShell";
@@ -32,6 +34,7 @@ export default function ProviderDashboard() {
   const [provider, setProvider] = useState(null);
   const [availabilities, setAvailabilities] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [availabilityForm, setAvailabilityForm] = useState({ availableDate: "", repeatWeeks: 1 });
   const [editingAvailability, setEditingAvailability] = useState(null);
   const [editForm, setEditForm] = useState({ availableDate: "" });
@@ -98,15 +101,22 @@ export default function ProviderDashboard() {
       }
 
       try {
-        const [availRes, apptRes] = await Promise.all([
+        const [availRes, apptRes, reviewsRes] = await Promise.all([
           api.get("/api/availabilities/my-availabilities"),
           api.get("/api/appointments/my-appointments"),
+          foundProvider?.id
+            ? api
+                .get(`/api/reviews/provider/${foundProvider.id}`)
+                .catch(() => ({ data: [] }))
+            : Promise.resolve({ data: [] }),
         ]);
         setAvailabilities(availRes.data || []);
         setAppointments(sortAppointments(apptRes.data || []));
+        setReviews(reviewsRes.data || []);
       } catch {
         setAvailabilities([]);
         setAppointments([]);
+        setReviews([]);
       }
       setError("");
     } catch {
@@ -220,6 +230,10 @@ export default function ProviderDashboard() {
     const pending = appointments.filter((a) => a.status === "PENDING").length;
     const confirmed = appointments.filter((a) => a.status === "CONFIRMED").length;
     const completed = appointments.filter((a) => a.status === "COMPLETED").length;
+    const reviewCount = reviews.length;
+    const averageRating = reviewCount
+      ? reviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / reviewCount
+      : 0;
     return {
       totalSlots: availabilities.length,
       openSlots,
@@ -227,8 +241,18 @@ export default function ProviderDashboard() {
       confirmed,
       completed,
       totalBookings: appointments.length,
+      reviewCount,
+      averageRating,
     };
-  }, [availabilities, appointments]);
+  }, [availabilities, appointments, reviews]);
+
+  const reviewsByAppointment = useMemo(() => {
+    const map = {};
+    reviews.forEach((r) => {
+      if (r.appointmentId) map[r.appointmentId] = r;
+    });
+    return map;
+  }, [reviews]);
 
   const filteredBookings = useMemo(() => {
     if (bookingFilter === "ALL") return appointments;
@@ -261,6 +285,12 @@ export default function ProviderDashboard() {
       label: "Client Bookings",
       icon: FiCalendar,
       count: stats.pending > 0 ? stats.pending : stats.totalBookings,
+    },
+    {
+      sectionId: "reviews",
+      label: "Client Reviews",
+      icon: FiStar,
+      count: stats.reviewCount,
     },
     { to: "/provider-setup", label: "Service & Pricing", icon: FiSettings },
     { to: "/profile", label: "Account Profile", icon: FiUser },
@@ -370,20 +400,31 @@ export default function ProviderDashboard() {
                       status={availabilities.length > 0 ? "ACTIVE" : "SETUP"}
                     />
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">
-                    {[provider?.city, provider?.state].filter(Boolean).join(", ")}
-                    {provider?.servicePricing
-                      ? ` · $${provider.servicePricing}`
-                      : ""}
+                  <p className="text-xs text-slate-500 mt-0.5 truncate flex flex-wrap items-center gap-x-2">
+                    <span>
+                      {[provider?.city, provider?.state].filter(Boolean).join(", ")}
+                      {provider?.servicePricing
+                        ? ` · $${provider.servicePricing}`
+                        : ""}
+                    </span>
+                    <span aria-hidden="true">·</span>
+                    <span className="inline-flex items-center gap-1 text-slate-700 font-medium tabular-nums">
+                      <FiStar className="w-3.5 h-3.5 text-amber-500 fill-amber-400" aria-hidden="true" />
+                      {stats.reviewCount > 0
+                        ? `${stats.averageRating.toFixed(1)} (${stats.reviewCount} ${
+                            stats.reviewCount === 1 ? "review" : "reviews"
+                          })`
+                        : "No reviews yet"}
+                    </span>
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setActiveSection("availability")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                     activeSection === "availability"
                       ? "bg-indigo-600 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -394,13 +435,24 @@ export default function ProviderDashboard() {
                 <button
                   type="button"
                   onClick={() => setActiveSection("bookings")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                     activeSection === "bookings"
                       ? "bg-indigo-600 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
                   Bookings ({appointments.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection("reviews")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                    activeSection === "reviews"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  Reviews ({stats.reviewCount})
                 </button>
               </div>
             </div>
@@ -654,6 +706,7 @@ export default function ProviderDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredBookings.map((appt) => {
                       const isBusy = updatingBookingId === appt.id;
+                      const bookingReview = reviewsByAppointment[appt.id];
                       return (
                         <div
                           key={appt.id}
@@ -690,6 +743,36 @@ export default function ProviderDashboard() {
                                 </span>
                               </div>
                             </div>
+
+                            {bookingReview && (
+                              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs font-semibold text-slate-800">
+                                    Client Review
+                                  </span>
+                                  <div
+                                    className="inline-flex items-center gap-0.5"
+                                    aria-label={`${bookingReview.rating} out of 5 stars`}
+                                  >
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <FiStar
+                                        key={star}
+                                        className={`w-3 h-3 ${
+                                          star <= bookingReview.rating
+                                            ? "text-amber-500 fill-amber-400"
+                                            : "text-slate-200 fill-slate-100"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                                {bookingReview.comment && (
+                                  <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed">
+                                    {bookingReview.comment}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
@@ -738,6 +821,103 @@ export default function ProviderDashboard() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Client Reviews Section */}
+            {(activeSection === "overview" || activeSection === "reviews") && (
+              <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-slate-900">
+                      Client Reviews
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Verified feedback submitted by clients after completed appointments.
+                    </p>
+                  </div>
+                  {stats.reviewCount > 0 && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className="inline-flex items-center gap-0.5" aria-hidden="true">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <FiStar
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= Math.round(stats.averageRating)
+                                ? "text-amber-500 fill-amber-400"
+                                : "text-slate-200 fill-slate-100"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="font-semibold text-slate-900 font-mono tabular-nums">
+                        {stats.averageRating.toFixed(1)}
+                      </span>
+                      <span className="text-xs text-slate-500 tabular-nums">
+                        ({stats.reviewCount}{" "}
+                        {stats.reviewCount === 1 ? "review" : "reviews"})
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {reviews.length === 0 ? (
+                  <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center">
+                    <FiMessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm font-medium text-slate-900">
+                      No customer reviews yet
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Reviews left by clients after completed sessions will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="py-4 first:pt-0 last:pb-0 space-y-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center shrink-0">
+                              {(review.reviewer || "C").slice(0, 2).toUpperCase()}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-slate-900 truncate">
+                                {review.reviewer}
+                              </p>
+                              <p className="text-xs text-slate-400 tabular-nums">
+                                Appointment #{review.appointmentId} ·{" "}
+                                {dayjs(review.createdAt).format("MMM D, YYYY")}
+                              </p>
+                            </div>
+                          </div>
+                          <div
+                            className="inline-flex items-center gap-1 shrink-0"
+                            aria-label={`${review.rating} out of 5 stars`}
+                          >
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <FiStar
+                                key={star}
+                                className={`w-3.5 h-3.5 ${
+                                  star <= review.rating
+                                    ? "text-amber-500 fill-amber-400"
+                                    : "text-slate-200 fill-slate-100"
+                                }`}
+                              />
+                            ))}
+                            <span className="ml-1 text-xs font-mono font-semibold text-slate-700 tabular-nums">
+                              {review.rating}.0
+                            </span>
+                          </div>
+                        </div>
+                        {review.comment && (
+                          <p className="text-sm text-slate-600 leading-relaxed pl-10">
+                            {review.comment}
+                          </p>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </section>
