@@ -183,16 +183,13 @@ export default function Providers() {
     : null;
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#faf9fc]">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50">
       {/* Header Band */}
-      <div className="bg-white border-b border-slate-200/80 saas-ambient-header">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-9">
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-700 mb-1.5">
-                Verified Directory
-              </p>
-              <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-900">
                 Service Providers
               </h1>
               <p className="mt-1.5 text-sm text-slate-600">
@@ -200,7 +197,7 @@ export default function Providers() {
                 book your appointment.
               </p>
             </div>
-            <p className="text-sm font-medium text-slate-600 tabular-nums">
+            <p className="text-sm text-slate-500 tabular-nums">
               {loading
                 ? "Loading..."
                 : `${totalElements} provider${totalElements === 1 ? "" : "s"} listed`}
@@ -210,7 +207,7 @@ export default function Providers() {
           {/* Search & Filter Toolbar */}
           <form
             onSubmit={handleSearchSubmit}
-            className="mt-6 saas-card p-3 flex flex-col xl:flex-row gap-3 items-stretch xl:items-center"
+            className="mt-6 flex flex-col xl:flex-row gap-3 items-stretch xl:items-center"
           >
             <div className="relative flex-1 min-w-0">
               <FiSearch
@@ -222,7 +219,7 @@ export default function Providers() {
                 placeholder="Search by service, city, or provider name..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="saas-input pl-10 pr-9 py-2.5 text-sm"
+                className="w-full pl-10 pr-9 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
               />
               {(searchInput || searchTerm) && (
                 <button
@@ -244,7 +241,7 @@ export default function Providers() {
               <div
                 role="group"
                 aria-label="Search scope"
-                className="flex items-center gap-1 p-1 bg-slate-100/90 rounded-xl border border-slate-200/60"
+                className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg"
               >
                 {SEARCH_TYPES.map((t) => (
                   <button
@@ -254,9 +251,9 @@ export default function Providers() {
                       setSearchType(t.value);
                       setCurrentPage(0);
                     }}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap shrink-0 ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
                       searchType === t.value
-                        ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm"
+                        ? "bg-white text-slate-900 shadow-sm"
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
@@ -279,7 +276,7 @@ export default function Providers() {
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
                   placeholder="Any"
-                  className="saas-input pl-12 pr-7 py-2.5 text-sm font-mono tabular-nums"
+                  className="w-full pl-12 pr-7 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                 />
                 {maxPrice && (
                   <button
@@ -295,7 +292,7 @@ export default function Providers() {
 
               <button
                 type="submit"
-                className="saas-btn-primary px-5 py-2.5 text-sm whitespace-nowrap shrink-0"
+                className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors whitespace-nowrap shrink-0"
               >
                 Search
               </button>
@@ -305,9 +302,9 @@ export default function Providers() {
       </div>
 
       {/* Directory Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-9">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {err && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-sm mb-6">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm mb-6">
             {err}
           </div>
         )}
@@ -317,23 +314,21 @@ export default function Providers() {
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="saas-card overflow-hidden animate-pulse"
+                className="bg-white border border-slate-200 rounded-xl overflow-hidden animate-pulse"
               >
                 <div className="aspect-[4/3] bg-slate-100" />
                 <div className="p-5 space-y-3">
-                  <div className="h-5 bg-slate-100 rounded-lg w-3/4" />
-                  <div className="h-3.5 bg-slate-100 rounded-lg w-1/2" />
-                  <div className="h-10 bg-slate-100 rounded-lg w-full" />
+                  <div className="h-5 bg-slate-100 rounded w-3/4" />
+                  <div className="h-3.5 bg-slate-100 rounded w-1/2" />
+                  <div className="h-10 bg-slate-100 rounded w-full" />
                 </div>
               </div>
             ))}
           </div>
         ) : filteredProviders.length === 0 ? (
-          <div className="saas-card p-12 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-violet-50 border border-violet-100 text-violet-600 flex items-center justify-center mx-auto mb-3">
-              <FiSearch className="w-5 h-5" />
-            </div>
-            <h2 className="font-display text-base font-bold text-slate-900">
+          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
+            <FiSearch className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+            <h2 className="text-base font-semibold text-slate-900">
               No providers match your filters
             </h2>
             <p className="text-sm text-slate-500 mt-1">
@@ -347,7 +342,7 @@ export default function Providers() {
               <button
                 type="button"
                 onClick={clearSearch}
-                className="saas-btn-secondary mt-4 px-4 py-2 text-sm text-violet-700 border-violet-200 bg-violet-50/70"
+                className="mt-4 px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
               >
                 Reset all filters
               </button>
@@ -368,16 +363,16 @@ export default function Providers() {
                 return (
                   <article
                     key={provider.id}
-                    className="saas-card-interactive overflow-hidden flex flex-col justify-between group"
+                    className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-indigo-300 hover:shadow-sm transition-all flex flex-col justify-between"
                   >
                     <div>
                       <div className="aspect-[4/3] bg-slate-100 overflow-hidden border-b border-slate-100">
                         {showFallback ? (
-                          <div className="w-full h-full bg-gradient-to-br from-violet-50/80 via-slate-50 to-purple-100/70 flex flex-col items-center justify-center p-6 text-center">
-                            <div className="w-13 h-13 p-3.5 rounded-2xl bg-white border border-violet-200/70 shadow-sm flex items-center justify-center text-violet-600 mb-2.5 group-hover:scale-105 transition-transform">
-                              <FiBriefcase className="w-6 h-6" aria-hidden="true" />
+                          <div className="w-full h-full bg-gradient-to-br from-slate-100 to-indigo-50 flex flex-col items-center justify-center p-6 text-center">
+                            <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-indigo-600 mb-2">
+                              <FiBriefcase className="w-5 h-5" aria-hidden="true" />
                             </div>
-                            <span className="text-xs font-semibold text-slate-600">
+                            <span className="text-xs font-medium text-slate-500">
                               {provider.user?.username || "Verified Provider"}
                             </span>
                           </div>
@@ -392,24 +387,22 @@ export default function Providers() {
                                 [provider.id]: true,
                               }))
                             }
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                            className="w-full h-full object-cover"
                           />
                         )}
                       </div>
 
                       <div className="p-5">
-                        <h2 className="font-display text-lg font-bold text-slate-900 group-hover:text-violet-700 transition-colors">
+                        <h2 className="text-lg font-semibold text-slate-900">
                           {provider.serviceName}
                         </h2>
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-                          <span className="font-medium text-slate-700">
-                            {provider.user?.username || "Specialist"}
-                          </span>
+                          <span>{provider.user?.username || "Specialist"}</span>
                           {provider.city && (
                             <>
                               <span aria-hidden="true">·</span>
                               <span className="inline-flex items-center gap-1">
-                                <FiMapPin className="w-3 h-3 text-violet-500" aria-hidden="true" />
+                                <FiMapPin className="w-3 h-3" aria-hidden="true" />
                                 {provider.city}
                                 {provider.state ? `, ${provider.state}` : ""}
                               </span>
@@ -418,7 +411,7 @@ export default function Providers() {
                         </div>
 
                         {/* Clean Rating & Review Trigger */}
-                        <div className="mt-3.5 flex items-center justify-between gap-2 text-xs">
+                        <div className="mt-3 flex items-center justify-between gap-2 text-xs">
                           <div
                             className="flex items-center gap-1.5"
                             aria-label={
@@ -441,7 +434,7 @@ export default function Providers() {
                             <button
                               type="button"
                               onClick={() => setActiveReviewsProvider(provider)}
-                              className="inline-flex items-center gap-1 font-semibold text-violet-600 hover:text-violet-700 whitespace-nowrap"
+                              className="inline-flex items-center gap-1 font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
                             >
                               <FiMessageSquare className="w-3 h-3" aria-hidden="true" />
                               <span>Read reviews</span>
@@ -458,7 +451,7 @@ export default function Providers() {
                     </div>
 
                     <div className="px-5 py-3.5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between gap-3">
-                      <span className="text-sm font-bold text-slate-900 font-mono tabular-nums">
+                      <span className="text-sm font-semibold text-slate-900 font-mono tabular-nums">
                         {provider.servicePricing
                           ? `$${provider.servicePricing}`
                           : "Standard consultation"}
@@ -466,7 +459,7 @@ export default function Providers() {
                       <button
                         type="button"
                         onClick={() => handleProviderClick(provider)}
-                        className="saas-btn-primary px-3.5 py-2 text-xs whitespace-nowrap shrink-0"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
                       >
                         <span>Select Time</span>
                         <FiArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
@@ -493,17 +486,17 @@ export default function Providers() {
       {/* Client Reviews Drawer Modal */}
       {activeReviewsProvider && modalRatingInfo && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="provider-reviews-title"
         >
-          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-modal-in">
-            <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/50 flex items-start justify-between gap-4">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4">
               <div>
                 <h2
                   id="provider-reviews-title"
-                  className="font-display text-base font-bold text-slate-900"
+                  className="text-base font-semibold text-slate-900"
                 >
                   {activeReviewsProvider.serviceName}
                 </h2>
@@ -522,7 +515,7 @@ export default function Providers() {
               <button
                 type="button"
                 onClick={() => setActiveReviewsProvider(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
                 aria-label="Close reviews"
               >
                 <FiX className="w-5 h-5" />
@@ -533,12 +526,12 @@ export default function Providers() {
               {modalRatingInfo.reviews.map((review) => (
                 <div key={review.id} className="py-4 space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-8 h-8 rounded-xl bg-violet-50 border border-violet-100 text-xs font-bold text-violet-700 flex items-center justify-center shrink-0">
+                    <div className="flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center shrink-0">
                         {(review.reviewer || "C").slice(0, 2).toUpperCase()}
                       </span>
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">
+                        <p className="text-sm font-medium text-slate-900">
                           {review.reviewer}
                         </p>
                         <p className="text-xs text-slate-400 tabular-nums">
@@ -557,7 +550,7 @@ export default function Providers() {
                     </div>
                   </div>
                   {review.comment && (
-                    <p className="text-sm text-slate-600 leading-relaxed pl-10">
+                    <p className="text-sm text-slate-600 leading-relaxed">
                       {review.comment}
                     </p>
                   )}
@@ -565,11 +558,11 @@ export default function Providers() {
               ))}
             </div>
 
-            <div className="px-6 py-4 bg-slate-50/70 border-t border-slate-200/80 flex items-center justify-end gap-3">
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setActiveReviewsProvider(null)}
-                className="saas-btn-secondary px-4 py-2 text-sm"
+                className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50"
               >
                 Close
               </button>
@@ -580,7 +573,7 @@ export default function Providers() {
                   setActiveReviewsProvider(null);
                   handleProviderClick(target);
                 }}
-                className="saas-btn-primary px-4 py-2 text-sm"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
               >
                 <span>Select Time</span>
                 <FiArrowRight className="w-4 h-4" />

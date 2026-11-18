@@ -418,7 +418,7 @@ export default function AdminDashboard() {
             type="button"
             onClick={() => fetchAdminData(true)}
             disabled={refreshing}
-            className="saas-btn-secondary px-3 py-2 text-sm whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-60 transition-colors whitespace-nowrap"
           >
             <FiRefreshCw
               className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
@@ -428,7 +428,7 @@ export default function AdminDashboard() {
           </button>
           <Link
             to="/admin/providers"
-            className="saas-btn-primary px-4 py-2 text-sm whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
           >
             <FiBriefcase className="w-4 h-4" aria-hidden="true" />
             <span>Manage Providers</span>
@@ -439,7 +439,7 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         {/* Workspace Section Switcher & Sync Timestamp */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-1 p-1 bg-slate-200/70 border border-slate-200/80 rounded-xl self-start overflow-x-auto max-w-full">
+          <div className="inline-flex items-center gap-1 p-1 bg-slate-200/70 rounded-lg self-start overflow-x-auto max-w-full">
             {[
               { id: "overview", label: "Overview" },
               { id: "users", label: "Users", count: usersTotalElements },
@@ -460,19 +460,15 @@ export default function AdminDashboard() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveSection(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap inline-flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap inline-flex items-center gap-1.5 ${
                     active
-                      ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm"
+                      ? "bg-white text-slate-900 shadow-sm"
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   <span>{tab.label}</span>
                   {typeof tab.count === "number" && (
-                    <span
-                      className={`font-mono tabular-nums ${
-                        active ? "text-violet-100" : "text-slate-500"
-                      }`}
-                    >
+                    <span className="font-mono tabular-nums text-slate-400">
                       {tab.count}
                     </span>
                   )}
@@ -491,14 +487,14 @@ export default function AdminDashboard() {
         {error && (
           <div
             role="alert"
-            className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
           >
             <span>{error}</span>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => fetchAdminData(true)}
-                className="px-3 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-medium transition-colors"
+                className="px-3 py-1 rounded-md bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-medium transition-colors"
               >
                 Retry
               </button>
@@ -515,7 +511,7 @@ export default function AdminDashboard() {
         )}
 
         {notice && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between gap-4">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
             <span>{notice}</span>
             <button
               type="button"
@@ -533,17 +529,15 @@ export default function AdminDashboard() {
           <button
             type="button"
             onClick={() => setActiveSection("users")}
-            className="saas-card-interactive p-5 text-left"
+            className="bg-white border border-slate-200 rounded-xl p-5 text-left hover:border-indigo-300 transition-colors"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-slate-500">
                 Total Users
               </span>
-              <span className="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
-                <FiUsers className="w-4 h-4" aria-hidden="true" />
-              </span>
+              <FiUsers className="w-4 h-4 text-slate-400" aria-hidden="true" />
             </div>
-            <p className="mt-2.5 text-2xl font-bold text-slate-900 font-mono tabular-nums">
+            <p className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
               {loading ? "—" : totalUsersDisplay}
             </p>
             <p className="mt-1 text-xs text-slate-500">
@@ -554,17 +548,18 @@ export default function AdminDashboard() {
           <button
             type="button"
             onClick={() => setActiveSection("providers")}
-            className="saas-card-interactive p-5 text-left"
+            className="bg-white border border-slate-200 rounded-xl p-5 text-left hover:border-indigo-300 transition-colors"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-slate-500">
                 Active Providers
               </span>
-              <span className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                <FiBriefcase className="w-4 h-4" aria-hidden="true" />
-              </span>
+              <FiBriefcase
+                className="w-4 h-4 text-indigo-500"
+                aria-hidden="true"
+              />
             </div>
-            <p className="mt-2.5 text-2xl font-bold text-violet-700 font-mono tabular-nums">
+            <p className="mt-2 text-2xl font-bold text-indigo-600 font-mono tabular-nums">
               {loading ? "—" : totalProvidersDisplay}
             </p>
             <p className="mt-1 text-xs text-slate-500">
@@ -575,17 +570,18 @@ export default function AdminDashboard() {
           <button
             type="button"
             onClick={() => setActiveSection("appointments")}
-            className="saas-card-interactive p-5 text-left"
+            className="bg-white border border-slate-200 rounded-xl p-5 text-left hover:border-indigo-300 transition-colors"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-slate-500">
                 Total Appointments
               </span>
-              <span className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
-                <FiCalendar className="w-4 h-4" aria-hidden="true" />
-              </span>
+              <FiCalendar
+                className="w-4 h-4 text-slate-400"
+                aria-hidden="true"
+              />
             </div>
-            <p className="mt-2.5 text-2xl font-bold text-slate-900 font-mono tabular-nums">
+            <p className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
               {loading ? "—" : totalAppointmentsDisplay}
             </p>
             <p className="mt-1 text-xs text-slate-500">
@@ -599,17 +595,18 @@ export default function AdminDashboard() {
               setAppointmentStatusFilter("UPCOMING");
               setActiveSection("appointments");
             }}
-            className="saas-card-interactive p-5 text-left"
+            className="bg-white border border-slate-200 rounded-xl p-5 text-left hover:border-indigo-300 transition-colors"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-slate-500">
                 Upcoming Sessions
               </span>
-              <span className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <FiCalendar className="w-4 h-4" aria-hidden="true" />
-              </span>
+              <FiCalendar
+                className="w-4 h-4 text-emerald-500"
+                aria-hidden="true"
+              />
             </div>
-            <p className="mt-2.5 text-2xl font-bold text-emerald-600 font-mono tabular-nums">
+            <p className="mt-2 text-2xl font-bold text-emerald-600 font-mono tabular-nums">
               {loading ? "—" : upcomingDisplay}
             </p>
             <p className="mt-1 text-xs text-slate-500">
@@ -623,10 +620,10 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Booking Status Distribution */}
-              <div className="lg:col-span-5 saas-card p-6 space-y-5">
+              <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="font-display font-bold text-slate-900">
+                    <h2 className="font-semibold text-slate-900">
                       Booking Status Breakdown
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -643,7 +640,7 @@ export default function AdminDashboard() {
                     {[1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
-                        className="h-8 bg-slate-100 rounded-xl animate-pulse"
+                        className="h-8 bg-slate-100 rounded animate-pulse"
                       />
                     ))}
                   </div>
@@ -654,25 +651,25 @@ export default function AdminDashboard() {
                         id: "CONFIRMED",
                         label: "Confirmed",
                         count: statusBreakdown.CONFIRMED,
-                        color: "bg-gradient-to-r from-emerald-500 to-teal-500",
+                        color: "bg-emerald-500",
                       },
                       {
                         id: "PENDING",
                         label: "Pending",
                         count: statusBreakdown.PENDING,
-                        color: "bg-gradient-to-r from-amber-500 to-orange-400",
+                        color: "bg-amber-500",
                       },
                       {
                         id: "COMPLETED",
                         label: "Completed",
                         count: statusBreakdown.COMPLETED,
-                        color: "bg-gradient-to-r from-violet-600 to-purple-500",
+                        color: "bg-sky-500",
                       },
                       {
                         id: "CANCELLED",
                         label: "Cancelled",
                         count: statusBreakdown.CANCELLED,
-                        color: "bg-gradient-to-r from-rose-500 to-red-500",
+                        color: "bg-rose-500",
                       },
                     ].map((row) => {
                       const pct = appointments.length
@@ -686,19 +683,19 @@ export default function AdminDashboard() {
                             setAppointmentStatusFilter(row.id);
                             setActiveSection("appointments");
                           }}
-                          className="w-full text-left space-y-1.5 p-2.5 -mx-2.5 rounded-xl hover:bg-violet-50/45 transition-colors"
+                          className="w-full text-left space-y-1.5 p-2 -mx-2 rounded-lg hover:bg-slate-50 transition-colors"
                         >
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-slate-700">
+                            <span className="font-medium text-slate-700">
                               {row.label}
                             </span>
                             <span className="font-mono tabular-nums text-slate-500">
                               {row.count} ({pct}%)
                             </span>
                           </div>
-                          <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all duration-300 ${row.color}`}
+                              className={`h-full rounded-full ${row.color}`}
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -710,10 +707,10 @@ export default function AdminDashboard() {
               </div>
 
               {/* Recent Appointments Table */}
-              <div className="lg:col-span-7 saas-card overflow-hidden flex flex-col">
-                <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/40 flex items-center justify-between">
+              <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col">
+                <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                   <div>
-                    <h2 className="font-display font-bold text-slate-900">
+                    <h2 className="font-semibold text-slate-900">
                       Recent Bookings
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -723,7 +720,7 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setActiveSection("appointments")}
-                    className="text-xs font-semibold text-violet-600 hover:text-violet-700 inline-flex items-center gap-1 whitespace-nowrap"
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1 whitespace-nowrap"
                   >
                     <span>All bookings</span>
                     <FiArrowRight className="w-3.5 h-3.5" />
@@ -735,7 +732,7 @@ export default function AdminDashboard() {
                     {[1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
-                        className="h-10 bg-slate-100 rounded-xl animate-pulse"
+                        className="h-10 bg-slate-100 rounded animate-pulse"
                       />
                     ))}
                   </div>
@@ -747,7 +744,7 @@ export default function AdminDashboard() {
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                       <thead>
-                        <tr className="border-b border-slate-100 text-xs font-semibold text-slate-500">
+                        <tr className="border-b border-slate-100 text-xs font-medium text-slate-500">
                           <th className="text-left py-2.5 px-6">Client</th>
                           <th className="text-left py-2.5 px-4">Service</th>
                           <th className="text-left py-2.5 px-4">Scheduled</th>
@@ -764,9 +761,9 @@ export default function AdminDashboard() {
                                 data: appt,
                               })
                             }
-                            className="hover:bg-violet-50/35 cursor-pointer transition-colors"
+                            className="hover:bg-slate-50/80 cursor-pointer transition-colors"
                           >
-                            <td className="py-3 px-6 font-semibold text-slate-900 whitespace-nowrap">
+                            <td className="py-3 px-6 font-medium text-slate-900 whitespace-nowrap">
                               {appt.user?.username || "Unknown"}
                             </td>
                             <td className="py-3 px-4 text-slate-600 max-w-[200px] truncate">
@@ -791,10 +788,10 @@ export default function AdminDashboard() {
 
             {/* Bottom 2-Column Directory Snapshots */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="saas-card overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/40 flex items-center justify-between">
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                   <div>
-                    <h2 className="font-display font-bold text-slate-900">
+                    <h2 className="font-semibold text-slate-900">
                       Service Providers
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -804,7 +801,7 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setActiveSection("providers")}
-                    className="text-xs font-semibold text-violet-600 hover:text-violet-700 inline-flex items-center gap-1 whitespace-nowrap"
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1 whitespace-nowrap"
                   >
                     <span>Manage all</span>
                     <FiArrowRight className="w-3.5 h-3.5" />
@@ -816,7 +813,7 @@ export default function AdminDashboard() {
                       {[1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className="h-11 bg-slate-100 rounded-xl animate-pulse"
+                          className="h-11 bg-slate-100 rounded animate-pulse"
                         />
                       ))}
                     </div>
@@ -832,10 +829,10 @@ export default function AdminDashboard() {
                         onClick={() =>
                           setInspectRecord({ type: "provider", data: p })
                         }
-                        className="w-full text-left px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-violet-50/35 transition-colors"
+                        className="w-full text-left px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70 transition-colors"
                       >
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-900 truncate">
+                          <p className="text-sm font-medium text-slate-900 truncate">
                             {p.serviceName}
                           </p>
                           <p className="text-xs text-slate-500 mt-0.5 truncate">
@@ -843,7 +840,7 @@ export default function AdminDashboard() {
                             {p.city ? ` · ${p.city}` : ""}
                           </p>
                         </div>
-                        <span className="text-xs font-mono font-semibold text-violet-700 tabular-nums shrink-0">
+                        <span className="text-xs font-mono text-slate-600 tabular-nums shrink-0">
                           {p.servicePricing ? `$${p.servicePricing}` : "—"}
                         </span>
                       </button>
@@ -852,10 +849,10 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="saas-card overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/40 flex items-center justify-between">
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
                   <div>
-                    <h2 className="font-display font-bold text-slate-900">
+                    <h2 className="font-semibold text-slate-900">
                       Registered Accounts
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -865,7 +862,7 @@ export default function AdminDashboard() {
                   <button
                     type="button"
                     onClick={() => setActiveSection("users")}
-                    className="text-xs font-semibold text-violet-600 hover:text-violet-700 inline-flex items-center gap-1 whitespace-nowrap"
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1 whitespace-nowrap"
                   >
                     <span>View all</span>
                     <FiArrowRight className="w-3.5 h-3.5" />
@@ -877,7 +874,7 @@ export default function AdminDashboard() {
                       {[1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className="h-11 bg-slate-100 rounded-xl animate-pulse"
+                          className="h-11 bg-slate-100 rounded animate-pulse"
                         />
                       ))}
                     </div>
@@ -889,14 +886,14 @@ export default function AdminDashboard() {
                     users.slice(0, 5).map((u) => (
                       <div
                         key={u.id}
-                        className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-violet-50/35 transition-colors"
+                        className="px-6 py-3.5 flex items-center justify-between gap-4 hover:bg-slate-50/70"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-xs font-bold text-violet-700 shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-semibold text-slate-700 shrink-0">
                             {(u.username || "U").slice(0, 2).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold text-slate-900 truncate">
+                            <p className="text-sm font-medium text-slate-900 truncate">
                               {u.username}
                             </p>
                             <p className="text-xs text-slate-500 truncate">
@@ -916,25 +913,25 @@ export default function AdminDashboard() {
 
         {/* USERS SECTION */}
         {activeSection === "users" && (
-          <section className="saas-card p-6">
+          <section className="bg-white border border-slate-200 rounded-xl p-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
               <div>
-                <h2 className="font-display font-bold text-slate-900">User Accounts</h2>
+                <h2 className="font-semibold text-slate-900">User Accounts</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Manage client, provider, and administrator accounts.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-1 p-1 bg-slate-100/90 border border-slate-200/70 rounded-xl">
+                <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
                   {ROLE_TABS.map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => setUserRoleFilter(tab.id)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                         userRoleFilter === tab.id
-                          ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm"
+                          ? "bg-white text-slate-900 shadow-sm"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
@@ -950,7 +947,7 @@ export default function AdminDashboard() {
                     value={userSearch}
                     onChange={(e) => setUserSearch(e.target.value)}
                     placeholder="Search username or email..."
-                    className="saas-input pl-9 pr-3 py-1.5 text-sm"
+                    className="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
 
@@ -961,7 +958,7 @@ export default function AdminDashboard() {
                     setUsersPageSize(Number(e.target.value));
                     setUsersPage(0);
                   }}
-                  className="saas-input w-auto px-2.5 py-1.5 text-xs font-medium text-slate-700"
+                  className="px-2.5 py-1.5 text-xs font-medium border border-slate-200 rounded-lg bg-white text-slate-700"
                 >
                   <option value={10}>10 / page</option>
                   <option value={25}>25 / page</option>
@@ -983,7 +980,7 @@ export default function AdminDashboard() {
                     )
                   }
                   disabled={filteredUsers.length === 0}
-                  className="saas-btn-secondary px-3 py-1.5 text-xs whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 whitespace-nowrap"
                 >
                   <FiDownload className="w-3.5 h-3.5" />
                   <span>Export CSV</span>
@@ -996,7 +993,7 @@ export default function AdminDashboard() {
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="h-12 bg-slate-100 rounded-xl animate-pulse"
+                    className="h-12 bg-slate-100 rounded-lg animate-pulse"
                   />
                 ))}
               </div>
@@ -1017,18 +1014,18 @@ export default function AdminDashboard() {
                       const isSelf =
                         currentUsername && u.username === currentUsername;
                       return (
-                        <tr key={u.id} className="hover:bg-violet-50/30 transition-colors">
+                        <tr key={u.id} className="hover:bg-slate-50/70">
                           <td className="py-3 px-4 font-mono text-xs text-slate-400 tabular-nums">
                             #{u.id}
                           </td>
                           <td className="py-3 px-4 font-medium text-slate-900">
                             <div className="flex items-center gap-2.5">
-                              <span className="w-7 h-7 rounded-xl bg-violet-50 border border-violet-100 text-xs font-bold text-violet-700 flex items-center justify-center shrink-0">
+                              <span className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center shrink-0">
                                 {(u.username || "U").slice(0, 2).toUpperCase()}
                               </span>
-                              <span className="font-semibold">{u.username}</span>
+                              <span>{u.username}</span>
                               {isSelf && (
-                                <span className="text-xs text-violet-600 font-medium">
+                                <span className="text-xs text-slate-400 font-normal">
                                   (you)
                                 </span>
                               )}
@@ -1043,7 +1040,7 @@ export default function AdminDashboard() {
                               <button
                                 type="button"
                                 onClick={() => openEditUserModal(u)}
-                                className="saas-btn-secondary px-2.5 py-1.5 text-xs whitespace-nowrap"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
                               >
                                 <FiEdit2 className="w-3.5 h-3.5" />
                                 <span>Edit</span>
@@ -1063,7 +1060,7 @@ export default function AdminDashboard() {
                                     label: u.username,
                                   })
                                 }
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
                               >
                                 <FiTrash2 className="w-3.5 h-3.5" />
                                 <span>Delete</span>
@@ -1102,10 +1099,10 @@ export default function AdminDashboard() {
 
         {/* PROVIDERS SECTION */}
         {activeSection === "providers" && (
-          <section className="saas-card p-6">
+          <section className="bg-white border border-slate-200 rounded-xl p-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
               <div>
-                <h2 className="font-display font-bold text-slate-900">
+                <h2 className="font-semibold text-slate-900">
                   Service Providers
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -1121,7 +1118,7 @@ export default function AdminDashboard() {
                     value={providerSearch}
                     onChange={(e) => setProviderSearch(e.target.value)}
                     placeholder="Search service, provider, city..."
-                    className="saas-input pl-9 pr-3 py-1.5 text-sm"
+                    className="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
 
@@ -1132,7 +1129,7 @@ export default function AdminDashboard() {
                     setProvidersPageSize(Number(e.target.value));
                     setProvidersPage(0);
                   }}
-                  className="saas-input w-auto px-2.5 py-1.5 text-xs font-medium text-slate-700"
+                  className="px-2.5 py-1.5 text-xs font-medium border border-slate-200 rounded-lg bg-white text-slate-700"
                 >
                   <option value={10}>10 / page</option>
                   <option value={25}>25 / page</option>
@@ -1156,7 +1153,7 @@ export default function AdminDashboard() {
                     )
                   }
                   disabled={filteredProviders.length === 0}
-                  className="saas-btn-secondary px-3 py-1.5 text-xs whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 whitespace-nowrap"
                 >
                   <FiDownload className="w-3.5 h-3.5" />
                   <span>Export CSV</span>
@@ -1164,7 +1161,7 @@ export default function AdminDashboard() {
 
                 <Link
                   to="/admin/providers"
-                  className="saas-btn-primary px-3 py-1.5 text-xs whitespace-nowrap"
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 whitespace-nowrap"
                 >
                   Directory Console
                 </Link>
@@ -1176,7 +1173,7 @@ export default function AdminDashboard() {
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="h-12 bg-slate-100 rounded-xl animate-pulse"
+                    className="h-12 bg-slate-100 rounded-lg animate-pulse"
                   />
                 ))}
               </div>
@@ -1195,12 +1192,12 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredProviders.map((p) => (
-                      <tr key={p.id} className="hover:bg-violet-50/30 transition-colors">
+                      <tr key={p.id} className="hover:bg-slate-50/70">
                         <td className="py-3 px-4 font-mono text-xs text-slate-400 tabular-nums">
                           #{p.id}
                         </td>
                         <td className="py-3 px-4 max-w-xs">
-                          <p className="font-semibold text-slate-900 truncate">
+                          <p className="font-medium text-slate-900 truncate">
                             {p.serviceName}
                           </p>
                           <p className="text-xs text-slate-500 truncate">
@@ -1213,7 +1210,7 @@ export default function AdminDashboard() {
                         <td className="py-3 px-4 text-slate-600 font-mono text-xs tabular-nums whitespace-nowrap">
                           {p.phoneNumber || "—"}
                         </td>
-                        <td className="py-3 px-4 text-violet-700 font-mono font-semibold text-xs tabular-nums whitespace-nowrap">
+                        <td className="py-3 px-4 text-slate-700 font-mono text-xs tabular-nums whitespace-nowrap">
                           {p.servicePricing ? `$${p.servicePricing}` : "—"}
                         </td>
                         <td className="py-3 px-4 text-right">
@@ -1223,7 +1220,7 @@ export default function AdminDashboard() {
                               onClick={() =>
                                 setInspectRecord({ type: "provider", data: p })
                               }
-                              className="saas-btn-secondary px-2.5 py-1.5 text-xs whitespace-nowrap"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
                             >
                               <FiEye className="w-3.5 h-3.5" />
                               <span>Inspect</span>
@@ -1237,7 +1234,7 @@ export default function AdminDashboard() {
                                   label: p.serviceName,
                                 })
                               }
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100 transition-colors whitespace-nowrap"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-colors whitespace-nowrap"
                             >
                               <FiTrash2 className="w-3.5 h-3.5" />
                               <span>Delete</span>
@@ -1275,10 +1272,10 @@ export default function AdminDashboard() {
 
         {/* APPOINTMENTS SECTION */}
         {activeSection === "appointments" && (
-          <section className="saas-card p-6">
+          <section className="bg-white border border-slate-200 rounded-xl p-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
               <div>
-                <h2 className="font-display font-bold text-slate-900">
+                <h2 className="font-semibold text-slate-900">
                   All Appointments
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -1287,15 +1284,15 @@ export default function AdminDashboard() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-1 p-1 bg-slate-100/90 border border-slate-200/70 rounded-xl overflow-x-auto">
+                <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto">
                   {STATUS_TABS.map((tab) => (
                     <button
                       key={tab.id}
                       type="button"
                       onClick={() => setAppointmentStatusFilter(tab.id)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                      className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
                         appointmentStatusFilter === tab.id
-                          ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm"
+                          ? "bg-white text-slate-900 shadow-sm"
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
@@ -1311,7 +1308,7 @@ export default function AdminDashboard() {
                     value={appointmentSearch}
                     onChange={(e) => setAppointmentSearch(e.target.value)}
                     placeholder="Search client or service..."
-                    className="saas-input pl-9 pr-3 py-1.5 text-sm"
+                    className="pl-9 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
 
@@ -1322,7 +1319,7 @@ export default function AdminDashboard() {
                     setAppointmentsPageSize(Number(e.target.value));
                     setAppointmentsPage(0);
                   }}
-                  className="saas-input w-auto px-2.5 py-1.5 text-xs font-medium text-slate-700"
+                  className="px-2.5 py-1.5 text-xs font-medium border border-slate-200 rounded-lg bg-white text-slate-700"
                 >
                   <option value={10}>10 / page</option>
                   <option value={25}>25 / page</option>
@@ -1346,7 +1343,7 @@ export default function AdminDashboard() {
                     )
                   }
                   disabled={filteredAppointments.length === 0}
-                  className="saas-btn-secondary px-3 py-1.5 text-xs whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 disabled:opacity-40 whitespace-nowrap"
                 >
                   <FiDownload className="w-3.5 h-3.5" />
                   <span>Export CSV</span>
@@ -1359,7 +1356,7 @@ export default function AdminDashboard() {
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="h-12 bg-slate-100 rounded-xl animate-pulse"
+                    className="h-12 bg-slate-100 rounded-lg animate-pulse"
                   />
                 ))}
               </div>
@@ -1378,12 +1375,12 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredAppointments.map((appt) => (
-                      <tr key={appt.id} className="hover:bg-violet-50/30 transition-colors">
+                      <tr key={appt.id} className="hover:bg-slate-50/70">
                         <td className="py-3 px-4 font-mono text-xs text-slate-400 tabular-nums">
                           #{appt.id}
                         </td>
                         <td className="py-3 px-4">
-                          <p className="font-semibold text-slate-900">
+                          <p className="font-medium text-slate-900">
                             {appt.user?.username || "Unknown"}
                           </p>
                           <p className="text-xs text-slate-500">
@@ -1391,7 +1388,7 @@ export default function AdminDashboard() {
                           </p>
                         </td>
                         <td className="py-3 px-4 max-w-xs">
-                          <p className="font-semibold text-slate-900 truncate">
+                          <p className="font-medium text-slate-900 truncate">
                             {appt.provider?.serviceName || "Consultation"}
                           </p>
                           <p className="text-xs text-slate-500 truncate">
@@ -1416,7 +1413,7 @@ export default function AdminDashboard() {
                                   data: appt,
                                 })
                               }
-                              className="saas-btn-secondary px-2.5 py-1.5 text-xs whitespace-nowrap"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
                             >
                               <FiEye className="w-3.5 h-3.5" />
                               <span>Inspect</span>
@@ -1430,7 +1427,7 @@ export default function AdminDashboard() {
                                   label: `Appointment #${appt.id}`,
                                 })
                               }
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100 transition-colors whitespace-nowrap"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-colors whitespace-nowrap"
                             >
                               <FiTrash2 className="w-3.5 h-3.5" />
                               <span>Delete</span>
@@ -1470,17 +1467,17 @@ export default function AdminDashboard() {
       {/* Edit User Modal */}
       {editingUser && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="edit-user-title"
         >
-          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-modal-in">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
               <div>
                 <h3
                   id="edit-user-title"
-                  className="font-display text-base font-bold text-slate-900"
+                  className="text-base font-semibold text-slate-900"
                 >
                   Edit User Account #{editingUser.id}
                 </h3>
@@ -1491,7 +1488,7 @@ export default function AdminDashboard() {
               <button
                 type="button"
                 onClick={() => setEditingUser(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
                 aria-label="Close modal"
               >
                 <FiX className="w-5 h-5" />
@@ -1517,7 +1514,7 @@ export default function AdminDashboard() {
                       username: e.target.value,
                     })
                   }
-                  className="saas-input px-3.5 py-2 text-sm"
+                  className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
 
@@ -1536,22 +1533,22 @@ export default function AdminDashboard() {
                   onChange={(e) =>
                     setUserEditForm({ ...userEditForm, email: e.target.value })
                   }
-                  className="saas-input px-3.5 py-2 text-sm"
+                  className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setEditingUser(null)}
-                  className="saas-btn-secondary px-4 py-2 text-sm"
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingUser}
-                  className="saas-btn-primary px-4 py-2 text-sm"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
                 >
                   <FiCheck className="w-4 h-4" />
                   <span>{savingUser ? "Saving..." : "Save Changes"}</span>
@@ -1565,22 +1562,22 @@ export default function AdminDashboard() {
       {/* Inspect Detail Modal */}
       {inspectRecord && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="inspect-record-title"
         >
-          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-modal-in">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full p-6">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
-                <p className="text-xs font-mono text-violet-600 font-semibold tabular-nums">
+                <p className="text-xs font-mono text-slate-400 tabular-nums">
                   {inspectRecord.type === "provider"
                     ? `Provider #${inspectRecord.data.id}`
                     : `Appointment #${inspectRecord.data.id}`}
                 </p>
                 <h3
                   id="inspect-record-title"
-                  className="font-display text-base font-bold text-slate-900 mt-0.5"
+                  className="text-base font-semibold text-slate-900 mt-0.5"
                 >
                   {inspectRecord.type === "provider"
                     ? inspectRecord.data.serviceName
@@ -1590,7 +1587,7 @@ export default function AdminDashboard() {
               <button
                 type="button"
                 onClick={() => setInspectRecord(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
                 aria-label="Close modal"
               >
                 <FiX className="w-5 h-5" />
@@ -1607,7 +1604,7 @@ export default function AdminDashboard() {
                 <dl className="divide-y divide-slate-100 border-t border-slate-100">
                   <div className="py-2.5 flex justify-between gap-4">
                     <dt className="text-slate-500">Account</dt>
-                    <dd className="font-semibold text-slate-900">
+                    <dd className="font-medium text-slate-900">
                       {inspectRecord.data.user?.username || "—"}
                     </dd>
                   </div>
@@ -1648,7 +1645,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="py-2.5 flex justify-between gap-4">
                     <dt className="text-slate-500">Rate</dt>
-                    <dd className="font-mono font-semibold text-violet-700 tabular-nums">
+                    <dd className="font-mono font-medium text-slate-900 tabular-nums">
                       {inspectRecord.data.servicePricing
                         ? `$${inspectRecord.data.servicePricing}`
                         : "—"}
@@ -1666,7 +1663,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="py-2.5 flex justify-between gap-4">
                   <dt className="text-slate-500">Scheduled Time</dt>
-                  <dd className="font-mono text-xs font-semibold text-slate-900 tabular-nums">
+                  <dd className="font-mono text-xs font-medium text-slate-900 tabular-nums">
                     {dayjs(inspectRecord.data.appointmentDate).format(
                       "dddd, MMM D, YYYY · h:mm A"
                     )}
@@ -1674,14 +1671,14 @@ export default function AdminDashboard() {
                 </div>
                 <div className="py-2.5 flex justify-between gap-4">
                   <dt className="text-slate-500">Client</dt>
-                  <dd className="text-right text-slate-900 font-semibold">
+                  <dd className="text-right text-slate-900 font-medium">
                     {inspectRecord.data.user?.username || "Unknown"} (
                     {inspectRecord.data.user?.email || "No email"})
                   </dd>
                 </div>
                 <div className="py-2.5 flex justify-between gap-4">
                   <dt className="text-slate-500">Provider</dt>
-                  <dd className="text-right text-slate-900 font-semibold">
+                  <dd className="text-right text-slate-900 font-medium">
                     {inspectRecord.data.provider?.user?.username || "Unknown"}
                   </dd>
                 </div>
@@ -1704,7 +1701,7 @@ export default function AdminDashboard() {
               <button
                 type="button"
                 onClick={() => setInspectRecord(null)}
-                className="saas-btn-secondary px-4 py-2 text-sm"
+                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50"
               >
                 Close
               </button>

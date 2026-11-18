@@ -9,7 +9,6 @@ import {
   FiBriefcase,
   FiAlertCircle,
   FiCheckCircle,
-  FiCalendar,
 } from "react-icons/fi";
 
 export default function Register() {
@@ -96,17 +95,10 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] saas-ambient-canvas flex items-center justify-center px-4 py-12 relative overflow-hidden">
-      <div
-        className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[540px] h-[260px] rounded-full bg-purple-200/35 blur-3xl"
-        aria-hidden="true"
-      />
-      <div className="relative w-full max-w-md saas-card p-8 sm:p-9">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl shadow-sm p-8">
         <div className="mb-6">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 text-white flex items-center justify-center shadow-md shadow-violet-600/25 mb-5">
-            <FiCalendar className="w-5 h-5" aria-hidden="true" />
-          </div>
-          <h1 className="font-display text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="font-display text-2xl font-bold text-slate-900">
             Create an account
           </h1>
           <p className="mt-1.5 text-sm text-slate-600">
@@ -117,7 +109,7 @@ export default function Register() {
         {error && (
           <div
             role="alert"
-            className="mb-5 flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-700"
+            className="mb-5 flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-700"
           >
             <FiAlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
             <span>{error}</span>
@@ -127,7 +119,7 @@ export default function Register() {
         {successMessage && (
           <div
             role="status"
-            className="mb-5 flex items-start gap-2.5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700"
+            className="mb-5 flex items-start gap-2.5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700"
           >
             <FiCheckCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
             <span>{successMessage}</span>
@@ -140,14 +132,14 @@ export default function Register() {
             <span className="block text-sm font-medium text-slate-700 mb-1.5">
               Account type
             </span>
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100/90 rounded-xl border border-slate-200/60">
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg">
               <button
                 type="button"
                 onClick={() => setForm({ ...form, role: "USER" })}
                 disabled={loading}
-                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                   form.role === "USER"
-                    ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm"
+                    ? "bg-white text-slate-900 shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -158,9 +150,9 @@ export default function Register() {
                 type="button"
                 onClick={() => setForm({ ...form, role: "PROVIDER" })}
                 disabled={loading}
-                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
                   form.role === "PROVIDER"
-                    ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm"
+                    ? "bg-white text-slate-900 shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -189,10 +181,10 @@ export default function Register() {
                 value={form.username}
                 onChange={handleInputChange}
                 disabled={loading}
-                className={`saas-input pl-10 pr-3.5 py-2.5 text-sm ${
+                className={`w-full pl-10 pr-3.5 py-2.5 text-sm bg-white border rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors ${
                   validationErrors.username
                     ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500"
-                    : ""
+                    : "border-slate-300 focus:ring-indigo-500/20 focus:border-indigo-600"
                 }`}
               />
             </div>
@@ -221,10 +213,10 @@ export default function Register() {
                 value={form.email}
                 onChange={handleInputChange}
                 disabled={loading}
-                className={`saas-input pl-10 pr-3.5 py-2.5 text-sm ${
+                className={`w-full pl-10 pr-3.5 py-2.5 text-sm bg-white border rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors ${
                   validationErrors.email
                     ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500"
-                    : ""
+                    : "border-slate-300 focus:ring-indigo-500/20 focus:border-indigo-600"
                 }`}
               />
             </div>
@@ -253,10 +245,10 @@ export default function Register() {
                 value={form.password}
                 onChange={handleInputChange}
                 disabled={loading}
-                className={`saas-input pl-10 pr-3.5 py-2.5 text-sm ${
+                className={`w-full pl-10 pr-3.5 py-2.5 text-sm bg-white border rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors ${
                   validationErrors.password
                     ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500"
-                    : ""
+                    : "border-slate-300 focus:ring-indigo-500/20 focus:border-indigo-600"
                 }`}
               />
             </div>
@@ -266,7 +258,7 @@ export default function Register() {
           </div>
 
           {form.role === "PROVIDER" && (
-            <div className="p-3.5 rounded-xl bg-violet-50/80 border border-violet-200/80 text-xs text-violet-900 leading-relaxed">
+            <div className="p-3.5 rounded-lg bg-indigo-50 border border-indigo-200 text-xs text-indigo-800 leading-relaxed">
               After creating your provider account, you will be signed in
               automatically to configure your service details, location, and
               pricing.
@@ -276,7 +268,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={loading}
-            className="saas-btn-primary w-full py-2.5 px-4 text-sm mt-1"
+            className="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -289,9 +281,9 @@ export default function Register() {
           </button>
         </form>
 
-        <p className="mt-6 pt-5 border-t border-slate-100 text-center text-sm text-slate-600">
+        <p className="mt-6 text-center text-sm text-slate-600">
           Already have an account?{" "}
-          <Link to="/login" className="font-semibold text-violet-600 hover:text-violet-700">
+          <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-700">
             Sign in
           </Link>
         </p>

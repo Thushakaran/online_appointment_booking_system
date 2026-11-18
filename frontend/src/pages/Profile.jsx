@@ -220,7 +220,7 @@ export default function Profile() {
         role === "PROVIDER" ? (
           <Link
             to="/provider-setup"
-            className="saas-btn-primary px-4 py-2 text-sm whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
           >
             <FiEdit2 className="w-4 h-4" />
             <span>{provider ? "Edit Service Profile" : "Complete Service Setup"}</span>
@@ -230,7 +230,7 @@ export default function Profile() {
     >
       <div className="space-y-6">
         {err && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between gap-4">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
             <span>{err}</span>
             <button
               type="button"
@@ -244,7 +244,7 @@ export default function Profile() {
         )}
 
         {success && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between gap-4">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
             <span>{success}</span>
             <button
               type="button"
@@ -259,22 +259,22 @@ export default function Profile() {
 
         {loading ? (
           <div className="space-y-6">
-            <div className="h-32 saas-card animate-pulse" />
+            <div className="h-32 bg-white border border-slate-200 rounded-xl animate-pulse" />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-64 saas-card animate-pulse" />
-              <div className="h-64 saas-card animate-pulse" />
+              <div className="h-64 bg-white border border-slate-200 rounded-xl animate-pulse" />
+              <div className="h-64 bg-white border border-slate-200 rounded-xl animate-pulse" />
             </div>
           </div>
         ) : !me ? (
-          <div className="saas-card p-8 text-center text-sm text-slate-600">
+          <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-sm text-slate-600">
             No account data available.
           </div>
         ) : (
           <>
             {/* Profile Header Card */}
-            <div className="saas-card p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 border border-violet-200/80 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                <div className="w-16 h-16 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center overflow-hidden shrink-0">
                   {role === "PROVIDER" && provider?.profileImage ? (
                     <img
                       src={provider.profileImage}
@@ -282,7 +282,7 @@ export default function Profile() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="font-display text-xl font-bold text-violet-700">
+                    <span className="font-display text-xl font-bold text-indigo-600">
                       {(me.username || "U").slice(0, 2).toUpperCase()}
                     </span>
                   )}
@@ -308,7 +308,7 @@ export default function Profile() {
                   setIsEditing((prev) => !prev);
                   setEditForm({ username: me.username, email: me.email });
                 }}
-                className="saas-btn-secondary px-4 py-2 text-sm shrink-0 self-start sm:self-center"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors shrink-0 self-start sm:self-center"
               >
                 <FiEdit2 className="w-4 h-4" />
                 <span>{isEditing ? "Cancel Editing" : "Edit Account"}</span>
@@ -318,25 +318,25 @@ export default function Profile() {
             {/* Activity KPI Strip */}
             {role === "PROVIDER" ? (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="saas-card p-5">
+                <div className="bg-white border border-slate-200 rounded-xl p-5">
                   <p className="text-xs font-medium text-slate-500">Total Slots</p>
                   <p className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
                     {availabilities.length}
                   </p>
                 </div>
-                <div className="saas-card p-5">
+                <div className="bg-white border border-slate-200 rounded-xl p-5">
                   <p className="text-xs font-medium text-slate-500">Open Slots</p>
                   <p className="mt-2 text-2xl font-bold text-emerald-600 font-mono tabular-nums">
                     {stats.openSlots}
                   </p>
                 </div>
-                <div className="saas-card p-5">
+                <div className="bg-white border border-slate-200 rounded-xl p-5">
                   <p className="text-xs font-medium text-slate-500">Total Bookings</p>
-                  <p className="mt-2 text-2xl font-bold text-violet-700 font-mono tabular-nums">
+                  <p className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
                     {stats.total}
                   </p>
                 </div>
-                <div className="saas-card p-5">
+                <div className="bg-white border border-slate-200 rounded-xl p-5">
                   <p className="text-xs font-medium text-slate-500">Profile Status</p>
                   <div className="mt-2">
                     <StatusBadge
@@ -353,27 +353,27 @@ export default function Profile() {
               </div>
             ) : (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="saas-card p-5">
+                <div className="bg-white border border-slate-200 rounded-xl p-5">
                   <p className="text-xs font-medium text-slate-500">
                     Total Bookings
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-violet-700 font-mono tabular-nums">
+                  <p className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
                     {stats.total}
                   </p>
                 </div>
-                <div className="saas-card p-5">
+                <div className="bg-white border border-slate-200 rounded-xl p-5">
                   <p className="text-xs font-medium text-slate-500">Pending</p>
                   <p className="mt-2 text-2xl font-bold text-amber-600 font-mono tabular-nums">
                     {stats.pending}
                   </p>
                 </div>
-                <div className="saas-card p-5">
+                <div className="bg-white border border-slate-200 rounded-xl p-5">
                   <p className="text-xs font-medium text-slate-500">Completed</p>
                   <p className="mt-2 text-2xl font-bold text-emerald-600 font-mono tabular-nums">
                     {stats.completed}
                   </p>
                 </div>
-                <div className="saas-card p-5">
+                <div className="bg-white border border-slate-200 rounded-xl p-5">
                   <p className="text-xs font-medium text-slate-500">Cancelled</p>
                   <p className="mt-2 text-2xl font-bold text-rose-600 font-mono tabular-nums">
                     {stats.cancelled}
@@ -386,15 +386,15 @@ export default function Profile() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               {/* Left Column: Account Details + Provider Service Card */}
               <div className="lg:col-span-6 space-y-6">
-                <div className="saas-card p-6">
-                  <h3 className="font-display font-bold text-slate-900 mb-4">
+                <div className="bg-white border border-slate-200 rounded-xl p-6">
+                  <h3 className="font-semibold text-slate-900 mb-4">
                     Account Details
                   </h3>
 
                   {isEditing ? (
                     <form onSubmit={handleProfileUpdate} className="space-y-4">
                       {editForm.username !== me.username && (
-                        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3.5 py-2.5 rounded-xl text-xs flex items-start gap-2">
+                        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3.5 py-2.5 rounded-lg text-xs flex items-start gap-2">
                           <FiAlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                           <span>
                             Changing your username will sign you out so your session
@@ -420,7 +420,7 @@ export default function Profile() {
                             onChange={(e) =>
                               setEditForm({ ...editForm, username: e.target.value })
                             }
-                            className="saas-input pl-9 pr-3 py-2 text-sm"
+                            className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                           />
                         </div>
                       </div>
@@ -442,7 +442,7 @@ export default function Profile() {
                             onChange={(e) =>
                               setEditForm({ ...editForm, email: e.target.value })
                             }
-                            className="saas-input pl-9 pr-3 py-2 text-sm"
+                            className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                           />
                         </div>
                       </div>
@@ -451,7 +451,7 @@ export default function Profile() {
                         <button
                           type="submit"
                           disabled={savingProfile}
-                          className="saas-btn-primary px-4 py-2 text-sm"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                         >
                           <FiCheck className="w-4 h-4" />
                           <span>
@@ -461,7 +461,7 @@ export default function Profile() {
                         <button
                           type="button"
                           onClick={() => setIsEditing(false)}
-                          className="saas-btn-secondary px-4 py-2 text-sm"
+                          className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
                         >
                           Cancel
                         </button>
@@ -471,7 +471,7 @@ export default function Profile() {
                     <dl className="divide-y divide-slate-100 text-sm">
                       <div className="py-3 flex items-center justify-between gap-4">
                         <dt className="text-slate-500">Username</dt>
-                        <dd className="font-semibold text-slate-900">{me.username}</dd>
+                        <dd className="font-medium text-slate-900">{me.username}</dd>
                       </div>
                       <div className="py-3 flex items-center justify-between gap-4">
                         <dt className="text-slate-500">Email</dt>
@@ -488,14 +488,14 @@ export default function Profile() {
                 </div>
 
                 {role === "PROVIDER" && (
-                  <div className="saas-card p-6">
+                  <div className="bg-white border border-slate-200 rounded-xl p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-display font-bold text-slate-900">
+                      <h3 className="font-semibold text-slate-900">
                         Service Information
                       </h3>
                       <Link
                         to="/provider-setup"
-                        className="text-xs font-semibold text-violet-600 hover:text-violet-700 inline-flex items-center gap-1"
+                        className="text-xs font-medium text-indigo-600 hover:text-indigo-700 inline-flex items-center gap-1"
                       >
                         <span>Manage</span>
                         <FiArrowRight className="w-3.5 h-3.5" />
@@ -506,7 +506,7 @@ export default function Profile() {
                       <div className="space-y-3 text-sm">
                         <div>
                           <p className="text-xs text-slate-500">Service Name</p>
-                          <p className="font-semibold text-slate-900 mt-0.5">
+                          <p className="font-medium text-slate-900 mt-0.5">
                             {provider.serviceName}
                           </p>
                         </div>
@@ -518,7 +518,7 @@ export default function Profile() {
                             </p>
                           </div>
                         )}
-                        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
                           <div>
                             <p className="text-xs text-slate-500">Location</p>
                             <p className="font-medium text-slate-900 mt-0.5">
@@ -529,7 +529,7 @@ export default function Profile() {
                           </div>
                           <div>
                             <p className="text-xs text-slate-500">Pricing</p>
-                            <p className="font-semibold font-mono tabular-nums text-slate-900 mt-0.5">
+                            <p className="font-medium font-mono tabular-nums text-slate-900 mt-0.5">
                               {provider.servicePricing
                                 ? `$${provider.servicePricing}`
                                 : "Standard rate"}
@@ -539,10 +539,8 @@ export default function Profile() {
                       </div>
                     ) : (
                       <div className="text-center py-6">
-                        <div className="w-11 h-11 rounded-2xl bg-violet-50 border border-violet-100 text-violet-600 flex items-center justify-center mx-auto mb-3">
-                          <FiBriefcase className="w-5 h-5" />
-                        </div>
-                        <p className="text-sm font-semibold text-slate-900">
+                        <FiBriefcase className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                        <p className="text-sm font-medium text-slate-900">
                           Service profile not completed
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
@@ -551,7 +549,7 @@ export default function Profile() {
                         </p>
                         <Link
                           to="/provider-setup"
-                          className="saas-btn-primary mt-4 px-4 py-2 text-xs"
+                          className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700"
                         >
                           Complete Setup
                         </Link>
@@ -563,10 +561,10 @@ export default function Profile() {
 
               {/* Right Column: Password & Security */}
               <div className="lg:col-span-6">
-                <div className="saas-card p-6">
+                <div className="bg-white border border-slate-200 rounded-xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="font-display font-bold text-slate-900">
+                      <h3 className="font-semibold text-slate-900">
                         Password & Security
                       </h3>
                       <p className="text-xs text-slate-500 mt-0.5">
@@ -576,7 +574,7 @@ export default function Profile() {
                     <button
                       type="button"
                       onClick={() => setShowPasswords((prev) => !prev)}
-                      className="p-2 rounded-xl text-slate-500 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+                      className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                       aria-label={
                         showPasswords ? "Hide passwords" : "Show passwords"
                       }
@@ -611,7 +609,7 @@ export default function Profile() {
                             })
                           }
                           placeholder="Enter current password"
-                          className="saas-input pl-9 pr-3 py-2 text-sm"
+                          className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         />
                       </div>
                     </div>
@@ -638,7 +636,7 @@ export default function Profile() {
                             })
                           }
                           placeholder="At least 6 characters"
-                          className="saas-input pl-9 pr-3 py-2 text-sm"
+                          className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         />
                       </div>
                     </div>
@@ -665,7 +663,7 @@ export default function Profile() {
                             })
                           }
                           placeholder="Repeat new password"
-                          className="saas-input pl-9 pr-3 py-2 text-sm"
+                          className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         />
                       </div>
                     </div>
@@ -673,7 +671,7 @@ export default function Profile() {
                     <button
                       type="submit"
                       disabled={savingPassword}
-                      className="saas-btn-primary w-full sm:w-auto px-5 py-2.5 text-sm"
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 disabled:opacity-50 transition-colors"
                     >
                       {savingPassword ? "Updating Password..." : "Update Password"}
                     </button>
