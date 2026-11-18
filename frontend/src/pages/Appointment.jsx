@@ -13,6 +13,7 @@ import {
   FiStar,
   FiDownload,
   FiRefreshCw,
+  FiEdit2,
 } from "react-icons/fi";
 import api from "../api/axios";
 import DashboardShell from "../components/DashboardShell";
@@ -96,6 +97,7 @@ export default function Appointments() {
   const [reviews, setReviews] = useState({});
   const [reviewForms, setReviewForms] = useState({});
   const [reviewSavingId, setReviewSavingId] = useState(null);
+  const [editingReviewId, setEditingReviewId] = useState(null);
 
   const load = useCallback(async (uid) => {
     try {
@@ -215,23 +217,46 @@ export default function Appointments() {
     }
   };
 
+  const startEditReview = (appointmentId) => {
+    const existing = reviews[appointmentId];
+    if (!existing) return;
+    setReviewForms((current) => ({
+      ...current,
+      [appointmentId]: {
+        rating: existing.rating || 5,
+        comment: existing.comment || "",
+      },
+    }));
+    setEditingReviewId(appointmentId);
+  };
+
   const submitReview = async (appointmentId) => {
     const form = reviewForms[appointmentId] || { rating: 5, comment: "" };
+    const isEditing =
+      editingReviewId === appointmentId && Boolean(reviews[appointmentId]);
     setReviewSavingId(appointmentId);
     setErr("");
     setMsg("");
     try {
-      const response = await api.post(`/api/reviews/appointment/${appointmentId}`, {
+      const payload = {
         rating: Number(form.rating || 5),
         comment: form.comment || "",
-      });
+      };
+      const response = isEditing
+        ? await api.put(`/api/reviews/appointment/${appointmentId}`, payload)
+        : await api.post(`/api/reviews/appointment/${appointmentId}`, payload);
       setReviews((current) => ({ ...current, [appointmentId]: response.data }));
-      setMsg("Thanks for sharing your review.");
+      setEditingReviewId(null);
+      setMsg(
+        isEditing
+          ? "Your review has been updated."
+          : "Thanks for sharing your review."
+      );
     } catch (error) {
       setErr(
         error.response?.data?.message ||
           error.response?.data?.detail ||
-          "Could not submit your review."
+          "Could not save your review."
       );
     } finally {
       setReviewSavingId(null);
@@ -519,26 +544,37 @@ export default function Appointments() {
                   {/* Completed Session Review Section */}
                   {appointment.status === "COMPLETED" && (
                     <div className="mt-4 pt-4 border-t border-slate-100">
-                      {reviews[appointment.id] ? (
-                        <div className="rounded-lg bg-slate-50 border border-slate-200 p-3.5 space-y-1.5">
+                      {reviews[appointment.id] &&
+                      editingReviewId !== appointment.id ? (
+                        <div className="rounded-lg bg-slate-50 border border-slate-200 p-3.5 space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs font-semibold text-slate-800">
                               Your Review
                             </span>
-                            <div
-                              className="inline-flex items-center gap-0.5"
-                              aria-label={`${reviews[appointment.id].rating} out of 5 stars`}
-                            >
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <FiStar
-                                  key={star}
-                                  className={`w-3.5 h-3.5 ${
-                                    star <= reviews[appointment.id].rating
-                                      ? "text-amber-500 fill-amber-400"
-                                      : "text-slate-200 fill-slate-100"
-                                  }`}
-                                />
-                              ))}
+                            <div className="flex items-center gap-2.5">
+                              <div
+                                className="inline-flex items-center gap-0.5"
+                                aria-label={`${reviews[appointment.id].rating} out of 5 stars`}
+                              >
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <FiStar
+                                    key={star}
+                                    className={`w-3.5 h-3.5 ${
+                                      star <= reviews[appointment.id].rating
+                                        ? "text-amber-500 fill-amber-400"
+                                        : "text-slate-200 fill-slate-100"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => startEditReview(appointment.id)}
+                                className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
+                              >
+                                <FiEdit2 className="w-3 h-3" aria-hidden="true" />
+                                <span>Edit</span>
+                              </button>
                             </div>
                           </div>
                           {reviews[appointment.id].comment ? (
@@ -561,7 +597,9 @@ export default function Appointments() {
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs font-semibold text-slate-800">
-                              Rate your session
+                              {editingReviewId === appointment.id
+                                ? "Edit your review"
+                                : "Rate your session"}
                             </span>
                             <div
                               role="radiogroup"
@@ -632,15 +670,28 @@ export default function Appointments() {
                               <span className="text-[11px] font-mono text-slate-400 tabular-nums">
                                 {currentComment.length}/1200
                               </span>
-                              <button
-                                type="submit"
-                                disabled={reviewSavingId === appointment.id}
-                                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium disabled:opacity-50 transition-colors whitespace-nowrap"
-                              >
-                                {reviewSavingId === appointment.id
-                                  ? "Submitting..."
-                                  : "Submit Review"}
-                              </button>
+                              <div className="flex items-center gap-2">
+                                {editingReviewId === appointment.id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingReviewId(null)}
+                                    className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
+                                  >
+                                    Cancel
+                                  </button>
+                                )}
+                                <button
+                                  type="submit"
+                                  disabled={reviewSavingId === appointment.id}
+                                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium disabled:opacity-50 transition-colors whitespace-nowrap"
+                                >
+                                  {reviewSavingId === appointment.id
+                                    ? "Saving..."
+                                    : editingReviewId === appointment.id
+                                    ? "Save Changes"
+                                    : "Submit Review"}
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </form>

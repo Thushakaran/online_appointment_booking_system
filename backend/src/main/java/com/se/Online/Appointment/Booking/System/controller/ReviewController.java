@@ -80,6 +80,31 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(reviewRepository.save(review)));
     }
 
+    @PutMapping("/appointment/{appointmentId}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<ReviewResponse> updateReview(@PathVariable Long appointmentId,
+            @RequestBody Map<String, Object> body, Authentication authentication) {
+        Appointment appointment = getOwnedAppointment(appointmentId, authentication);
+        if (appointment.getStatus() != AppointmentStatus.COMPLETED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only completed appointments can be reviewed");
+        }
+        Review review = reviewRepository.findByAppointmentId(appointment.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
+        int rating;
+        try { rating = Integer.parseInt(String.valueOf(body.get("rating"))); }
+        catch (Exception ex) { throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rating must be between 1 and 5"); }
+        if (rating < 1 || rating > 5) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rating must be between 1 and 5");
+        }
+        String comment = body.get("comment") == null ? "" : String.valueOf(body.get("comment")).trim();
+        if (comment.length() > 1200) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Review comments must be 1,200 characters or fewer");
+        }
+        review.setRating(rating);
+        review.setComment(comment);
+        return ResponseEntity.ok(toResponse(reviewRepository.save(review)));
+    }
+
     private Appointment getOwnedAppointment(Long id, Authentication authentication) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Appointment not found"));

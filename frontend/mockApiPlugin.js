@@ -772,7 +772,7 @@ export default function mockApiPlugin() {
       }
 
       const appointmentReviewMatch = pathname.match(/^\/api\/reviews\/appointment\/(\d+)$/);
-      if (appointmentReviewMatch && (method === "GET" || method === "POST")) {
+      if (appointmentReviewMatch && (method === "GET" || method === "POST" || method === "PUT")) {
         if (!currentUser || currentUser.role !== "USER") {
           return sendJson(res, 403, { error: "Client access required" });
         }
@@ -789,13 +789,19 @@ export default function mockApiPlugin() {
         if (appointment.status !== "COMPLETED") {
           return sendJson(res, 400, { message: "Only completed appointments can be reviewed" });
         }
-        if (existingReview) return sendJson(res, 409, { message: "This appointment already has a review" });
         const rating = Number(body.rating);
         const comment = String(body.comment || "").trim();
         if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
           return sendJson(res, 400, { message: "Rating must be between 1 and 5" });
         }
         if (comment.length > 1200) return sendJson(res, 400, { message: "Review comments must be 1,200 characters or fewer" });
+        if (method === "PUT") {
+          if (!existingReview) return sendJson(res, 404, { message: "Review not found" });
+          existingReview.rating = rating;
+          existingReview.comment = comment;
+          return sendJson(res, 200, existingReview);
+        }
+        if (existingReview) return sendJson(res, 409, { message: "This appointment already has a review" });
         const review = {
           id: store.nextReviewId++,
           appointmentId,
