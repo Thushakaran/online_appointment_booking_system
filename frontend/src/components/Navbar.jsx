@@ -15,7 +15,7 @@ export default function Navbar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token, role, user, profileImage } = useSelector((state) => state.auth);
+  const { token, role, profileImage } = useSelector((state) => state.auth);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {
@@ -94,26 +94,25 @@ export default function Navbar() {
             <>
               <Link
                 to="/profile"
-                className={`inline-flex items-center gap-2.5 pl-1.5 pr-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap shrink-0 border ${
+                aria-label="Open profile"
+                title="Profile"
+                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border p-1 transition-colors shrink-0 ${
                   location.pathname === "/profile"
                     ? "bg-indigo-50 text-indigo-700 border-indigo-200"
                     : "text-slate-700 border-slate-200 bg-white hover:bg-slate-50"
                 }`}
               >
-                <span className="w-7 h-7 rounded-full overflow-hidden bg-indigo-50 border border-slate-200 flex items-center justify-center shrink-0">
+                <span className="w-full h-full rounded-full overflow-hidden bg-indigo-50 border border-slate-200 flex items-center justify-center shrink-0">
                   {profileImage ? (
                     <img
                       src={profileImage}
-                      alt={user || "Profile"}
+                      alt=""
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-[11px] font-semibold text-indigo-700">
-                      {(user || "U").slice(0, 2).toUpperCase()}
-                    </span>
+                    <FiUser className="w-3.5 h-3.5 text-indigo-700" aria-hidden="true" />
                   )}
                 </span>
-                <span className="max-w-[140px] truncate">{user}</span>
               </Link>
               {role !== "USER" && (
                 <Link
@@ -186,25 +185,26 @@ export default function Navbar() {
               <>
                 <Link
                   to="/profile"
+                  aria-label="Open profile"
+                  title="Profile"
                   onClick={() => setMobileOpen(false)}
-                  className={`w-full inline-flex items-center justify-center gap-2.5 px-4 py-2 rounded-lg text-sm font-medium ${
+                  className={`w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium ${
                     location.pathname === "/profile"
                       ? "text-indigo-700 bg-indigo-50"
                       : "text-slate-700 bg-slate-50 hover:bg-slate-100"
                   }`}
                 >
-                  <span className="w-6 h-6 rounded-full overflow-hidden bg-indigo-100 border border-slate-200 flex items-center justify-center shrink-0">
+                  <span className="w-8 h-8 rounded-full overflow-hidden bg-indigo-100 border border-slate-200 flex items-center justify-center shrink-0">
                     {profileImage ? (
                       <img
                         src={profileImage}
-                        alt={user || "Profile"}
+                        alt=""
                         className="w-full h-full object-cover"
                       />
                     ) : (
                       <FiUser className="w-3.5 h-3.5 text-indigo-700" aria-hidden="true" />
                     )}
                   </span>
-                  <span>Profile ({user})</span>
                 </Link>
                 {role !== "USER" && (
                   <Link
@@ -221,7 +221,7 @@ export default function Navbar() {
                   className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors"
                 >
                   <FiLogOut className="w-4 h-4" />
-                  <span>Sign Out ({user})</span>
+                  <span>Sign Out</span>
                 </button>
               </>
             ) : (
