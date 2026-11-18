@@ -183,6 +183,7 @@ export default function ProviderSetup() {
     <DashboardShell
       title={isNewProvider ? "Complete Provider Profile" : "Service & Pricing"}
       breadcrumb="Provider Workspace"
+      breadcrumbTo="/provider-dashboard"
       actions={
         <Link
           to="/provider-dashboard"

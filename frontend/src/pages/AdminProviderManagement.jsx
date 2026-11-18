@@ -208,6 +208,7 @@ export default function AdminProviderManagement() {
     <DashboardShell
       title="Provider Directory"
       breadcrumb="Admin Console"
+      breadcrumbTo="/admin-dashboard"
       actions={
         <div className="flex items-center gap-2">
           <Link

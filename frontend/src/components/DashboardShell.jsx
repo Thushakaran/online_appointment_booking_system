@@ -5,7 +5,6 @@ import { logout } from "../features/auth/authSlice";
 import {
   FiCalendar,
   FiGrid,
-  FiUsers,
   FiUser,
   FiClock,
   FiSettings,
@@ -21,6 +20,7 @@ import {
 export default function DashboardShell({
   title,
   breadcrumb = "Workspace",
+  breadcrumbTo = null,
   actions = null,
   notifications = [],
   onSelectSection,
@@ -62,6 +62,13 @@ export default function DashboardShell({
       setReadIds([]);
     }
   }, [readStorageKey]);
+
+  const workspaceHome =
+    role === "ADMIN"
+      ? "/admin-dashboard"
+      : role === "PROVIDER"
+      ? "/provider-dashboard"
+      : "/dashboard";
 
   const handleLogout = () => {
     dispatch(logout());
@@ -135,7 +142,10 @@ export default function DashboardShell({
       );
     }
 
-    const active = location.pathname === item.to;
+    const active =
+      location.pathname === item.to ||
+      (item.to === "/providers" &&
+        location.pathname.startsWith("/book-appointment"));
     return (
       <Link
         key={item.to}
@@ -158,7 +168,7 @@ export default function DashboardShell({
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-slate-200 z-30">
         <div className="h-16 px-5 flex items-center border-b border-slate-200">
-          <Link to="/" className="flex items-center gap-2.5 whitespace-nowrap">
+          <Link to={workspaceHome} className="flex items-center gap-2.5 whitespace-nowrap">
             <span className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
               <FiCalendar className="w-4 h-4" aria-hidden="true" />
             </span>
@@ -212,7 +222,7 @@ export default function DashboardShell({
           <aside className="relative w-64 max-w-full bg-white border-r border-slate-200 flex flex-col z-10">
             <div className="h-16 px-5 flex items-center justify-between border-b border-slate-200">
               <Link
-                to="/"
+                to={workspaceHome}
                 onClick={() => setSidebarOpen(false)}
                 className="flex items-center gap-2.5"
               >
@@ -263,9 +273,18 @@ export default function DashboardShell({
               <FiMenu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2 text-sm min-w-0">
-              <span className="text-slate-500 hidden sm:inline whitespace-nowrap">
-                {breadcrumb}
-              </span>
+              {breadcrumbTo ? (
+                <Link
+                  to={breadcrumbTo}
+                  className="text-slate-500 hover:text-indigo-600 hidden sm:inline whitespace-nowrap transition-colors"
+                >
+                  {breadcrumb}
+                </Link>
+              ) : (
+                <span className="text-slate-500 hidden sm:inline whitespace-nowrap">
+                  {breadcrumb}
+                </span>
+              )}
               <FiChevronRight
                 className="w-4 h-4 text-slate-400 hidden sm:inline shrink-0"
                 aria-hidden="true"

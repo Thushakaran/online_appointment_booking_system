@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation, Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -24,7 +25,10 @@ const WORKSPACE_ROUTES = [
   "/provider-setup",
   "/admin-dashboard",
   "/admin/providers",
+  "/book-appointment",
 ];
+
+const AUTH_WORKSPACE_ROUTES = ["/providers"];
 
 function NotFoundPage() {
   return (
@@ -60,14 +64,16 @@ function NotFoundPage() {
 
 function AppShell() {
   const location = useLocation();
-  const isWorkspaceRoute = WORKSPACE_ROUTES.some((prefix) =>
-    location.pathname.startsWith(prefix)
-  );
+  const { token } = useSelector((state) => state.auth);
+  const isWorkspaceRoute =
+    WORKSPACE_ROUTES.some((prefix) => location.pathname.startsWith(prefix)) ||
+    (Boolean(token) &&
+      AUTH_WORKSPACE_ROUTES.some((prefix) => location.pathname.startsWith(prefix)));
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       {!isWorkspaceRoute && <Navbar />}
-      <div className={isWorkspaceRoute ? "flex-1" : "flex-1"}>
+      <div className="flex-1">
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />

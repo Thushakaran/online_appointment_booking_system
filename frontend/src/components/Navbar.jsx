@@ -30,26 +30,15 @@ export default function Navbar() {
     return "/dashboard";
   };
 
-  const navLinks = [];
-  navLinks.push({ to: "/", label: "Home" });
+  const getDashboardLabel = () => {
+    if (role === "ADMIN") return "Admin Console";
+    if (role === "PROVIDER") return "Provider Portal";
+    return "My Dashboard";
+  };
 
+  const navLinks = [{ to: "/", label: "Home" }];
   if (role !== "PROVIDER") {
     navLinks.push({ to: "/providers", label: "Providers" });
-  }
-
-  if (token) {
-    if (role === "USER") {
-      navLinks.push({ to: "/dashboard", label: "Overview" });
-      navLinks.push({ to: "/appointments", label: "Appointments" });
-      navLinks.push({ to: "/profile", label: "Profile" });
-    } else if (role === "PROVIDER") {
-      navLinks.push({ to: "/provider-dashboard", label: "Dashboard" });
-      navLinks.push({ to: "/provider-setup", label: "Service Setup" });
-      navLinks.push({ to: "/profile", label: "Profile" });
-    } else if (role === "ADMIN") {
-      navLinks.push({ to: "/admin-dashboard", label: "Admin Console" });
-      navLinks.push({ to: "/admin/providers", label: "Providers" });
-    }
   }
 
   const isActive = (path) => location.pathname === path;
@@ -101,6 +90,13 @@ export default function Navbar() {
               >
                 <FiUser className="w-4 h-4 text-slate-500" aria-hidden="true" />
                 <span className="max-w-[140px] truncate">{user}</span>
+              </Link>
+              <Link
+                to={getDashboardPath()}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors whitespace-nowrap shrink-0"
+              >
+                <span>{getDashboardLabel()}</span>
+                <FiChevronRight className="w-4 h-4" aria-hidden="true" />
               </Link>
               <button
                 type="button"
@@ -161,14 +157,23 @@ export default function Navbar() {
           ))}
           <div className="pt-3 border-t border-slate-200 flex flex-col gap-2">
             {token ? (
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors"
-              >
-                <FiLogOut className="w-4 h-4" />
-                <span>Sign Out ({user})</span>
-              </button>
+              <>
+                <Link
+                  to={getDashboardPath()}
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full text-center px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  {getDashboardLabel()}
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 transition-colors"
+                >
+                  <FiLogOut className="w-4 h-4" />
+                  <span>Sign Out ({user})</span>
+                </button>
+              </>
             ) : (
               <>
                 <Link

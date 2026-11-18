@@ -392,6 +392,7 @@ export default function AdminDashboard() {
       count: appointmentsTotalElements,
     },
     { to: "/admin/providers", label: "Provider Directory", icon: FiSliders },
+    { to: "/providers", label: "Public Directory", icon: FiSearch },
   ];
 
   const totalUsersDisplay =
