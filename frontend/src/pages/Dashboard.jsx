@@ -118,38 +118,46 @@ function PublicLanding() {
           </div>
 
           {/* 4-Column Live Platform KPI Strip */}
-          <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5">
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md sm:p-6">
+              <span className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"><FiBriefcase className="h-5 w-5" aria-hidden="true" /></span>
               <p className="text-xs font-medium text-slate-500">
                 Active Providers
               </p>
-              <p className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900 font-mono tabular-nums">
+              <p className="mt-4 text-3xl font-bold tracking-tight text-slate-950 tabular-nums">
                 {loading ? "—" : stats.totalProviders}
               </p>
+              <p className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">Service providers listed</p>
             </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md sm:p-6">
+              <span className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-600"><FiCalendar className="h-5 w-5" aria-hidden="true" /></span>
               <p className="text-xs font-medium text-slate-500">
                 Total Bookings
               </p>
-              <p className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900 font-mono tabular-nums">
+              <p className="mt-4 text-3xl font-bold tracking-tight text-slate-950 tabular-nums">
                 {loading ? "—" : stats.totalAppointments}
               </p>
+              <p className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">Appointments on the platform</p>
             </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md sm:p-6">
+              <span className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><FiClock className="h-5 w-5" aria-hidden="true" /></span>
               <p className="text-xs font-medium text-slate-500">
                 Upcoming Sessions
               </p>
-              <p className="mt-2 text-2xl sm:text-3xl font-bold text-indigo-600 font-mono tabular-nums">
+              <p className="mt-4 text-3xl font-bold tracking-tight text-violet-700 tabular-nums">
                 {loading ? "—" : stats.upcomingAppointments}
               </p>
+              <p className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">Pending or confirmed sessions</p>
             </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md sm:p-6">
+              <span className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"><FiUsers className="h-5 w-5" aria-hidden="true" /></span>
               <p className="text-xs font-medium text-slate-500">
                 Registered Users
               </p>
-              <p className="mt-2 text-2xl sm:text-3xl font-bold text-slate-900 font-mono tabular-nums">
+              <p className="mt-4 text-3xl font-bold tracking-tight text-slate-950 tabular-nums">
                 {loading ? "—" : stats.totalUsers}
               </p>
+              <p className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">Client and provider accounts</p>
             </div>
           </div>
         </div>
