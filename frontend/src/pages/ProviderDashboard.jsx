@@ -143,11 +143,21 @@ export default function ProviderDashboard() {
       setError("");
       setMessage("");
       const repeats = Math.min(12, Math.max(1, Number(availabilityForm.repeatWeeks) || 1));
-      await Promise.all(Array.from({ length: repeats }, (_, week) => api.post("/api/availabilities", {
-        availableDate: dayjs(availabilityForm.availableDate).add(week, "week").format("YYYY-MM-DDTHH:mm:ss"),
-      })));
+      await Promise.all(
+        Array.from({ length: repeats }, (_, week) =>
+          api.post("/api/availabilities", {
+            availableDate: dayjs(availabilityForm.availableDate)
+              .add(week, "week")
+              .format("YYYY-MM-DDTHH:mm:ss"),
+          })
+        )
+      );
       setAvailabilityForm({ availableDate: "", repeatWeeks: 1 });
-      setMessage(repeats > 1 ? `Added ${repeats} weekly availability slots.` : "Availability slot added.");
+      setMessage(
+        repeats > 1
+          ? `Added ${repeats} weekly availability slots.`
+          : "Availability slot added."
+      );
       await fetchProviderData();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to add availability slot.");
@@ -214,12 +224,18 @@ export default function ProviderDashboard() {
       setMessage(`Appointment marked as ${nextStatus.toLowerCase()}.`);
       await fetchProviderData();
     } catch (err) {
-      const apiMessage = err.response?.data?.message || err.response?.data?.detail || err.response?.data?.error;
-      setError(apiMessage || (err.response?.status === 403
-        ? "You cannot change this appointment because it is not assigned to your provider account."
-        : err.response?.status === 401
-          ? "Your session has expired. Please sign in again."
-          : "Unable to update appointment status. Check the selected appointment and try again."));
+      const apiMessage =
+        err.response?.data?.message ||
+        err.response?.data?.detail ||
+        err.response?.data?.error;
+      setError(
+        apiMessage ||
+          (err.response?.status === 403
+            ? "You cannot change this appointment because it is not assigned to your provider account."
+            : err.response?.status === 401
+            ? "Your session has expired. Please sign in again."
+            : "Unable to update appointment status. Check the selected appointment and try again.")
+      );
     } finally {
       setUpdatingBookingId(null);
     }
@@ -307,7 +323,7 @@ export default function ProviderDashboard() {
       actions={
         <Link
           to="/provider-setup"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
+          className="saas-btn-secondary px-4 py-2 text-sm whitespace-nowrap"
         >
           <FiSettings className="w-4 h-4" />
           <span>{profileExists ? "Edit Service" : "Complete Setup"}</span>
@@ -316,7 +332,7 @@ export default function ProviderDashboard() {
     >
       <div className="space-y-6">
         {error && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between gap-4">
             <span>{error}</span>
             <button
               type="button"
@@ -329,7 +345,7 @@ export default function ProviderDashboard() {
         )}
 
         {message && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between gap-4">
             <span>{message}</span>
             <button
               type="button"
@@ -347,15 +363,15 @@ export default function ProviderDashboard() {
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className="h-24 bg-white border border-slate-200 rounded-xl animate-pulse"
+                  className="h-24 saas-card animate-pulse"
                 />
               ))}
             </div>
-            <div className="h-64 bg-white border border-slate-200 rounded-xl animate-pulse" />
+            <div className="h-64 saas-card animate-pulse" />
           </div>
         ) : !profileExists ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-10 text-center max-w-xl mx-auto">
-            <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4">
+          <div className="saas-card p-10 text-center max-w-xl mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-600 flex items-center justify-center mx-auto mb-4">
               <FiAlertCircle className="w-6 h-6" />
             </div>
             <h2 className="font-display text-xl font-bold text-slate-900">
@@ -368,7 +384,7 @@ export default function ProviderDashboard() {
             <button
               type="button"
               onClick={() => navigate("/provider-setup")}
-              className="mt-6 px-5 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+              className="saas-btn-primary mt-6 px-5 py-2.5 text-sm"
             >
               Set Up Service Profile
             </button>
@@ -376,9 +392,9 @@ export default function ProviderDashboard() {
         ) : (
           <>
             {/* Provider Profile Summary Header */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="saas-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="w-14 h-14 rounded-xl bg-indigo-50 border border-indigo-100 overflow-hidden flex items-center justify-center shrink-0">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 border border-violet-200/80 overflow-hidden flex items-center justify-center shrink-0">
                   {provider?.profileImage ? (
                     <img
                       src={provider.profileImage}
@@ -386,7 +402,7 @@ export default function ProviderDashboard() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="font-display font-bold text-indigo-600">
+                    <span className="font-display font-bold text-violet-700">
                       {(provider?.serviceName || "PR").slice(0, 2).toUpperCase()}
                     </span>
                   )}
@@ -408,7 +424,7 @@ export default function ProviderDashboard() {
                         : ""}
                     </span>
                     <span aria-hidden="true">·</span>
-                    <span className="inline-flex items-center gap-1 text-slate-700 font-medium tabular-nums">
+                    <span className="inline-flex items-center gap-1 text-slate-700 font-semibold tabular-nums">
                       <FiStar className="w-3.5 h-3.5 text-amber-500 fill-amber-400" aria-hidden="true" />
                       {stats.reviewCount > 0
                         ? `${stats.averageRating.toFixed(1)} (${stats.reviewCount} ${
@@ -424,10 +440,10 @@ export default function ProviderDashboard() {
                 <button
                   type="button"
                   onClick={() => setActiveSection("availability")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
                     activeSection === "availability"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-violet-50 hover:text-violet-700"
                   }`}
                 >
                   Manage Slots
@@ -435,10 +451,10 @@ export default function ProviderDashboard() {
                 <button
                   type="button"
                   onClick={() => setActiveSection("bookings")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
                     activeSection === "bookings"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-violet-50 hover:text-violet-700"
                   }`}
                 >
                   Bookings ({appointments.length})
@@ -446,10 +462,10 @@ export default function ProviderDashboard() {
                 <button
                   type="button"
                   onClick={() => setActiveSection("reviews")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
                     activeSection === "reviews"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-violet-50 hover:text-violet-700"
                   }`}
                 >
                   Reviews ({stats.reviewCount})
@@ -459,13 +475,13 @@ export default function ProviderDashboard() {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <div className="saas-card p-5">
                 <p className="text-xs font-medium text-slate-500">Total Slots</p>
                 <p className="mt-2 text-2xl font-bold text-slate-900 font-mono tabular-nums">
                   {stats.totalSlots}
                 </p>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <div className="saas-card p-5">
                 <p className="text-xs font-medium text-slate-500">
                   Open Availability
                 </p>
@@ -473,7 +489,7 @@ export default function ProviderDashboard() {
                   {stats.openSlots}
                 </p>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <div className="saas-card p-5">
                 <p className="text-xs font-medium text-slate-500">
                   Pending Approval
                 </p>
@@ -481,9 +497,9 @@ export default function ProviderDashboard() {
                   {stats.pending}
                 </p>
               </div>
-              <div className="bg-white border border-slate-200 rounded-xl p-5">
+              <div className="saas-card p-5">
                 <p className="text-xs font-medium text-slate-500">Confirmed</p>
-                <p className="mt-2 text-2xl font-bold text-indigo-600 font-mono tabular-nums">
+                <p className="mt-2 text-2xl font-bold text-violet-700 font-mono tabular-nums">
                   {stats.confirmed}
                 </p>
               </div>
@@ -491,10 +507,10 @@ export default function ProviderDashboard() {
 
             {/* Availability Section */}
             {(activeSection === "overview" || activeSection === "availability") && (
-              <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+              <section className="saas-card p-6 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-slate-900">
+                    <h3 className="font-display font-bold text-slate-900">
                       Availability Schedule
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -509,12 +525,12 @@ export default function ProviderDashboard() {
                 {/* Add Availability Form */}
                 <form
                   onSubmit={handleAddAvailability}
-                  className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-end gap-3"
+                  className="bg-violet-50/45 border border-violet-200/70 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-end gap-3"
                 >
                   <div className="flex-1">
                     <label
                       htmlFor="new-slot-date"
-                      className="block text-xs font-medium text-slate-700 mb-1.5"
+                      className="block text-xs font-semibold text-slate-700 mb-1.5"
                     >
                       New Time Slot (Date & Time)
                     </label>
@@ -524,15 +540,18 @@ export default function ProviderDashboard() {
                       required
                       value={availabilityForm.availableDate}
                       onChange={(e) =>
-                        setAvailabilityForm({ ...availabilityForm, availableDate: e.target.value })
+                        setAvailabilityForm({
+                          ...availabilityForm,
+                          availableDate: e.target.value,
+                        })
                       }
-                      className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="saas-input px-3.5 py-2 text-sm"
                     />
                   </div>
                   <div className="w-full sm:w-36">
                     <label
                       htmlFor="repeat-weeks"
-                      className="block text-xs font-medium text-slate-700 mb-1.5"
+                      className="block text-xs font-semibold text-slate-700 mb-1.5"
                     >
                       Repeat (weeks)
                     </label>
@@ -548,12 +567,12 @@ export default function ProviderDashboard() {
                           repeatWeeks: e.target.value,
                         })
                       }
-                      className="w-full px-3.5 py-2 text-sm font-mono tabular-nums bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="saas-input px-3.5 py-2 text-sm font-mono tabular-nums"
                     />
                   </div>
                   <button
                     type="submit"
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                    className="saas-btn-primary px-4 py-2 text-sm whitespace-nowrap"
                   >
                     <FiPlus className="w-4 h-4" />
                     <span>Add Slot</span>
@@ -561,9 +580,9 @@ export default function ProviderDashboard() {
                 </form>
 
                 {availabilities.length === 0 ? (
-                  <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center">
+                  <div className="border border-dashed border-slate-200 rounded-2xl p-8 text-center">
                     <FiClock className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-semibold text-slate-900">
                       No availability slots published
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
@@ -577,7 +596,7 @@ export default function ProviderDashboard() {
                       return (
                         <div
                           key={slot.id}
-                          className="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-3"
+                          className="border border-slate-200/80 rounded-2xl p-4 bg-white hover:border-violet-200 transition-colors flex flex-col justify-between gap-3"
                         >
                           {isEditing ? (
                             <div className="space-y-3">
@@ -590,13 +609,13 @@ export default function ProviderDashboard() {
                                 onChange={(e) =>
                                   setEditForm({ availableDate: e.target.value })
                                 }
-                                className="w-full px-3 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                className="saas-input px-3 py-1.5 text-sm"
                               />
                               <div className="flex items-center gap-2">
                                 <button
                                   type="button"
                                   onClick={() => handleUpdateAvailability(slot.id)}
-                                  className="flex-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700"
+                                  className="saas-btn-primary flex-1 px-3 py-1.5 text-xs"
                                 >
                                   Save
                                 </button>
@@ -606,7 +625,7 @@ export default function ProviderDashboard() {
                                     setEditingAvailability(null);
                                     setEditForm({ availableDate: "" });
                                   }}
-                                  className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50"
+                                  className="saas-btn-secondary flex-1 px-3 py-1.5 text-xs"
                                 >
                                   Cancel
                                 </button>
@@ -621,7 +640,7 @@ export default function ProviderDashboard() {
                                       "MMM D, YYYY"
                                     )}
                                   </p>
-                                  <p className="text-xs text-slate-500 mt-0.5 font-mono tabular-nums">
+                                  <p className="text-xs text-violet-700 mt-0.5 font-mono font-medium tabular-nums">
                                     {dayjs(slot.availableDate).format("h:mm A")}
                                   </p>
                                 </div>
@@ -630,11 +649,11 @@ export default function ProviderDashboard() {
                                 />
                               </div>
 
-                              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                              <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100">
                                 <button
                                   type="button"
                                   onClick={() => handleStartEdit(slot)}
-                                  className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors"
+                                  className="saas-btn-secondary flex-1 px-3 py-1.5 text-xs"
                                 >
                                   <FiEdit2 className="w-3.5 h-3.5" />
                                   <span>Edit</span>
@@ -642,7 +661,7 @@ export default function ProviderDashboard() {
                                 <button
                                   type="button"
                                   onClick={() => setDeleteSlotTarget(slot)}
-                                  className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-colors"
+                                  className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-colors"
                                 >
                                   <FiTrash2 className="w-3.5 h-3.5" />
                                   <span>Delete</span>
@@ -660,10 +679,10 @@ export default function ProviderDashboard() {
 
             {/* Bookings Section */}
             {(activeSection === "overview" || activeSection === "bookings") && (
-              <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+              <section className="saas-card p-6 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-slate-900">
+                    <h3 className="font-display font-bold text-slate-900">
                       Client Bookings
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -677,10 +696,10 @@ export default function ProviderDashboard() {
                         key={f}
                         type="button"
                         onClick={() => setBookingFilter(f)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                           bookingFilter === f
-                            ? "bg-indigo-600 text-white"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm"
+                            : "bg-slate-100 text-slate-700 hover:bg-violet-50 hover:text-violet-700"
                         }`}
                       >
                         {f === "ALL"
@@ -692,9 +711,9 @@ export default function ProviderDashboard() {
                 </div>
 
                 {filteredBookings.length === 0 ? (
-                  <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center">
+                  <div className="border border-dashed border-slate-200 rounded-2xl p-8 text-center">
                     <FiCalendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-semibold text-slate-900">
                       No {bookingFilter === "ALL" ? "" : bookingFilter.toLowerCase()}{" "}
                       bookings found
                     </p>
@@ -710,7 +729,7 @@ export default function ProviderDashboard() {
                       return (
                         <div
                           key={appt.id}
-                          className="border border-slate-200 rounded-xl p-4 flex flex-col justify-between gap-4"
+                          className="border border-slate-200/80 rounded-2xl p-4 bg-white hover:border-violet-200 transition-colors flex flex-col justify-between gap-4"
                         >
                           <div className="space-y-3">
                             <div className="flex items-start justify-between gap-2">
@@ -729,9 +748,9 @@ export default function ProviderDashboard() {
                               <StatusBadge status={appt.status} />
                             </div>
 
-                            <div className="bg-slate-50 border border-slate-100 rounded-lg p-3 space-y-1 text-xs text-slate-600">
-                              <div className="flex items-center gap-1.5 text-slate-900 font-medium">
-                                <FiUser className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3 space-y-1 text-xs text-slate-600">
+                              <div className="flex items-center gap-1.5 text-slate-900 font-semibold">
+                                <FiUser className="w-3.5 h-3.5 text-violet-500 shrink-0" />
                                 <span className="truncate">
                                   {appt.user?.username || "Client"}
                                 </span>
@@ -745,7 +764,7 @@ export default function ProviderDashboard() {
                             </div>
 
                             {bookingReview && (
-                              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1">
+                              <div className="bg-violet-50/50 border border-violet-200/70 rounded-xl p-3 space-y-1">
                                 <div className="flex items-center justify-between gap-2">
                                   <span className="text-xs font-semibold text-slate-800">
                                     Client Review
@@ -775,7 +794,7 @@ export default function ProviderDashboard() {
                             )}
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+                          <div className="flex flex-wrap items-center gap-2 pt-2.5 border-t border-slate-100">
                             {appt.status === "PENDING" && (
                               <button
                                 type="button"
@@ -783,7 +802,7 @@ export default function ProviderDashboard() {
                                 onClick={() =>
                                   handleUpdateAppointmentStatus(appt.id, "CONFIRMED")
                                 }
-                                className="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50"
+                                className="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50"
                               >
                                 <FiCheck className="w-3.5 h-3.5" />
                                 <span>Confirm</span>
@@ -797,7 +816,7 @@ export default function ProviderDashboard() {
                                 onClick={() =>
                                   handleUpdateAppointmentStatus(appt.id, "COMPLETED")
                                 }
-                                className="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 disabled:opacity-50"
+                                className="saas-btn-primary flex-1 px-2.5 py-1.5 text-xs"
                               >
                                 <FiAward className="w-3.5 h-3.5" />
                                 <span>Complete</span>
@@ -811,7 +830,7 @@ export default function ProviderDashboard() {
                                 onClick={() =>
                                   handleUpdateAppointmentStatus(appt.id, "CANCELLED")
                                 }
-                                className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 disabled:opacity-50"
+                                className="inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100 disabled:opacity-50"
                               >
                                 <FiX className="w-3.5 h-3.5" />
                                 <span>Cancel</span>
@@ -828,10 +847,10 @@ export default function ProviderDashboard() {
 
             {/* Client Reviews Section */}
             {(activeSection === "overview" || activeSection === "reviews") && (
-              <section className="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+              <section className="saas-card p-6 space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-semibold text-slate-900">
+                    <h3 className="font-display font-bold text-slate-900">
                       Client Reviews
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -864,9 +883,9 @@ export default function ProviderDashboard() {
                 </div>
 
                 {reviews.length === 0 ? (
-                  <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center">
+                  <div className="border border-dashed border-slate-200 rounded-2xl p-8 text-center">
                     <FiMessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="text-sm font-semibold text-slate-900">
                       No customer reviews yet
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
@@ -879,11 +898,11 @@ export default function ProviderDashboard() {
                       <div key={review.id} className="py-4 first:pt-0 last:pb-0 space-y-2">
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center shrink-0">
+                            <span className="w-8 h-8 rounded-xl bg-violet-50 border border-violet-100 text-xs font-bold text-violet-700 flex items-center justify-center shrink-0">
                               {(review.reviewer || "C").slice(0, 2).toUpperCase()}
                             </span>
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-slate-900 truncate">
+                              <p className="text-sm font-semibold text-slate-900 truncate">
                                 {review.reviewer}
                               </p>
                               <p className="text-xs text-slate-400 tabular-nums">

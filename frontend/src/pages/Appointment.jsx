@@ -326,7 +326,7 @@ export default function Appointments() {
       actions={
         <Link
           to="/providers"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+          className="saas-btn-primary px-4 py-2 text-sm whitespace-nowrap"
         >
           <FiCalendar className="w-4 h-4" aria-hidden="true" />
           <span>Book Appointment</span>
@@ -335,7 +335,7 @@ export default function Appointments() {
     >
       <div className="space-y-6">
         {err && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between gap-4">
             <span>{err}</span>
             <button
               type="button"
@@ -349,7 +349,7 @@ export default function Appointments() {
         )}
 
         {msg && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between gap-4">
             <span>{msg}</span>
             <button
               type="button"
@@ -363,7 +363,7 @@ export default function Appointments() {
         )}
 
         {/* Filter Bar & Search */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="saas-card p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-1.5">
             {FILTER_TABS.map((tab) => {
               const active = statusFilter === tab.id;
@@ -372,16 +372,16 @@ export default function Appointments() {
                   key={tab.id}
                   type="button"
                   onClick={() => setStatusFilter(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap inline-flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap inline-flex items-center gap-1.5 ${
                     active
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-sm shadow-violet-600/20"
+                      : "bg-slate-100/90 text-slate-700 hover:bg-violet-50 hover:text-violet-700"
                   }`}
                 >
                   <span>{tab.label}</span>
                   <span
                     className={`font-mono tabular-nums ${
-                      active ? "text-indigo-100" : "text-slate-500"
+                      active ? "text-violet-100" : "text-slate-500"
                     }`}
                   >
                     {counts[tab.id]}
@@ -401,7 +401,7 @@ export default function Appointments() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search service, provider, city..."
-              className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              className="saas-input pl-9 pr-3 py-2 text-sm"
             />
           </div>
         </div>
@@ -412,7 +412,7 @@ export default function Appointments() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="bg-white border border-slate-200 rounded-xl p-6 h-52 animate-pulse"
+                className="saas-card p-6 h-52 animate-pulse"
               >
                 <div className="h-4 bg-slate-200 rounded w-1/3 mb-4" />
                 <div className="h-5 bg-slate-200 rounded w-3/4 mb-3" />
@@ -421,9 +421,11 @@ export default function Appointments() {
             ))}
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
-            <FiCalendar className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <h2 className="text-base font-semibold text-slate-900">
+          <div className="saas-card p-12 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-violet-50 border border-violet-100 text-violet-600 flex items-center justify-center mx-auto mb-3">
+              <FiCalendar className="w-5 h-5" />
+            </div>
+            <h2 className="font-display text-base font-bold text-slate-900">
               {items.length === 0
                 ? "No appointments yet"
                 : "No matching appointments"}
@@ -436,7 +438,7 @@ export default function Appointments() {
             {items.length === 0 ? (
               <Link
                 to="/providers"
-                className="mt-5 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                className="saas-btn-primary mt-5 px-4 py-2 text-sm"
               >
                 Browse Providers
               </Link>
@@ -447,7 +449,7 @@ export default function Appointments() {
                   setStatusFilter("ALL");
                   setSearchQuery("");
                 }}
-                className="mt-5 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+                className="saas-btn-secondary mt-5 px-4 py-2 text-sm"
               >
                 Reset Filters
               </button>
@@ -470,7 +472,7 @@ export default function Appointments() {
               return (
                 <div
                   key={appointment.id}
-                  className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between hover:border-slate-300 transition-colors"
+                  className="saas-card-interactive p-5 flex flex-col justify-between"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-3 mb-4">
@@ -481,7 +483,7 @@ export default function Appointments() {
                             ? ` · $${appointment.provider.servicePricing}`
                             : ""}
                         </p>
-                        <h3 className="text-base font-semibold text-slate-900 truncate mt-0.5">
+                        <h3 className="font-display text-base font-bold text-slate-900 truncate mt-0.5">
                           {appointment.provider?.serviceName || "Consultation"}
                         </h3>
                       </div>
@@ -494,7 +496,7 @@ export default function Appointments() {
                           className="w-4 h-4 text-slate-400 shrink-0"
                           aria-hidden="true"
                         />
-                        <span className="truncate">
+                        <span className="truncate font-medium text-slate-700">
                           {appointment.provider?.user?.username || "Provider"}
                         </span>
                       </div>
@@ -514,9 +516,9 @@ export default function Appointments() {
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2 pt-1 text-slate-900 font-medium tabular-nums">
+                      <div className="flex items-center gap-2 pt-1 text-slate-900 font-semibold tabular-nums">
                         <FiClock
-                          className="w-4 h-4 text-indigo-600 shrink-0"
+                          className="w-4 h-4 text-violet-600 shrink-0"
                           aria-hidden="true"
                         />
                         <span>
@@ -531,7 +533,7 @@ export default function Appointments() {
                           <button
                             type="button"
                             onClick={() => downloadReminder(appointment)}
-                            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700 transition-colors"
                           >
                             <FiDownload className="w-3.5 h-3.5" aria-hidden="true" />
                             <span>Download calendar reminder (.ics)</span>
@@ -546,7 +548,7 @@ export default function Appointments() {
                     <div className="mt-4 pt-4 border-t border-slate-100">
                       {reviews[appointment.id] &&
                       editingReviewId !== appointment.id ? (
-                        <div className="rounded-lg bg-slate-50 border border-slate-200 p-3.5 space-y-2">
+                        <div className="rounded-xl bg-violet-50/50 border border-violet-200/70 p-3.5 space-y-2">
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs font-semibold text-slate-800">
                               Your Review
@@ -570,7 +572,7 @@ export default function Appointments() {
                               <button
                                 type="button"
                                 onClick={() => startEditReview(appointment.id)}
-                                className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 whitespace-nowrap"
                               >
                                 <FiEdit2 className="w-3 h-3" aria-hidden="true" />
                                 <span>Edit</span>
@@ -593,7 +595,7 @@ export default function Appointments() {
                             event.preventDefault();
                             submitReview(appointment.id);
                           }}
-                          className="rounded-lg bg-slate-50 border border-slate-200 p-3.5 space-y-3"
+                          className="rounded-xl bg-slate-50/80 border border-slate-200/80 p-3.5 space-y-3"
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs font-semibold text-slate-800">
@@ -626,7 +628,7 @@ export default function Appointments() {
                                         },
                                       }))
                                     }
-                                    className="p-0.5 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-transform hover:scale-110"
+                                    className="p-0.5 rounded focus:outline-none focus:ring-2 focus:ring-violet-500/30 transition-transform hover:scale-110"
                                   >
                                     <FiStar
                                       className={`w-4 h-4 ${
@@ -664,7 +666,7 @@ export default function Appointments() {
                                 }))
                               }
                               placeholder="Share how your visit went (optional)..."
-                              className="w-full resize-y text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                              className="saas-input resize-y text-xs px-2.5 py-2"
                             />
                             <div className="mt-2 flex items-center justify-between gap-2">
                               <span className="text-[11px] font-mono text-slate-400 tabular-nums">
@@ -675,7 +677,7 @@ export default function Appointments() {
                                   <button
                                     type="button"
                                     onClick={() => setEditingReviewId(null)}
-                                    className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
+                                    className="saas-btn-secondary px-2.5 py-1.5 text-xs whitespace-nowrap"
                                   >
                                     Cancel
                                   </button>
@@ -683,7 +685,7 @@ export default function Appointments() {
                                 <button
                                   type="submit"
                                   disabled={reviewSavingId === appointment.id}
-                                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium disabled:opacity-50 transition-colors whitespace-nowrap"
+                                  className="saas-btn-primary px-3 py-1.5 text-xs whitespace-nowrap"
                                 >
                                   {reviewSavingId === appointment.id
                                     ? "Saving..."
@@ -701,7 +703,7 @@ export default function Appointments() {
 
                   {/* Inline Reschedule Panel */}
                   {rescheduleTarget?.id === appointment.id && (
-                    <div className="mt-4 rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-2.5">
+                    <div className="mt-4 rounded-xl bg-violet-50/50 border border-violet-200/70 p-3.5 space-y-2.5">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-semibold text-slate-800">
                           Choose New Slot
@@ -733,7 +735,7 @@ export default function Appointments() {
                             onChange={(e) =>
                               setSelectedRescheduleSlot(e.target.value)
                             }
-                            className="min-w-0 flex-1 text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            className="saas-input min-w-0 flex-1 text-xs px-2.5 py-2"
                           >
                             <option value="">Select a date & time...</option>
                             {rescheduleSlots.map((slot) => (
@@ -748,7 +750,7 @@ export default function Appointments() {
                             type="button"
                             disabled={!selectedRescheduleSlot || isBusy}
                             onClick={saveReschedule}
-                            className="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium disabled:opacity-50 transition-colors whitespace-nowrap shrink-0"
+                            className="saas-btn-primary px-3 py-2 text-xs whitespace-nowrap shrink-0"
                           >
                             Save
                           </button>
@@ -764,7 +766,7 @@ export default function Appointments() {
                         type="button"
                         disabled={isBusy}
                         onClick={() => updateStatus(appointment.id, "CONFIRMED")}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors whitespace-nowrap"
                       >
                         <FiCheck className="w-3.5 h-3.5" />
                         <span>Confirm</span>
@@ -779,7 +781,7 @@ export default function Appointments() {
                             ? setRescheduleTarget(null)
                             : beginReschedule(appointment)
                         }
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-medium hover:bg-indigo-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-violet-200 bg-violet-50 text-violet-700 text-xs font-semibold hover:bg-violet-100 disabled:opacity-50 transition-colors whitespace-nowrap"
                       >
                         <FiRefreshCw className="w-3 h-3" />
                         <span>Reschedule</span>
@@ -790,7 +792,7 @@ export default function Appointments() {
                         type="button"
                         disabled={isBusy}
                         onClick={() => setCancelTarget(appointment)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100 disabled:opacity-50 transition-colors whitespace-nowrap"
                       >
                         <FiX className="w-3.5 h-3.5" />
                         <span>Cancel</span>
@@ -803,7 +805,7 @@ export default function Appointments() {
                             ? `/book-appointment/${appointment.provider.id}`
                             : "/providers"
                         }
-                        className="text-xs font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
+                        className="text-xs font-semibold text-violet-600 hover:text-violet-700 whitespace-nowrap"
                       >
                         Book again
                       </Link>

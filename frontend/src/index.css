@@ -6,10 +6,29 @@
   html {
     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
     scroll-behavior: smooth;
+    background-color: #faf9fc;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f5f3ff;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #ddd6fe;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #c4b5fd;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -22,7 +41,56 @@
   }
 }
 
+@layer components {
+  .saas-card {
+    @apply bg-white border border-slate-200/80 rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.03),0_6px_20px_-6px_rgba(124,58,237,0.05)];
+  }
+
+  .saas-card-interactive {
+    @apply bg-white border border-slate-200/80 rounded-2xl shadow-[0_1px_2px_rgba(15,23,42,0.03),0_6px_20px_-6px_rgba(124,58,237,0.05)] transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-300/90 hover:shadow-[0_12px_28px_-8px_rgba(124,58,237,0.14)];
+  }
+
+  .saas-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white font-semibold shadow-sm shadow-violet-600/20 hover:from-violet-700 hover:to-purple-700 hover:shadow-md hover:shadow-violet-600/25 active:scale-[0.98] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+
+  .saas-btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-medium shadow-sm hover:bg-violet-50/40 hover:border-violet-200 hover:text-violet-800 active:scale-[0.98] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .saas-input {
+    @apply w-full bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 hover:border-slate-300;
+  }
+
+  .saas-ambient-header {
+    background-image:
+      radial-gradient(65% 120% at 15% 0%, rgba(139, 92, 246, 0.11) 0%, rgba(139, 92, 246, 0) 70%),
+      radial-gradient(50% 100% at 90% 10%, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0) 70%);
+  }
+
+  .saas-ambient-canvas {
+    background-image:
+      radial-gradient(45% 40% at 10% 0%, rgba(139, 92, 246, 0.08) 0%, rgba(250, 249, 252, 0) 100%),
+      radial-gradient(40% 35% at 92% 10%, rgba(168, 85, 247, 0.07) 0%, rgba(250, 249, 252, 0) 100%);
+  }
+}
+
+@keyframes modalFadeScale {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 @layer utilities {
+  .animate-modal-in {
+    animation: modalFadeScale 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }

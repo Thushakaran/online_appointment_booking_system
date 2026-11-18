@@ -33,7 +33,7 @@ const Pagination = ({
           key="first"
           type="button"
           onClick={() => onPageChange(0)}
-          className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors tabular-nums"
+          className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-violet-50/50 hover:border-violet-200 hover:text-violet-700 transition-all tabular-nums"
         >
           1
         </button>
@@ -54,10 +54,10 @@ const Pagination = ({
           type="button"
           onClick={() => onPageChange(i)}
           aria-current={i === currentPage ? "page" : undefined}
-          className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors tabular-nums ${
+          className={`px-3 py-1.5 text-sm font-semibold rounded-xl border transition-all tabular-nums ${
             i === currentPage
-              ? "bg-indigo-600 text-white border-indigo-600"
-              : "text-slate-700 bg-white border-slate-200 hover:bg-slate-50"
+              ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white border-transparent shadow-sm shadow-violet-600/25"
+              : "text-slate-700 bg-white border-slate-200 hover:bg-violet-50/50 hover:border-violet-200 hover:text-violet-700"
           }`}
         >
           {i + 1}
@@ -78,7 +78,7 @@ const Pagination = ({
           key="last"
           type="button"
           onClick={() => onPageChange(totalPages - 1)}
-          className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors tabular-nums"
+          className="px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-violet-50/50 hover:border-violet-200 hover:text-violet-700 transition-all tabular-nums"
         >
           {totalPages}
         </button>
@@ -89,19 +89,19 @@ const Pagination = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-5 mt-5 border-t border-slate-200">
+    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-5 mt-5 border-t border-slate-200/80">
       <p className="text-sm text-slate-500 tabular-nums">
-        Showing <span className="font-medium text-slate-900">{startItem}</span> to{" "}
-        <span className="font-medium text-slate-900">{endItem}</span> of{" "}
-        <span className="font-medium text-slate-900">{totalElements}</span> results
+        Showing <span className="font-semibold text-slate-900">{startItem}</span> to{" "}
+        <span className="font-semibold text-slate-900">{endItem}</span> of{" "}
+        <span className="font-semibold text-slate-900">{totalElements}</span> results
       </p>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 flex-wrap justify-center">
         <button
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={!hasPrevious}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-violet-50/50 hover:border-violet-200 hover:text-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
         >
           <FiChevronLeft className="w-4 h-4" />
           <span>Previous</span>
@@ -113,7 +113,7 @@ const Pagination = ({
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={!hasNext}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-violet-50/50 hover:border-violet-200 hover:text-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all whitespace-nowrap"
         >
           <span>Next</span>
           <FiChevronRight className="w-4 h-4" />

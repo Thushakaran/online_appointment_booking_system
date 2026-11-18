@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login, clearError } from "../features/auth/authSlice";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FiEye, FiEyeOff, FiLock, FiUser, FiAlertCircle } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiLock, FiUser, FiAlertCircle, FiCalendar } from "react-icons/fi";
 import api from "../api/axios";
 
 export default function Login() {
@@ -80,10 +80,17 @@ export default function Login() {
   }, [role, token, navigate, redirectTarget]);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl shadow-sm p-8">
-        <div className="mb-6">
-          <h1 className="font-display text-2xl font-bold text-slate-900">
+    <div className="min-h-[calc(100vh-4rem)] saas-ambient-canvas flex items-center justify-center px-4 py-12 relative overflow-hidden">
+      <div
+        className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[540px] h-[260px] rounded-full bg-violet-200/35 blur-3xl"
+        aria-hidden="true"
+      />
+      <div className="relative w-full max-w-md saas-card p-8 sm:p-9">
+        <div className="mb-7">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 text-white flex items-center justify-center shadow-md shadow-violet-600/25 mb-5">
+            <FiCalendar className="w-5 h-5" aria-hidden="true" />
+          </div>
+          <h1 className="font-display text-2xl font-bold text-slate-900 tracking-tight">
             Sign in to AppointFlow
           </h1>
           <p className="mt-1.5 text-sm text-slate-600">
@@ -94,7 +101,7 @@ export default function Login() {
         {error && (
           <div
             role="alert"
-            className="mb-5 flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-700"
+            className="mb-5 flex items-start gap-2.5 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-sm text-rose-700"
           >
             <FiAlertCircle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
             <span>{error}</span>
@@ -123,10 +130,10 @@ export default function Login() {
                 value={form.username}
                 onChange={handleInputChange}
                 disabled={loading}
-                className={`w-full pl-10 pr-3.5 py-2.5 text-sm bg-white border rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors ${
+                className={`saas-input pl-10 pr-3.5 py-2.5 text-sm ${
                   validationErrors.username
                     ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500"
-                    : "border-slate-300 focus:ring-indigo-500/20 focus:border-indigo-600"
+                    : ""
                 }`}
               />
             </div>
@@ -156,16 +163,16 @@ export default function Login() {
                 value={form.password}
                 onChange={handleInputChange}
                 disabled={loading}
-                className={`w-full pl-10 pr-10 py-2.5 text-sm bg-white border rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 transition-colors ${
+                className={`saas-input pl-10 pr-10 py-2.5 text-sm ${
                   validationErrors.password
                     ? "border-rose-400 focus:ring-rose-500/20 focus:border-rose-500"
-                    : "border-slate-300 focus:ring-indigo-500/20 focus:border-indigo-600"
+                    : ""
                 }`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-violet-600 transition-colors"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
@@ -179,7 +186,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="saas-btn-primary w-full py-2.5 px-4 text-sm mt-2"
           >
             {loading ? (
               <>
@@ -192,9 +199,9 @@ export default function Login() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-600">
+        <p className="mt-6 pt-5 border-t border-slate-100 text-center text-sm text-slate-600">
           New to AppointFlow?{" "}
-          <Link to="/register" className="font-semibold text-indigo-600 hover:text-indigo-700">
+          <Link to="/register" className="font-semibold text-violet-600 hover:text-violet-700">
             Create an account
           </Link>
         </p>

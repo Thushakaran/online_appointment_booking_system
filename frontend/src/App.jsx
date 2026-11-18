@@ -28,27 +28,27 @@ const WORKSPACE_ROUTES = [
 
 function NotFoundPage() {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-md w-full text-center">
-        <p className="text-xs font-mono font-semibold text-indigo-600 uppercase tracking-wider">
+    <div className="min-h-[65vh] flex items-center justify-center px-4 saas-ambient-canvas">
+      <div className="saas-card p-8 sm:p-10 max-w-md w-full text-center">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-50 to-purple-100 border border-violet-200/80 text-violet-700 font-mono font-bold text-sm flex items-center justify-center mx-auto">
           404
-        </p>
-        <h1 className="font-display text-2xl font-bold text-slate-900 mt-2">
+        </div>
+        <h1 className="font-display text-2xl font-bold text-slate-900 mt-4">
           Page not found
         </h1>
-        <p className="text-sm text-slate-600 mt-2">
+        <p className="text-sm text-slate-600 mt-2 leading-relaxed">
           The page you requested does not exist or may have moved.
         </p>
-        <div className="mt-6 flex items-center justify-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <Link
             to="/"
-            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+            className="saas-btn-primary px-4 py-2.5 text-sm"
           >
             Back to Home
           </Link>
           <Link
             to="/providers"
-            className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+            className="saas-btn-secondary px-4 py-2.5 text-sm"
           >
             Browse Providers
           </Link>
@@ -65,9 +65,9 @@ function AppShell() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-[#faf9fc]">
       {!isWorkspaceRoute && <Navbar />}
-      <div className={isWorkspaceRoute ? "flex-1" : "flex-1"}>
+      <div className="flex-1">
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />

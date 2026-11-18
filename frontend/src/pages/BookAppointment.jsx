@@ -139,12 +139,12 @@ export default function BookAppointment() {
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-10 px-4">
+      <div className="min-h-[calc(100vh-4rem)] saas-ambient-canvas py-10 px-4">
         <div className="max-w-5xl mx-auto space-y-6 animate-pulse">
-          <div className="h-44 bg-white border border-slate-200 rounded-xl" />
+          <div className="h-44 saas-card" />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-7 h-72 bg-white border border-slate-200 rounded-xl" />
-            <div className="lg:col-span-5 h-72 bg-white border border-slate-200 rounded-xl" />
+            <div className="lg:col-span-7 h-72 saas-card" />
+            <div className="lg:col-span-5 h-72 saas-card" />
           </div>
         </div>
       </div>
@@ -153,17 +153,17 @@ export default function BookAppointment() {
 
   if (!provider) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-slate-50 flex items-center justify-center px-4">
-        <div className="bg-white border border-slate-200 rounded-xl p-8 max-w-md w-full text-center">
+      <div className="min-h-[calc(100vh-4rem)] saas-ambient-canvas flex items-center justify-center px-4">
+        <div className="saas-card p-8 max-w-md w-full text-center">
           <FiAlertCircle className="w-8 h-8 text-rose-500 mx-auto mb-3" />
-          <h1 className="text-lg font-semibold text-slate-900">Provider not found</h1>
+          <h1 className="font-display text-lg font-bold text-slate-900">Provider not found</h1>
           <p className="text-sm text-slate-500 mt-1">
             {err || "We could not locate this service provider."}
           </p>
           <button
             type="button"
             onClick={() => navigate("/providers")}
-            className="mt-5 px-5 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+            className="saas-btn-primary mt-5 px-5 py-2.5 text-sm"
           >
             Back to Providers
           </button>
@@ -173,12 +173,12 @@ export default function BookAppointment() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-4rem)] saas-ambient-canvas py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-6">
         <button
           type="button"
           onClick={() => navigate("/providers")}
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-violet-700 transition-colors"
         >
           <FiArrowLeft className="w-4 h-4" />
           <span>Back to Providers</span>
@@ -187,7 +187,7 @@ export default function BookAppointment() {
         {err && (
           <div
             role="alert"
-            className="flex items-start gap-2.5 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm"
+            className="flex items-start gap-2.5 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-sm"
           >
             <FiAlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{err}</span>
@@ -196,11 +196,11 @@ export default function BookAppointment() {
 
         {/* Confirmed Success Banner */}
         {confirmedBooking && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
+          <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+            <div className="flex items-start gap-3.5">
               <FiCheckCircle className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
               <div>
-                <h2 className="text-base font-semibold text-emerald-950">
+                <h2 className="font-display text-base font-bold text-emerald-950">
                   Appointment Requested Successfully
                 </h2>
                 <p className="text-sm text-emerald-800 mt-0.5 tabular-nums">
@@ -212,7 +212,7 @@ export default function BookAppointment() {
             <div className="flex items-center gap-2 shrink-0">
               <Link
                 to="/appointments"
-                className="px-4 py-2 rounded-lg bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-800 transition-colors whitespace-nowrap"
+                className="px-4 py-2 rounded-xl bg-emerald-700 text-white text-sm font-semibold hover:bg-emerald-800 transition-colors whitespace-nowrap"
               >
                 View My Appointments
               </Link>
@@ -221,9 +221,9 @@ export default function BookAppointment() {
         )}
 
         {/* Provider Summary Header Card */}
-        <section className="bg-white border border-slate-200 rounded-xl p-6">
+        <section className="saas-card p-6">
           <div className="flex flex-col sm:flex-row items-start gap-6">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200/70 shrink-0 flex items-center justify-center">
               {provider.profileImage && !imgFailed ? (
                 <img
                   src={provider.profileImage}
@@ -233,27 +233,29 @@ export default function BookAppointment() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <FiBriefcase className="w-8 h-8 text-indigo-600" />
+                <FiBriefcase className="w-8 h-8 text-violet-600" />
               )}
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h1 className="font-display text-2xl font-bold text-slate-900">
+                  <h1 className="font-display text-2xl font-bold text-slate-900 tracking-tight">
                     {provider.serviceName}
                   </h1>
                   <p className="text-sm text-slate-500 mt-0.5">
                     Provided by{" "}
-                    <span className="font-medium text-slate-800">
+                    <span className="font-semibold text-slate-800">
                       {provider.user?.username || "Specialist"}
                     </span>
                   </p>
                 </div>
                 {provider.servicePricing && (
-                  <div className="text-left sm:text-right">
-                    <span className="text-xs text-slate-500 block">Rate</span>
-                    <span className="text-base font-bold text-slate-900 font-mono tabular-nums">
+                  <div className="sm:text-right bg-violet-50/80 border border-violet-200/70 px-3.5 py-2 rounded-xl self-start">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-700 block">
+                      Rate
+                    </span>
+                    <span className="text-base font-bold text-violet-950 font-mono tabular-nums">
                       ${provider.servicePricing}
                     </span>
                   </div>
@@ -269,13 +271,13 @@ export default function BookAppointment() {
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-600">
                 {provider.phoneNumber && (
                   <span className="inline-flex items-center gap-1.5">
-                    <FiPhone className="w-3.5 h-3.5 text-slate-400" />
+                    <FiPhone className="w-3.5 h-3.5 text-violet-500" />
                     <span>{provider.phoneNumber}</span>
                   </span>
                 )}
                 {(provider.city || provider.state) && (
                   <span className="inline-flex items-center gap-1.5">
-                    <FiMapPin className="w-3.5 h-3.5 text-slate-400" />
+                    <FiMapPin className="w-3.5 h-3.5 text-violet-500" />
                     <span>
                       {[provider.address, provider.city, provider.state]
                         .filter(Boolean)
@@ -291,8 +293,8 @@ export default function BookAppointment() {
         {/* Booking Workspace: Slot Selection + Review Panel */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left: Date & Time Selection */}
-          <section className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6">
-            <h2 className="font-display text-lg font-semibold text-slate-900">
+          <section className="lg:col-span-7 saas-card p-6">
+            <h2 className="font-display text-lg font-bold text-slate-900">
               1. Select Date & Time Slot
             </h2>
             <p className="text-xs text-slate-500 mt-1">
@@ -300,9 +302,9 @@ export default function BookAppointment() {
             </p>
 
             {dateKeys.length === 0 ? (
-              <div className="mt-6 py-12 text-center border border-dashed border-slate-200 rounded-xl">
+              <div className="mt-6 py-12 text-center border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                 <FiCalendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-semibold text-slate-900">
                   No open slots available right now
                 </p>
                 <p className="text-xs text-slate-500 mt-1">
@@ -324,10 +326,10 @@ export default function BookAppointment() {
                           setSelectedDateKey(dayKey);
                           setSelectedSlot(null);
                         }}
-                        className={`px-3.5 py-2.5 rounded-lg border text-left transition-colors ${
+                        className={`px-3.5 py-2.5 rounded-xl border text-left transition-all ${
                           active
-                            ? "bg-indigo-600 text-white border-indigo-600"
-                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                            ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white border-transparent shadow-sm shadow-violet-600/25"
+                            : "bg-white text-slate-700 border-slate-200 hover:border-violet-300 hover:bg-violet-50/40"
                         }`}
                       >
                         <div className="text-xs font-semibold tabular-nums">
@@ -335,7 +337,7 @@ export default function BookAppointment() {
                         </div>
                         <div
                           className={`text-[11px] mt-0.5 tabular-nums ${
-                            active ? "text-indigo-100" : "text-slate-500"
+                            active ? "text-violet-100" : "text-slate-500"
                           }`}
                         >
                           {count} open
@@ -361,13 +363,13 @@ export default function BookAppointment() {
                           key={slot.id}
                           type="button"
                           onClick={() => setSelectedSlot(slot)}
-                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border text-sm font-medium font-mono tabular-nums transition-colors ${
+                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium font-mono tabular-nums transition-all ${
                             isSelected
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-600 ring-1 ring-indigo-600"
-                              : "bg-white text-slate-800 border-slate-200 hover:border-indigo-300 hover:bg-slate-50"
+                              ? "bg-violet-50 text-violet-700 border-violet-600 ring-1 ring-violet-600 shadow-sm"
+                              : "bg-white text-slate-800 border-slate-200 hover:border-violet-300 hover:bg-violet-50/40"
                           }`}
                         >
-                          <FiClock className="w-3.5 h-3.5 shrink-0" />
+                          <FiClock className={`w-3.5 h-3.5 shrink-0 ${isSelected ? "text-violet-600" : "text-slate-400"}`} />
                           <span>{dayjs(slot.availableDate).format("h:mm A")}</span>
                         </button>
                       );
@@ -379,8 +381,8 @@ export default function BookAppointment() {
           </section>
 
           {/* Right: Booking Summary & Confirmation */}
-          <aside className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6">
-            <h2 className="font-display text-lg font-semibold text-slate-900">
+          <aside className="lg:col-span-5 saas-card p-6">
+            <h2 className="font-display text-lg font-bold text-slate-900">
               2. Review & Confirm
             </h2>
             <p className="text-xs text-slate-500 mt-1">
@@ -390,7 +392,7 @@ export default function BookAppointment() {
             <dl className="mt-5 divide-y divide-slate-100 text-sm">
               <div className="py-3 flex justify-between gap-4">
                 <dt className="text-slate-500">Service</dt>
-                <dd className="font-medium text-slate-900 text-right">
+                <dd className="font-semibold text-slate-900 text-right">
                   {provider.serviceName}
                 </dd>
               </div>
@@ -410,7 +412,7 @@ export default function BookAppointment() {
               </div>
               <div className="py-3 flex justify-between gap-4">
                 <dt className="text-slate-500">Time</dt>
-                <dd className="font-medium text-slate-900 text-right font-mono tabular-nums">
+                <dd className="font-medium text-violet-700 text-right font-mono tabular-nums">
                   {selectedSlot
                     ? dayjs(selectedSlot.availableDate).format("h:mm A")
                     : "Not selected"}
@@ -418,7 +420,7 @@ export default function BookAppointment() {
               </div>
               <div className="py-3 flex justify-between gap-4">
                 <dt className="text-slate-500">Pricing</dt>
-                <dd className="font-semibold text-slate-900 text-right font-mono tabular-nums">
+                <dd className="font-bold text-slate-900 text-right font-mono tabular-nums">
                   {provider.servicePricing ? `$${provider.servicePricing}` : "Standard"}
                 </dd>
               </div>
@@ -428,7 +430,7 @@ export default function BookAppointment() {
               type="button"
               disabled={!selectedSlot || bookingLoading || role !== "USER"}
               onClick={handleConfirmBooking}
-              className="mt-6 w-full py-2.5 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="saas-btn-primary mt-6 w-full py-2.5 px-4 text-sm"
             >
               {bookingLoading
                 ? "Confirming Appointment..."
@@ -440,10 +442,10 @@ export default function BookAppointment() {
         </div>
 
         {/* Client Reviews Section */}
-        <section className="bg-white border border-slate-200 rounded-xl p-6">
+        <section className="saas-card p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
             <div>
-              <h2 className="font-display text-lg font-semibold text-slate-900">
+              <h2 className="font-display text-lg font-bold text-slate-900">
                 Client Reviews
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -492,11 +494,11 @@ export default function BookAppointment() {
                 <div key={review.id} className="py-4 space-y-1.5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center shrink-0">
+                      <span className="w-8 h-8 rounded-xl bg-violet-50 border border-violet-100 text-xs font-bold text-violet-700 flex items-center justify-center shrink-0">
                         {(review.reviewer || "C").slice(0, 2).toUpperCase()}
                       </span>
                       <div>
-                        <p className="text-sm font-medium text-slate-900">
+                        <p className="text-sm font-semibold text-slate-900">
                           {review.reviewer}
                         </p>
                         <p className="text-xs text-slate-400 tabular-nums">
@@ -521,7 +523,7 @@ export default function BookAppointment() {
                     </div>
                   </div>
                   {review.comment && (
-                    <p className="text-sm text-slate-600 leading-relaxed pl-9">
+                    <p className="text-sm text-slate-600 leading-relaxed pl-10">
                       {review.comment}
                     </p>
                   )}

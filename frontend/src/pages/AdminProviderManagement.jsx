@@ -212,14 +212,14 @@ export default function AdminProviderManagement() {
         <div className="flex items-center gap-2">
           <Link
             to="/admin-dashboard"
-            className="px-3.5 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
+            className="saas-btn-secondary px-3.5 py-2 text-sm whitespace-nowrap"
           >
             Back to Overview
           </Link>
           <button
             type="button"
             onClick={() => setShowAddForm((prev) => !prev)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
+            className="saas-btn-primary px-4 py-2 text-sm whitespace-nowrap"
           >
             <FiPlus className="w-4 h-4" />
             <span>{showAddForm ? "Close Form" : "Add Provider"}</span>
@@ -231,14 +231,14 @@ export default function AdminProviderManagement() {
         {error && (
           <div
             role="alert"
-            className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
           >
             <span>{error}</span>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={fetchData}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-medium"
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-medium"
               >
                 <FiRefreshCw className="w-3.5 h-3.5" />
                 <span>Retry</span>
@@ -255,7 +255,7 @@ export default function AdminProviderManagement() {
         )}
 
         {message && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-sm flex items-center justify-between gap-4">
             <span>{message}</span>
             <button
               type="button"
@@ -269,10 +269,10 @@ export default function AdminProviderManagement() {
 
         {/* Add Provider Panel */}
         {showAddForm && (
-          <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <div className="saas-card p-6 animate-modal-in">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="font-semibold text-slate-900">
+                <h2 className="font-display font-bold text-slate-900">
                   Onboard New Service Provider
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -282,7 +282,7 @@ export default function AdminProviderManagement() {
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600"
                 aria-label="Close form"
               >
                 <FiX className="w-4 h-4" />
@@ -290,7 +290,7 @@ export default function AdminProviderManagement() {
             </div>
 
             {eligibleUsers.length === 0 ? (
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-600">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-600">
                 No eligible client accounts are available to promote. Register a
                 new account first.
               </div>
@@ -311,7 +311,7 @@ export default function AdminProviderManagement() {
                       onChange={(e) =>
                         setForm({ ...form, userId: e.target.value })
                       }
-                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="saas-input px-3.5 py-2 text-sm"
                     >
                       <option value="">Select user account...</option>
                       {eligibleUsers.map((u) => (
@@ -338,7 +338,7 @@ export default function AdminProviderManagement() {
                         setForm({ ...form, serviceName: e.target.value })
                       }
                       placeholder="e.g., Medical Consultation"
-                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="saas-input px-3.5 py-2 text-sm"
                     />
                   </div>
 
@@ -357,7 +357,7 @@ export default function AdminProviderManagement() {
                         setForm({ ...form, phoneNumber: e.target.value })
                       }
                       placeholder="+1 (555) 123-4567"
-                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="saas-input px-3.5 py-2 text-sm"
                     />
                   </div>
 
@@ -376,7 +376,7 @@ export default function AdminProviderManagement() {
                         setForm({ ...form, servicePricing: e.target.value })
                       }
                       placeholder="150 / 45-min session"
-                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="saas-input px-3.5 py-2 text-sm"
                     />
                   </div>
 
@@ -395,7 +395,7 @@ export default function AdminProviderManagement() {
                         setForm({ ...form, address: e.target.value })
                       }
                       placeholder="123 Main Street"
-                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="saas-input px-3.5 py-2 text-sm"
                     />
                   </div>
 
@@ -415,7 +415,7 @@ export default function AdminProviderManagement() {
                           setForm({ ...form, city: e.target.value })
                         }
                         placeholder="San Francisco"
-                        className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        className="saas-input px-3.5 py-2 text-sm"
                       />
                     </div>
                     <div>
@@ -433,7 +433,7 @@ export default function AdminProviderManagement() {
                           setForm({ ...form, state: e.target.value })
                         }
                         placeholder="CA"
-                        className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        className="saas-input px-3.5 py-2 text-sm"
                       />
                     </div>
                   </div>
@@ -454,7 +454,7 @@ export default function AdminProviderManagement() {
                       setForm({ ...form, description: e.target.value })
                     }
                     placeholder="Describe the service..."
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="saas-input px-3.5 py-2 text-sm"
                   />
                 </div>
 
@@ -462,7 +462,7 @@ export default function AdminProviderManagement() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                    className="saas-btn-primary px-4 py-2 text-sm"
                   >
                     <FiCheck className="w-4 h-4" />
                     <span>{submitting ? "Adding..." : "Create Provider"}</span>
@@ -470,7 +470,7 @@ export default function AdminProviderManagement() {
                   <button
                     type="button"
                     onClick={() => setShowAddForm(false)}
-                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50"
+                    className="saas-btn-secondary px-4 py-2 text-sm"
                   >
                     Cancel
                   </button>
@@ -481,10 +481,10 @@ export default function AdminProviderManagement() {
         )}
 
         {/* Directory Table */}
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
+        <div className="saas-card p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
             <div>
-              <h2 className="font-semibold text-slate-900">
+              <h2 className="font-display font-bold text-slate-900">
                 All Providers ({filteredProviders.length})
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -499,7 +499,7 @@ export default function AdminProviderManagement() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search service, username, city..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                className="saas-input pl-9 pr-3 py-2 text-sm"
               />
             </div>
           </div>
@@ -509,14 +509,16 @@ export default function AdminProviderManagement() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-14 bg-slate-100 rounded-lg animate-pulse"
+                  className="h-14 bg-slate-100 rounded-xl animate-pulse"
                 />
               ))}
             </div>
           ) : filteredProviders.length === 0 ? (
             <div className="py-12 text-center">
-              <FiBriefcase className="w-9 h-9 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm font-medium text-slate-900">
+              <div className="w-12 h-12 rounded-2xl bg-violet-50 border border-violet-100 text-violet-600 flex items-center justify-center mx-auto mb-3">
+                <FiBriefcase className="w-5 h-5" />
+              </div>
+              <p className="text-sm font-semibold text-slate-900">
                 No providers found
               </p>
               <p className="text-xs text-slate-500 mt-1">
@@ -526,7 +528,7 @@ export default function AdminProviderManagement() {
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="mt-4 px-3.5 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  className="saas-btn-secondary mt-4 px-3.5 py-1.5 text-xs"
                 >
                   Clear search
                 </button>
@@ -547,12 +549,12 @@ export default function AdminProviderManagement() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredProviders.map((provider) => (
-                    <tr key={provider.id} className="hover:bg-slate-50/70">
+                    <tr key={provider.id} className="hover:bg-violet-50/30 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-xs text-slate-400 tabular-nums">
                         #{provider.id}
                       </td>
                       <td className="py-3.5 px-4">
-                        <p className="font-medium text-slate-900">
+                        <p className="font-semibold text-slate-900">
                           {provider.user?.username || "—"}
                         </p>
                         <p className="text-xs text-slate-500">
@@ -560,7 +562,7 @@ export default function AdminProviderManagement() {
                         </p>
                       </td>
                       <td className="py-3.5 px-4 max-w-xs">
-                        <p className="font-medium text-slate-900 truncate">
+                        <p className="font-semibold text-slate-900 truncate">
                           {provider.serviceName}
                         </p>
                         {provider.description && (
@@ -574,7 +576,7 @@ export default function AdminProviderManagement() {
                           .filter(Boolean)
                           .join(", ") || "—"}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600 font-mono text-xs tabular-nums whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-slate-700 font-mono text-xs tabular-nums whitespace-nowrap">
                         {provider.servicePricing
                           ? `$${provider.servicePricing}`
                           : "—"}
@@ -584,7 +586,7 @@ export default function AdminProviderManagement() {
                           <button
                             type="button"
                             onClick={() => openEditModal(provider)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
+                            className="saas-btn-secondary px-2.5 py-1.5 text-xs whitespace-nowrap"
                           >
                             <FiEdit2 className="w-3.5 h-3.5" />
                             <span>Edit</span>
@@ -592,7 +594,7 @@ export default function AdminProviderManagement() {
                           <button
                             type="button"
                             onClick={() => setDeleteTarget(provider)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 transition-colors whitespace-nowrap"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-semibold hover:bg-rose-100 transition-colors whitespace-nowrap"
                           >
                             <FiTrash2 className="w-3.5 h-3.5" />
                             <span>Delete</span>
@@ -611,23 +613,23 @@ export default function AdminProviderManagement() {
       {/* Edit Provider Modal */}
       {editTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/45 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="edit-provider-title"
         >
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto animate-modal-in">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
               <h3
                 id="edit-provider-title"
-                className="text-base font-semibold text-slate-900"
+                className="font-display text-base font-bold text-slate-900"
               >
                 Edit Provider ({editTarget.user?.username || "Service"})
               </h3>
               <button
                 type="button"
                 onClick={() => setEditTarget(null)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl"
                 aria-label="Close modal"
               >
                 <FiX className="w-5 h-5" />
@@ -646,7 +648,7 @@ export default function AdminProviderManagement() {
                   onChange={(e) =>
                     setEditForm({ ...editForm, serviceName: e.target.value })
                   }
-                  className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="saas-input px-3.5 py-2 text-sm"
                 />
               </div>
 
@@ -660,7 +662,7 @@ export default function AdminProviderManagement() {
                   onChange={(e) =>
                     setEditForm({ ...editForm, address: e.target.value })
                   }
-                  className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="saas-input px-3.5 py-2 text-sm"
                 />
               </div>
 
@@ -675,7 +677,7 @@ export default function AdminProviderManagement() {
                     onChange={(e) =>
                       setEditForm({ ...editForm, city: e.target.value })
                     }
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="saas-input px-3.5 py-2 text-sm"
                   />
                 </div>
                 <div>
@@ -688,7 +690,7 @@ export default function AdminProviderManagement() {
                     onChange={(e) =>
                       setEditForm({ ...editForm, state: e.target.value })
                     }
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="saas-input px-3.5 py-2 text-sm"
                   />
                 </div>
               </div>
@@ -704,7 +706,7 @@ export default function AdminProviderManagement() {
                     onChange={(e) =>
                       setEditForm({ ...editForm, zipCode: e.target.value })
                     }
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="saas-input px-3.5 py-2 text-sm"
                   />
                 </div>
                 <div>
@@ -717,7 +719,7 @@ export default function AdminProviderManagement() {
                     onChange={(e) =>
                       setEditForm({ ...editForm, country: e.target.value })
                     }
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="saas-input px-3.5 py-2 text-sm"
                   />
                 </div>
               </div>
@@ -733,7 +735,7 @@ export default function AdminProviderManagement() {
                     onChange={(e) =>
                       setEditForm({ ...editForm, phoneNumber: e.target.value })
                     }
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="saas-input px-3.5 py-2 text-sm"
                   />
                 </div>
                 <div>
@@ -749,7 +751,7 @@ export default function AdminProviderManagement() {
                         servicePricing: e.target.value,
                       })
                     }
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="saas-input px-3.5 py-2 text-sm"
                   />
                 </div>
               </div>
@@ -764,22 +766,22 @@ export default function AdminProviderManagement() {
                   onChange={(e) =>
                     setEditForm({ ...editForm, description: e.target.value })
                   }
-                  className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="saas-input px-3.5 py-2 text-sm"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setEditTarget(null)}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50"
+                  className="saas-btn-secondary px-4 py-2 text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                  className="saas-btn-primary px-4 py-2 text-sm"
                 >
                   {submitting ? "Saving..." : "Save Changes"}
                 </button>
