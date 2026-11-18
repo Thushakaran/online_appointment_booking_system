@@ -474,9 +474,27 @@ export default function ProviderDashboard() {
                       className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
                   </div>
-                  <div className="w-full sm:w-32">
-                    <label htmlFor="repeat-weeks" className="block text-xs font-medium text-slate-700 mb-1.5">Repeat weekly</label>
-                    <input id="repeat-weeks" type="number" min="1" max="12" value={availabilityForm.repeatWeeks} onChange={(e) => setAvailabilityForm({ ...availabilityForm, repeatWeeks: e.target.value })} className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg" />
+                  <div className="w-full sm:w-36">
+                    <label
+                      htmlFor="repeat-weeks"
+                      className="block text-xs font-medium text-slate-700 mb-1.5"
+                    >
+                      Repeat (weeks)
+                    </label>
+                    <input
+                      id="repeat-weeks"
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={availabilityForm.repeatWeeks}
+                      onChange={(e) =>
+                        setAvailabilityForm({
+                          ...availabilityForm,
+                          repeatWeeks: e.target.value,
+                        })
+                      }
+                      className="w-full px-3.5 py-2 text-sm font-mono tabular-nums bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
                   </div>
                   <button
                     type="submit"

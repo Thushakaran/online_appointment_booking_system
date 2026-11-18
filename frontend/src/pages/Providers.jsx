@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import {
@@ -7,6 +7,8 @@ import {
   FiArrowRight,
   FiBriefcase,
   FiX,
+  FiStar,
+  FiMessageSquare,
 } from "react-icons/fi";
 import api from "../api/axios";
 import Pagination from "../components/Pagination";
@@ -17,6 +19,24 @@ const SEARCH_TYPES = [
   { value: "city", label: "City" },
   { value: "description", label: "Specialty" },
 ];
+
+function StarRow({ rating, size = "w-3.5 h-3.5" }) {
+  const rounded = Math.round(rating || 0);
+  return (
+    <span className="inline-flex items-center gap-0.5" aria-hidden="true">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <FiStar
+          key={star}
+          className={`${size} ${
+            star <= rounded
+              ? "text-amber-500 fill-amber-400"
+              : "text-slate-200 fill-slate-100"
+          }`}
+        />
+      ))}
+    </span>
+  );
+}
 
 export default function Providers() {
   const navigate = useNavigate();
@@ -35,6 +55,7 @@ export default function Providers() {
   const [failedImages, setFailedImages] = useState({});
   const [maxPrice, setMaxPrice] = useState("");
   const [providerRatings, setProviderRatings] = useState({});
+  const [activeReviewsProvider, setActiveReviewsProvider] = useState(null);
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -76,14 +97,35 @@ export default function Providers() {
       }
 
       const data = response.data;
-      setProviders(data.content || []);
-      const reviewLists = await Promise.all((data.content || []).map((provider) =>
-        api.get(`/api/reviews/provider/${provider.id}`).then((r) => r.data || []).catch(() => [])
-      ));
-      setProviderRatings(Object.fromEntries((data.content || []).map((provider, index) => {
-        const reviews = reviewLists[index];
-        return [provider.id, { count: reviews.length, average: reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0, reviews: reviews.slice(0, 3) }];
-      })));
+      const list = data.content || [];
+      setProviders(list);
+
+      const reviewLists = await Promise.all(
+        list.map((provider) =>
+          api
+            .get(`/api/reviews/provider/${provider.id}`)
+            .then((r) => r.data || [])
+            .catch(() => [])
+        )
+      );
+
+      setProviderRatings(
+        Object.fromEntries(
+          list.map((provider, index) => {
+            const reviews = reviewLists[index];
+            const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+            return [
+              provider.id,
+              {
+                count: reviews.length,
+                average: reviews.length ? total / reviews.length : 0,
+                reviews,
+              },
+            ];
+          })
+        )
+      );
+
       setTotalElements(data.totalElements || 0);
       setTotalPages(data.totalPages || 0);
       setHasNext(data.hasNext || false);
@@ -101,6 +143,17 @@ export default function Providers() {
     fetchProviders();
   }, [fetchProviders]);
 
+  const filteredProviders = useMemo(() => {
+    const cap = Number(maxPrice);
+    if (!maxPrice || Number.isNaN(cap) || cap <= 0) return providers;
+    return providers.filter((p) => {
+      const priceMatch = String(p.servicePricing || "").match(/[\d.]+/);
+      if (!priceMatch) return true;
+      const price = Number(priceMatch[0]);
+      return Number.isNaN(price) || price <= cap;
+    });
+  }, [providers, maxPrice]);
+
   const handleProviderClick = (provider) => {
     navigate(`/book-appointment/${provider.id}`, {
       state: { provider },
@@ -117,8 +170,17 @@ export default function Providers() {
     setSearchInput("");
     setSearchTerm("");
     setSearchType("general");
+    setMaxPrice("");
     setCurrentPage(0);
   };
+
+  const modalRatingInfo = activeReviewsProvider
+    ? providerRatings[activeReviewsProvider.id] || {
+        count: 0,
+        average: 0,
+        reviews: [],
+      }
+    : null;
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50">
@@ -131,23 +193,25 @@ export default function Providers() {
                 Service Providers
               </h1>
               <p className="mt-1.5 text-sm text-slate-600">
-                Select a specialist to view real-time availability and book your
-                appointment.
+                Select a specialist to view real-time availability, client reviews, and
+                book your appointment.
               </p>
             </div>
             <p className="text-sm text-slate-500 tabular-nums">
-              {loading ? "Loading..." : `${totalElements} provider${totalElements === 1 ? "" : "s"} found`}
+              {loading
+                ? "Loading..."
+                : `${totalElements} provider${totalElements === 1 ? "" : "s"} listed`}
             </p>
           </div>
 
           {/* Search & Filter Toolbar */}
           <form
             onSubmit={handleSearchSubmit}
-            className="mt-6 flex flex-col lg:flex-row gap-3 items-stretch lg:items-center"
+            className="mt-6 flex flex-col xl:flex-row gap-3 items-stretch xl:items-center"
           >
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0">
               <FiSearch
-                className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
+                className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                 aria-hidden="true"
               />
               <input
@@ -160,7 +224,11 @@ export default function Providers() {
               {(searchInput || searchTerm) && (
                 <button
                   type="button"
-                  onClick={clearSearch}
+                  onClick={() => {
+                    setSearchInput("");
+                    setSearchTerm("");
+                    setCurrentPage(0);
+                  }}
                   aria-label="Clear search"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                 >
@@ -169,7 +237,7 @@ export default function Providers() {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
               <div
                 role="group"
                 aria-label="Search scope"
@@ -183,7 +251,7 @@ export default function Providers() {
                       setSearchType(t.value);
                       setCurrentPage(0);
                     }}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
                       searchType === t.value
                         ? "bg-white text-slate-900 shadow-sm"
                         : "text-slate-600 hover:text-slate-900"
@@ -194,17 +262,42 @@ export default function Providers() {
                 ))}
               </div>
 
+              <div className="relative w-36 shrink-0">
+                <label htmlFor="max-price-filter" className="sr-only">
+                  Maximum price
+                </label>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 pointer-events-none">
+                  Max $
+                </span>
+                <input
+                  id="max-price-filter"
+                  type="number"
+                  min="0"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  placeholder="Any"
+                  className="w-full pl-12 pr-7 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                />
+                {maxPrice && (
+                  <button
+                    type="button"
+                    onClick={() => setMaxPrice("")}
+                    aria-label="Clear max price"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <FiX className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors whitespace-nowrap"
+                className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors whitespace-nowrap shrink-0"
               >
                 Search
               </button>
             </div>
           </form>
-          <div className="mt-3 flex flex-wrap gap-3 items-center text-sm">
-            <label className="flex items-center gap-2 text-slate-600">Maximum price<input type="number" min="0" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="Any" className="w-24 px-2 py-1.5 border border-slate-300 rounded-md" /></label>
-          </div>
         </div>
       </div>
 
@@ -232,36 +325,41 @@ export default function Providers() {
               </div>
             ))}
           </div>
-        ) : providers.length === 0 ? (
+        ) : filteredProviders.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
             <FiSearch className="w-8 h-8 text-slate-300 mx-auto mb-3" />
             <h2 className="text-base font-semibold text-slate-900">
-              No providers found
+              No providers match your filters
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              {searchTerm
+              {maxPrice && providers.length > 0
+                ? `No specialists on this page are priced at $${maxPrice} or below.`
+                : searchTerm
                 ? `No service providers matched "${searchTerm}".`
                 : "No service providers are currently listed."}
             </p>
-            {searchTerm && (
+            {(searchTerm || maxPrice) && (
               <button
                 type="button"
                 onClick={clearSearch}
                 className="mt-4 px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
               >
-                Reset search filters
+                Reset all filters
               </button>
             )}
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {providers.filter((p) => {
-                const price = Number(String(p.servicePricing || "").replace(/[^\d.]/g, ""));
-                return !maxPrice || !price || price <= Number(maxPrice);
-              }).map((provider) => {
+              {filteredProviders.map((provider) => {
                 const showFallback =
                   !provider.profileImage || failedImages[provider.id];
+                const ratingInfo = providerRatings[provider.id] || {
+                  count: 0,
+                  average: 0,
+                  reviews: [],
+                };
+
                 return (
                   <article
                     key={provider.id}
@@ -311,25 +409,39 @@ export default function Providers() {
                             </>
                           )}
                         </div>
-                        <div className="mt-2 flex items-center gap-1.5 text-sm" aria-label={providerRatings[provider.id]?.count ? `${providerRatings[provider.id].average.toFixed(1)} out of 5 from ${providerRatings[provider.id].count} reviews` : "No reviews yet"}>
-                          <span className="text-amber-500" aria-hidden="true">★</span>
-                          <span className="font-semibold text-slate-800">{providerRatings[provider.id]?.count ? providerRatings[provider.id].average.toFixed(1) : "New"}</span>
-                          <span className="text-xs text-slate-500">({providerRatings[provider.id]?.count || 0} reviews)</span>
+
+                        {/* Clean Rating & Review Trigger */}
+                        <div className="mt-3 flex items-center justify-between gap-2 text-xs">
+                          <div
+                            className="flex items-center gap-1.5"
+                            aria-label={
+                              ratingInfo.count
+                                ? `${ratingInfo.average.toFixed(1)} out of 5 from ${ratingInfo.count} reviews`
+                                : "No reviews yet"
+                            }
+                          >
+                            <StarRow rating={ratingInfo.average} />
+                            <span className="font-semibold text-slate-900 font-mono tabular-nums">
+                              {ratingInfo.count ? ratingInfo.average.toFixed(1) : "New"}
+                            </span>
+                            <span className="text-slate-500 tabular-nums">
+                              · {ratingInfo.count}{" "}
+                              {ratingInfo.count === 1 ? "review" : "reviews"}
+                            </span>
+                          </div>
+
+                          {ratingInfo.count > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setActiveReviewsProvider(provider)}
+                              className="inline-flex items-center gap-1 font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
+                            >
+                              <FiMessageSquare className="w-3 h-3" aria-hidden="true" />
+                              <span>Read reviews</span>
+                            </button>
+                          )}
                         </div>
-                        {!!providerRatings[provider.id]?.count && (
-                          <details className="mt-2 text-xs text-slate-600">
-                            <summary className="cursor-pointer text-indigo-700 hover:text-indigo-900">Read recent reviews</summary>
-                            <div className="mt-2 space-y-2">
-                              {providerRatings[provider.id].reviews.map((review) => (
-                                <blockquote key={review.id} className="border-l-2 border-amber-300 pl-2.5 py-0.5">
-                                  <p className="text-amber-600" aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(review.rating)}<span className="sr-only"> {review.rating} out of 5 stars</span></p>
-                                  {review.comment && <p className="mt-0.5">{review.comment}</p>}
-                                  <footer className="mt-0.5 text-slate-400">{review.reviewer} · {dayjs(review.createdAt).format("MMM D, YYYY")}</footer>
-                                </blockquote>
-                              ))}
-                            </div>
-                          </details>
-                        )}
+
                         {provider.description && (
                           <p className="mt-3 text-sm text-slate-600 line-clamp-2 leading-relaxed">
                             {provider.description}
@@ -370,6 +482,106 @@ export default function Providers() {
           </>
         )}
       </div>
+
+      {/* Client Reviews Drawer Modal */}
+      {activeReviewsProvider && modalRatingInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="provider-reviews-title"
+        >
+          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4">
+              <div>
+                <h2
+                  id="provider-reviews-title"
+                  className="text-base font-semibold text-slate-900"
+                >
+                  {activeReviewsProvider.serviceName}
+                </h2>
+                <div className="mt-1 flex items-center gap-2 text-xs text-slate-600">
+                  <StarRow rating={modalRatingInfo.average} size="w-3.5 h-3.5" />
+                  <span className="font-semibold text-slate-900 font-mono tabular-nums">
+                    {modalRatingInfo.average.toFixed(1)} out of 5
+                  </span>
+                  <span aria-hidden="true">·</span>
+                  <span className="tabular-nums">
+                    {modalRatingInfo.count}{" "}
+                    {modalRatingInfo.count === 1 ? "client review" : "client reviews"}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveReviewsProvider(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                aria-label="Close reviews"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="max-h-96 overflow-y-auto divide-y divide-slate-100 px-6">
+              {modalRatingInfo.reviews.map((review) => (
+                <div key={review.id} className="py-4 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center shrink-0">
+                        {(review.reviewer || "C").slice(0, 2).toUpperCase()}
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">
+                          {review.reviewer}
+                        </p>
+                        <p className="text-xs text-slate-400 tabular-nums">
+                          {dayjs(review.createdAt).format("MMM D, YYYY")}
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className="flex items-center gap-1.5"
+                      aria-label={`${review.rating} out of 5 stars`}
+                    >
+                      <StarRow rating={review.rating} size="w-3.5 h-3.5" />
+                      <span className="text-xs font-mono font-semibold text-slate-700 tabular-nums">
+                        {review.rating}.0
+                      </span>
+                    </div>
+                  </div>
+                  {review.comment && (
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      {review.comment}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setActiveReviewsProvider(null)}
+                className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const target = activeReviewsProvider;
+                  setActiveReviewsProvider(null);
+                  handleProviderClick(target);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+              >
+                <span>Select Time</span>
+                <FiArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

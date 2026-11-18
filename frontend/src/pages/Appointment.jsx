@@ -10,6 +10,9 @@ import {
   FiX,
   FiBriefcase,
   FiMapPin,
+  FiStar,
+  FiDownload,
+  FiRefreshCw,
 } from "react-icons/fi";
 import api from "../api/axios";
 import DashboardShell from "../components/DashboardShell";
@@ -40,8 +43,30 @@ const downloadReminder = (appointment) => {
   const date = dayjs(getAppointmentDate(appointment));
   const stamp = date.format("YYYYMMDDTHHmmss");
   const title = `${appointment.provider?.serviceName || "Appointment"} appointment`;
-  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", `UID:appointment-${appointment.id}@appointflow`, `DTSTART:${stamp}`, `DTEND:${dayjs(getAppointmentDate(appointment)).add(1, "hour").format("YYYYMMDDTHHmmss")}`, `SUMMARY:${title}`, "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", `DESCRIPTION:Reminder: ${title}`, "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
-  const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" })); link.download = `appointment-${appointment.id}.ics`; link.click(); URL.revokeObjectURL(link.href);
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "BEGIN:VEVENT",
+    `UID:appointment-${appointment.id}@appointflow`,
+    `DTSTART:${stamp}`,
+    `DTEND:${dayjs(getAppointmentDate(appointment))
+      .add(1, "hour")
+      .format("YYYYMMDDTHHmmss")}`,
+    `SUMMARY:${title}`,
+    "BEGIN:VALARM",
+    "TRIGGER:-PT1H",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:Reminder: ${title}`,
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+  link.href = url;
+  link.download = `appointment-${appointment.id}.ics`;
+  link.click();
+  URL.revokeObjectURL(url);
 };
 
 const sortAppointments = (appointments) => {
@@ -66,6 +91,7 @@ export default function Appointments() {
   const [cancelTarget, setCancelTarget] = useState(null);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
   const [rescheduleSlots, setRescheduleSlots] = useState([]);
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [selectedRescheduleSlot, setSelectedRescheduleSlot] = useState("");
   const [reviews, setReviews] = useState({});
   const [reviewForms, setReviewForms] = useState({});
@@ -77,10 +103,17 @@ export default function Appointments() {
       const res = await api.get(`/api/appointments/user/${uid}`);
       const loadedItems = sortAppointments(res.data || []);
       setItems(loadedItems);
-      const completed = loadedItems.filter((appointment) => appointment.status === "COMPLETED");
-      const reviewResults = await Promise.all(completed.map((appointment) =>
-        api.get(`/api/reviews/appointment/${appointment.id}`).then((response) => [appointment.id, response.data]).catch(() => [appointment.id, null])
-      ));
+      const completed = loadedItems.filter(
+        (appointment) => appointment.status === "COMPLETED"
+      );
+      const reviewResults = await Promise.all(
+        completed.map((appointment) =>
+          api
+            .get(`/api/reviews/appointment/${appointment.id}`)
+            .then((response) => [appointment.id, response.data])
+            .catch(() => [appointment.id, null])
+        )
+      );
       setReviews(Object.fromEntries(reviewResults));
       setErr("");
     } catch (e) {
@@ -141,34 +174,68 @@ export default function Appointments() {
   };
 
   const beginReschedule = async (appointment) => {
-    setErr(""); setMsg(""); setRescheduleTarget(appointment);
+    setErr("");
+    setMsg("");
+    setRescheduleTarget(appointment);
+    setRescheduleLoading(true);
+    setSelectedRescheduleSlot("");
     try {
-      const response = await api.get(`/api/availabilities/provider/${appointment.provider.id}`);
-      setRescheduleSlots((response.data || []).filter((slot) => slot.id !== appointment.availability?.id));
-      setSelectedRescheduleSlot("");
-    } catch { setErr("Could not load available times for this provider."); setRescheduleTarget(null); }
+      const response = await api.get(
+        `/api/availabilities/provider/${appointment.provider.id}`
+      );
+      setRescheduleSlots(
+        (response.data || []).filter(
+          (slot) => slot.id !== appointment.availability?.id
+        )
+      );
+    } catch {
+      setErr("Could not load available times for this provider.");
+      setRescheduleTarget(null);
+    } finally {
+      setRescheduleLoading(false);
+    }
   };
 
   const saveReschedule = async () => {
     if (!rescheduleTarget || !selectedRescheduleSlot) return;
     setActionLoadingId(rescheduleTarget.id);
     try {
-      await api.put(`/api/appointments/${rescheduleTarget.id}/reschedule/${selectedRescheduleSlot}`);
-      setMsg("Appointment rescheduled successfully."); setRescheduleTarget(null); await load(userId);
-    } catch (e) { setErr(e.response?.data?.message || "Could not reschedule this appointment."); }
-    finally { setActionLoadingId(null); }
+      await api.put(
+        `/api/appointments/${rescheduleTarget.id}/reschedule/${selectedRescheduleSlot}`
+      );
+      setMsg("Appointment rescheduled successfully.");
+      setRescheduleTarget(null);
+      await load(userId);
+    } catch (e) {
+      setErr(
+        e.response?.data?.message || "Could not reschedule this appointment."
+      );
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   const submitReview = async (appointmentId) => {
-    const form = reviewForms[appointmentId] || { rating: "5", comment: "" };
-    setReviewSavingId(appointmentId); setErr(""); setMsg("");
+    const form = reviewForms[appointmentId] || { rating: 5, comment: "" };
+    setReviewSavingId(appointmentId);
+    setErr("");
+    setMsg("");
     try {
-      const response = await api.post(`/api/reviews/appointment/${appointmentId}`, form);
+      const response = await api.post(`/api/reviews/appointment/${appointmentId}`, {
+        rating: Number(form.rating || 5),
+        comment: form.comment || "",
+      });
       setReviews((current) => ({ ...current, [appointmentId]: response.data }));
       setMsg("Thanks for sharing your review.");
     } catch (error) {
-      setErr(error.response?.data?.message || error.response?.data?.detail || "Could not submit your review.");
-    } finally { setReviewSavingId(null); }
+      setErr(
+        error.response?.data?.message ||
+          error.response?.data?.detail ||
+          "Could not submit your review."
+      );
+    } finally {
+      setReviewSavingId(null);
+    }
   };
 
   const counts = useMemo(() => {
@@ -176,7 +243,9 @@ export default function Appointments() {
     return {
       ALL: items.length,
       UPCOMING: items.filter(
-        (a) => (a.status === "PENDING" || a.status === "CONFIRMED") && getAppointmentDate(a).getTime() >= now
+        (a) =>
+          (a.status === "PENDING" || a.status === "CONFIRMED") &&
+          getAppointmentDate(a).getTime() >= now
       ).length,
       PAST: items.filter((a) => getAppointmentDate(a).getTime() < now).length,
       PENDING: items.filter((a) => a.status === "PENDING").length,
@@ -190,7 +259,10 @@ export default function Appointments() {
     const q = searchQuery.trim().toLowerCase();
     return items.filter((appt) => {
       if (statusFilter === "UPCOMING") {
-        if ((appt.status !== "PENDING" && appt.status !== "CONFIRMED") || getAppointmentDate(appt).getTime() < Date.now()) {
+        if (
+          (appt.status !== "PENDING" && appt.status !== "CONFIRMED") ||
+          getAppointmentDate(appt).getTime() < Date.now()
+        ) {
           return false;
         }
       } else if (statusFilter === "PAST") {
@@ -357,13 +429,18 @@ export default function Appointments() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
             {filteredItems.map((appointment) => {
               const apptDate = getAppointmentDate(appointment);
               const isPending = appointment.status === "PENDING";
               const isConfirmed = appointment.status === "CONFIRMED";
               const canCancel = isPending || isConfirmed;
               const isBusy = actionLoadingId === appointment.id;
+              const currentRating = Number(
+                reviewForms[appointment.id]?.rating ?? 5
+              );
+              const currentComment =
+                reviewForms[appointment.id]?.comment ?? "";
 
               return (
                 <div
@@ -375,6 +452,9 @@ export default function Appointments() {
                       <div className="min-w-0">
                         <p className="text-xs font-mono text-slate-400 tabular-nums">
                           #{appointment.id}
+                          {appointment.provider?.servicePricing
+                            ? ` · $${appointment.provider.servicePricing}`
+                            : ""}
                         </p>
                         <h3 className="text-base font-semibold text-slate-900 truncate mt-0.5">
                           {appointment.provider?.serviceName || "Consultation"}
@@ -420,89 +500,263 @@ export default function Appointments() {
                             : "Date unavailable"}
                         </span>
                       </div>
-                      {canCancel && <button type="button" onClick={() => downloadReminder(appointment)} className="mt-1 text-xs text-indigo-700 underline underline-offset-2">Add calendar reminder</button>}
+
+                      {canCancel && (
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            onClick={() => downloadReminder(appointment)}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                          >
+                            <FiDownload className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>Download calendar reminder (.ics)</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
+                  {/* Completed Session Review Section */}
                   {appointment.status === "COMPLETED" && (
-                    <div className="mt-4 rounded-lg bg-amber-50/70 border border-amber-100 p-3">
+                    <div className="mt-4 pt-4 border-t border-slate-100">
                       {reviews[appointment.id] ? (
-                        <div>
-                          <p className="text-xs font-semibold text-slate-800">Your review <span className="text-amber-600">{"★".repeat(reviews[appointment.id].rating)}</span></p>
-                          {reviews[appointment.id].comment && <p className="mt-1 text-xs text-slate-600">{reviews[appointment.id].comment}</p>}
+                        <div className="rounded-lg bg-slate-50 border border-slate-200 p-3.5 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-slate-800">
+                              Your Review
+                            </span>
+                            <div
+                              className="inline-flex items-center gap-0.5"
+                              aria-label={`${reviews[appointment.id].rating} out of 5 stars`}
+                            >
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <FiStar
+                                  key={star}
+                                  className={`w-3.5 h-3.5 ${
+                                    star <= reviews[appointment.id].rating
+                                      ? "text-amber-500 fill-amber-400"
+                                      : "text-slate-200 fill-slate-100"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          {reviews[appointment.id].comment ? (
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                              {reviews[appointment.id].comment}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-slate-400">
+                              Rated {reviews[appointment.id].rating} out of 5 stars.
+                            </p>
+                          )}
                         </div>
                       ) : (
-                        <form onSubmit={(event) => { event.preventDefault(); submitReview(appointment.id); }} className="space-y-2">
-                          <p className="text-xs font-semibold text-slate-800">How was your appointment?</p>
-                          <div className="flex gap-2">
-                            <label className="sr-only" htmlFor={`review-rating-${appointment.id}`}>Rating</label>
-                            <select id={`review-rating-${appointment.id}`} value={reviewForms[appointment.id]?.rating || "5"} onChange={(event) => setReviewForms((current) => ({ ...current, [appointment.id]: { ...current[appointment.id], rating: event.target.value } }))} className="text-xs border border-slate-300 rounded-md px-2 py-1.5">
-                              {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} {rating === 1 ? "star" : "stars"}</option>)}
-                            </select>
-                            <button type="submit" disabled={reviewSavingId === appointment.id} className="px-3 py-1.5 rounded-md bg-amber-500 text-white text-xs font-semibold disabled:opacity-50">{reviewSavingId === appointment.id ? "Saving…" : "Leave review"}</button>
+                        <form
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            submitReview(appointment.id);
+                          }}
+                          className="rounded-lg bg-slate-50 border border-slate-200 p-3.5 space-y-3"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-slate-800">
+                              Rate your session
+                            </span>
+                            <div
+                              role="radiogroup"
+                              aria-label="Rating out of 5 stars"
+                              className="inline-flex items-center gap-1"
+                            >
+                              {[1, 2, 3, 4, 5].map((star) => {
+                                const selected = star <= currentRating;
+                                return (
+                                  <button
+                                    key={star}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={currentRating === star}
+                                    aria-label={`${star} ${
+                                      star === 1 ? "star" : "stars"
+                                    }`}
+                                    onClick={() =>
+                                      setReviewForms((current) => ({
+                                        ...current,
+                                        [appointment.id]: {
+                                          ...current[appointment.id],
+                                          rating: star,
+                                        },
+                                      }))
+                                    }
+                                    className="p-0.5 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-transform hover:scale-110"
+                                  >
+                                    <FiStar
+                                      className={`w-4 h-4 ${
+                                        selected
+                                          ? "text-amber-500 fill-amber-400"
+                                          : "text-slate-300"
+                                      }`}
+                                    />
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
-                          <label className="sr-only" htmlFor={`review-comment-${appointment.id}`}>Review comment</label>
-                          <textarea id={`review-comment-${appointment.id}`} maxLength={1200} rows={2} value={reviewForms[appointment.id]?.comment || ""} onChange={(event) => setReviewForms((current) => ({ ...current, [appointment.id]: { ...current[appointment.id], comment: event.target.value } }))} placeholder="Add a comment (optional)" className="w-full resize-y text-xs border border-slate-300 rounded-md px-2 py-1.5" />
+
+                          <div>
+                            <label
+                              className="sr-only"
+                              htmlFor={`review-comment-${appointment.id}`}
+                            >
+                              Review comment
+                            </label>
+                            <textarea
+                              id={`review-comment-${appointment.id}`}
+                              maxLength={1200}
+                              rows={2}
+                              value={currentComment}
+                              onChange={(event) =>
+                                setReviewForms((current) => ({
+                                  ...current,
+                                  [appointment.id]: {
+                                    ...current[appointment.id],
+                                    rating: currentRating,
+                                    comment: event.target.value,
+                                  },
+                                }))
+                              }
+                              placeholder="Share how your visit went (optional)..."
+                              className="w-full resize-y text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                            />
+                            <div className="mt-2 flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-mono text-slate-400 tabular-nums">
+                                {currentComment.length}/1200
+                              </span>
+                              <button
+                                type="submit"
+                                disabled={reviewSavingId === appointment.id}
+                                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium disabled:opacity-50 transition-colors whitespace-nowrap"
+                              >
+                                {reviewSavingId === appointment.id
+                                  ? "Submitting..."
+                                  : "Submit Review"}
+                              </button>
+                            </div>
+                          </div>
                         </form>
                       )}
                     </div>
                   )}
 
+                  {/* Inline Reschedule Panel */}
                   {rescheduleTarget?.id === appointment.id && (
-                    <div className="mt-3 flex gap-2">
-                      <select aria-label="Choose a new appointment time" value={selectedRescheduleSlot} onChange={(e) => setSelectedRescheduleSlot(e.target.value)} className="min-w-0 flex-1 text-xs border border-slate-300 rounded-lg px-2 py-2">
-                        <option value="">Choose a new time</option>
-                        {rescheduleSlots.map((slot) => <option key={slot.id} value={slot.id}>{dayjs(slot.availableDate).format("MMM D, YYYY h:mm A")}</option>)}
-                      </select>
-                      <button type="button" disabled={!selectedRescheduleSlot || isBusy} onClick={saveReschedule} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs disabled:opacity-50">Save</button>
-                    </div>
-                  )}
-                  <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <span className="text-xs font-mono text-slate-500 tabular-nums truncate">
-                      {appointment.provider?.servicePricing
-                        ? `$${appointment.provider.servicePricing}`
-                        : "Standard rate"}
-                    </span>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      {isPending && (
+                    <div className="mt-4 rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-slate-800">
+                          Choose New Slot
+                        </span>
                         <button
                           type="button"
-                          disabled={isBusy}
-                          onClick={() =>
-                            updateStatus(appointment.id, "CONFIRMED")
-                          }
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors whitespace-nowrap"
-                        >
-                          <FiCheck className="w-3.5 h-3.5" />
-                          <span>Confirm</span>
-                        </button>
-                      )}
-                      {canCancel && <button type="button" disabled={isBusy} onClick={() => beginReschedule(appointment)} className="px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-medium disabled:opacity-50">Reschedule</button>}
-                      {canCancel && (
-                        <button
-                          type="button"
-                          disabled={isBusy}
-                          onClick={() => setCancelTarget(appointment)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                          onClick={() => setRescheduleTarget(null)}
+                          className="p-0.5 text-slate-400 hover:text-slate-600"
+                          aria-label="Close reschedule panel"
                         >
                           <FiX className="w-3.5 h-3.5" />
-                          <span>Cancel</span>
                         </button>
-                      )}
-                      {!canCancel && (
-                        <Link
-                          to={
-                            appointment.provider?.id
-                              ? `/book-appointment/${appointment.provider.id}`
-                              : "/providers"
-                          }
-                          className="text-xs font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
-                        >
-                          Book again
-                        </Link>
+                      </div>
+
+                      {rescheduleLoading ? (
+                        <p className="text-xs text-slate-500">
+                          Loading available times...
+                        </p>
+                      ) : rescheduleSlots.length === 0 ? (
+                        <p className="text-xs text-slate-500">
+                          No other open time slots are currently available for this
+                          provider.
+                        </p>
+                      ) : (
+                        <div className="flex gap-2">
+                          <select
+                            aria-label="Choose a new appointment time"
+                            value={selectedRescheduleSlot}
+                            onChange={(e) =>
+                              setSelectedRescheduleSlot(e.target.value)
+                            }
+                            className="min-w-0 flex-1 text-xs bg-white border border-slate-200 rounded-lg px-2.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                          >
+                            <option value="">Select a date & time...</option>
+                            {rescheduleSlots.map((slot) => (
+                              <option key={slot.id} value={slot.id}>
+                                {dayjs(slot.availableDate).format(
+                                  "MMM D, YYYY · h:mm A"
+                                )}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            disabled={!selectedRescheduleSlot || isBusy}
+                            onClick={saveReschedule}
+                            className="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium disabled:opacity-50 transition-colors whitespace-nowrap shrink-0"
+                          >
+                            Save
+                          </button>
+                        </div>
                       )}
                     </div>
+                  )}
+
+                  {/* Card Action Bar */}
+                  <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2">
+                    {isPending && (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => updateStatus(appointment.id, "CONFIRMED")}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors whitespace-nowrap"
+                      >
+                        <FiCheck className="w-3.5 h-3.5" />
+                        <span>Confirm</span>
+                      </button>
+                    )}
+                    {canCancel && (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() =>
+                          rescheduleTarget?.id === appointment.id
+                            ? setRescheduleTarget(null)
+                            : beginReschedule(appointment)
+                        }
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-medium hover:bg-indigo-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                      >
+                        <FiRefreshCw className="w-3 h-3" />
+                        <span>Reschedule</span>
+                      </button>
+                    )}
+                    {canCancel && (
+                      <button
+                        type="button"
+                        disabled={isBusy}
+                        onClick={() => setCancelTarget(appointment)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium hover:bg-rose-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                      >
+                        <FiX className="w-3.5 h-3.5" />
+                        <span>Cancel</span>
+                      </button>
+                    )}
+                    {!canCancel && (
+                      <Link
+                        to={
+                          appointment.provider?.id
+                            ? `/book-appointment/${appointment.provider.id}`
+                            : "/providers"
+                        }
+                        className="text-xs font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
+                      >
+                        Book again
+                      </Link>
+                    )}
                   </div>
                 </div>
               );

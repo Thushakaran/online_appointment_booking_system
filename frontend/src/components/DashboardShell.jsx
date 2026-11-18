@@ -339,18 +339,19 @@ export default function DashboardShell({
                                   </p>
                                   <p className="text-xs text-slate-500 mt-0.5">
                                     {n.detail}
+                                    {" · "}
+                                    <span className={isUnread ? "font-medium text-indigo-600" : "text-slate-400"}>
+                                      {isUnread ? "Unread" : "Read"}
+                                    </span>
                                   </p>
-                                  <span className={`mt-1 inline-block text-[10px] font-semibold uppercase tracking-wide ${isUnread ? "text-indigo-700" : "text-slate-400"}`}>
-                                    {isUnread ? "Unseen" : "Seen"}
-                                  </span>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() => toggleRead(n.id)}
-                                  className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-700"
-                                  aria-label={`${isUnread ? "Mark as seen" : "Mark as unseen"}: ${n.title}`}
+                                  className="shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
+                                  aria-label={`${isUnread ? "Mark as read" : "Mark as unread"}: ${n.title}`}
                                 >
-                                  Mark {isUnread ? "seen" : "unseen"}
+                                  {isUnread ? "Mark read" : "Mark unread"}
                                 </button>
                               </div>
                             </div>

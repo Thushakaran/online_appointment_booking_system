@@ -11,6 +11,7 @@ import {
   FiCheckCircle,
   FiAlertCircle,
   FiBriefcase,
+  FiStar,
 } from "react-icons/fi";
 import api from "../api/axios";
 
@@ -29,6 +30,7 @@ export default function BookAppointment() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [err, setErr] = useState("");
   const [imgFailed, setImgFailed] = useState(false);
+  const [reviews, setReviews] = useState([]);
 
   const loadProviderAndAvailabilities = useCallback(async () => {
     try {
@@ -37,13 +39,15 @@ export default function BookAppointment() {
         const providerRes = await api.get(`/api/providers/${providerId}`);
         setProvider(providerRes.data);
       }
-      const availabilitiesRes = await api.get(
-        `/api/availabilities/provider/${providerId}`
-      );
+      const [availabilitiesRes, reviewsRes] = await Promise.all([
+        api.get(`/api/availabilities/provider/${providerId}`),
+        api.get(`/api/reviews/provider/${providerId}`).catch(() => ({ data: [] })),
+      ]);
       const slots = (availabilitiesRes.data || []).sort(
         (a, b) => new Date(a.availableDate) - new Date(b.availableDate)
       );
       setAvailabilities(slots);
+      setReviews(reviewsRes.data || []);
       if (slots.length > 0) {
         const firstDay = dayjs(slots[0].availableDate).format("YYYY-MM-DD");
         setSelectedDateKey((prev) => prev || firstDay);
@@ -434,6 +438,98 @@ export default function BookAppointment() {
             </button>
           </aside>
         </div>
+
+        {/* Client Reviews Section */}
+        <section className="bg-white border border-slate-200 rounded-xl p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+            <div>
+              <h2 className="font-display text-lg font-semibold text-slate-900">
+                Client Reviews
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Verified feedback from completed consultations
+              </p>
+            </div>
+            {reviews.length > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <div className="inline-flex items-center gap-0.5" aria-hidden="true">
+                  {[1, 2, 3, 4, 5].map((star) => {
+                    const avg =
+                      reviews.reduce((sum, r) => sum + r.rating, 0) /
+                      reviews.length;
+                    return (
+                      <FiStar
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.round(avg)
+                            ? "text-amber-500 fill-amber-400"
+                            : "text-slate-200 fill-slate-100"
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+                <span className="font-semibold text-slate-900 font-mono tabular-nums">
+                  {(
+                    reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+                  ).toFixed(1)}
+                </span>
+                <span className="text-xs text-slate-500 tabular-nums">
+                  ({reviews.length}{" "}
+                  {reviews.length === 1 ? "review" : "reviews"})
+                </span>
+              </div>
+            )}
+          </div>
+
+          {reviews.length === 0 ? (
+            <p className="py-6 text-sm text-slate-500">
+              No client reviews yet for this service.
+            </p>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {reviews.map((review) => (
+                <div key={review.id} className="py-4 space-y-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center shrink-0">
+                        {(review.reviewer || "C").slice(0, 2).toUpperCase()}
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-slate-900">
+                          {review.reviewer}
+                        </p>
+                        <p className="text-xs text-slate-400 tabular-nums">
+                          {dayjs(review.createdAt).format("MMM D, YYYY")}
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className="inline-flex items-center gap-1"
+                      aria-label={`${review.rating} out of 5 stars`}
+                    >
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <FiStar
+                          key={star}
+                          className={`w-3.5 h-3.5 ${
+                            star <= review.rating
+                              ? "text-amber-500 fill-amber-400"
+                              : "text-slate-200 fill-slate-100"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {review.comment && (
+                    <p className="text-sm text-slate-600 leading-relaxed pl-9">
+                      {review.comment}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

@@ -184,6 +184,45 @@ function createInitialStore() {
       appointmentDate: addDays(-12, 10, 0),
       status: "CANCELLED",
     },
+    {
+      id: 6,
+      userId: 8,
+      providerId: 1,
+      availabilityId: null,
+      appointmentDate: addDays(-8, 10, 0),
+      status: "COMPLETED",
+    },
+    {
+      id: 7,
+      userId: 8,
+      providerId: 2,
+      availabilityId: null,
+      appointmentDate: addDays(-4, 15, 0),
+      status: "COMPLETED",
+    },
+  ];
+
+  const reviews = [
+    {
+      id: 1,
+      appointmentId: 6,
+      providerId: 1,
+      reviewer: "sophia_user",
+      rating: 5,
+      comment:
+        "Thorough wellness consultation with clear follow-up notes and zero wait time.",
+      createdAt: addDays(-7, 11, 30),
+    },
+    {
+      id: 2,
+      appointmentId: 7,
+      providerId: 2,
+      reviewer: "sophia_user",
+      rating: 5,
+      comment:
+        "Practical, well-structured legal review that addressed every founder agreement question.",
+      createdAt: addDays(-3, 16, 15),
+    },
   ];
 
   return {
@@ -191,12 +230,12 @@ function createInitialStore() {
     providers,
     availabilities,
     appointments,
-    reviews: [],
+    reviews,
     nextUserId: 10,
     nextProviderId: 7,
     nextAvailabilityId: 21,
-    nextAppointmentId: 6,
-    nextReviewId: 1,
+    nextAppointmentId: 8,
+    nextReviewId: 3,
   };
 }
 
