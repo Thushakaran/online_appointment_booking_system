@@ -27,6 +27,8 @@ import DashboardShell from "../components/DashboardShell";
 import Pagination from "../components/Pagination";
 import StatusBadge from "../components/ui/StatusBadge";
 import ConfirmModal from "../components/ui/ConfirmModal";
+import Modal from "../components/ui/Modal";
+import { useToast } from "../components/ui/toastContext";
 
 const ROLE_TABS = [
   { id: "ALL", label: "All Roles" },
@@ -69,6 +71,7 @@ function downloadCsv(filename, headers, rows) {
 }
 
 export default function AdminDashboard() {
+  const toast = useToast();
   const { token, role, user: currentUsername } = useSelector(
     (state) => state.auth
   );
@@ -83,7 +86,6 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
 
   // Search & Filters
   const [userSearch, setUserSearch] = useState("");
@@ -217,12 +219,6 @@ export default function AdminDashboard() {
     fetchAdminData(false);
   }, [fetchAdminData]);
 
-  useEffect(() => {
-    if (!notice) return;
-    const t = setTimeout(() => setNotice(""), 4000);
-    return () => clearTimeout(t);
-  }, [notice]);
-
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     try {
@@ -230,19 +226,19 @@ export default function AdminDashboard() {
       setError("");
       if (deleteTarget.type === "user") {
         await api.delete(`/api/users/${deleteTarget.id}`);
-        setNotice(`User "${deleteTarget.label}" deleted.`);
+        toast.success(`User "${deleteTarget.label}" deleted.`);
         if (users.length === 1 && usersPage > 0) {
           setUsersPage((p) => p - 1);
         }
       } else if (deleteTarget.type === "provider") {
         await api.delete(`/api/providers/${deleteTarget.id}`);
-        setNotice(`Provider "${deleteTarget.label}" deleted.`);
+        toast.success(`Provider "${deleteTarget.label}" deleted.`);
         if (providers.length === 1 && providersPage > 0) {
           setProvidersPage((p) => p - 1);
         }
       } else if (deleteTarget.type === "appointment") {
         await api.delete(`/api/appointments/${deleteTarget.id}`);
-        setNotice(`Appointment #${deleteTarget.id} removed.`);
+        toast.success(`Appointment #${deleteTarget.id} removed.`);
         if (appointments.length === 1 && appointmentsPage > 0) {
           setAppointmentsPage((p) => p - 1);
         }
@@ -252,9 +248,10 @@ export default function AdminDashboard() {
     } catch (err) {
       const detail =
         err?.response?.data?.error || err?.response?.data?.message;
-      setError(
-        detail || `Failed to delete ${deleteTarget.type}. Please try again.`
-      );
+      const msg =
+        detail || `Failed to delete ${deleteTarget.type}. Please try again.`;
+      setError(msg);
+      toast.error(msg);
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -279,18 +276,19 @@ export default function AdminDashboard() {
         username: userEditForm.username.trim(),
         email: userEditForm.email.trim(),
       });
-      setNotice(`Account "${userEditForm.username.trim()}" updated.`);
+      toast.success(`Account "${userEditForm.username.trim()}" updated.`);
       setEditingUser(null);
       await fetchAdminData(true);
     } catch (err) {
       const status = err?.response?.status;
       const detail =
         err?.response?.data?.error || err?.response?.data?.message;
-      if (status === 409) {
-        setError(detail || "Username or email already exists.");
-      } else {
-        setError(detail || "Failed to update user account.");
-      }
+      const msg =
+        status === 409
+          ? detail || "Username or email already exists."
+          : detail || "Failed to update user account.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSavingUser(false);
     }
@@ -508,20 +506,6 @@ export default function AdminDashboard() {
                 <FiX className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        )}
-
-        {notice && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
-            <span>{notice}</span>
-            <button
-              type="button"
-              onClick={() => setNotice("")}
-              className="p-1 text-emerald-600 hover:text-emerald-800"
-              aria-label="Dismiss notice"
-            >
-              <FiX className="w-4 h-4" />
-            </button>
           </div>
         )}
 
@@ -989,6 +973,32 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {(userSearch.trim() || userRoleFilter !== "ALL") && (
+              <div className="mb-4 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+                <span>
+                  Filtering current page: showing{" "}
+                  <strong className="text-slate-900 font-semibold tabular-nums">
+                    {filteredUsers.length}
+                  </strong>{" "}
+                  of{" "}
+                  <strong className="text-slate-900 font-semibold tabular-nums">
+                    {users.length}
+                  </strong>{" "}
+                  loaded users (page {usersPage + 1} of {Math.max(1, usersTotalPages)}).
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserSearch("");
+                    setUserRoleFilter("ALL");
+                  }}
+                  className="text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+
             {loading ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4].map((i) => (
@@ -1168,6 +1178,30 @@ export default function AdminDashboard() {
                 </Link>
               </div>
             </div>
+
+            {providerSearch.trim() && (
+              <div className="mb-4 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+                <span>
+                  Filtering current page: showing{" "}
+                  <strong className="text-slate-900 font-semibold tabular-nums">
+                    {filteredProviders.length}
+                  </strong>{" "}
+                  of{" "}
+                  <strong className="text-slate-900 font-semibold tabular-nums">
+                    {providers.length}
+                  </strong>{" "}
+                  loaded providers (page {providersPage + 1} of{" "}
+                  {Math.max(1, providersTotalPages)}).
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setProviderSearch("")}
+                  className="text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  Clear search
+                </button>
+              </div>
+            )}
 
             {loading ? (
               <div className="space-y-3">
@@ -1352,6 +1386,33 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {(appointmentSearch.trim() || appointmentStatusFilter !== "ALL") && (
+              <div className="mb-4 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+                <span>
+                  Filtering current page: showing{" "}
+                  <strong className="text-slate-900 font-semibold tabular-nums">
+                    {filteredAppointments.length}
+                  </strong>{" "}
+                  of{" "}
+                  <strong className="text-slate-900 font-semibold tabular-nums">
+                    {appointments.length}
+                  </strong>{" "}
+                  loaded appointments (page {appointmentsPage + 1} of{" "}
+                  {Math.max(1, appointmentsTotalPages)}).
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAppointmentSearch("");
+                    setAppointmentStatusFilter("ALL");
+                  }}
+                  className="text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+
             {loading ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4].map((i) => (
@@ -1466,14 +1527,15 @@ export default function AdminDashboard() {
       </div>
 
       {/* Edit User Modal */}
-      {editingUser && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="edit-user-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-md w-full p-6">
+      <Modal
+        open={Boolean(editingUser)}
+        onClose={() => !savingUser && setEditingUser(null)}
+        disableClose={savingUser}
+        labelledBy="edit-user-title"
+        maxWidth="max-w-md"
+      >
+        {editingUser && (
+          <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3
@@ -1557,18 +1619,18 @@ export default function AdminDashboard() {
               </div>
             </form>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       {/* Inspect Detail Modal */}
-      {inspectRecord && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="inspect-record-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full p-6">
+      <Modal
+        open={Boolean(inspectRecord)}
+        onClose={() => setInspectRecord(null)}
+        labelledBy="inspect-record-title"
+        maxWidth="max-w-lg"
+      >
+        {inspectRecord && (
+          <div className="p-6">
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
                 <p className="text-xs font-mono text-slate-400 tabular-nums">
@@ -1708,8 +1770,8 @@ export default function AdminDashboard() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
 
       <ConfirmModal
         open={Boolean(deleteTarget)}

@@ -11,10 +11,14 @@ import {
   FiStar,
   FiMessageSquare,
   FiCalendar,
+  FiClock,
 } from "react-icons/fi";
 import api from "../api/axios";
 import Pagination from "../components/Pagination";
 import DashboardShell from "../components/DashboardShell";
+import Modal from "../components/ui/Modal";
+import AlertBanner from "../components/ui/AlertBanner";
+import EmptyState from "../components/ui/EmptyState";
 
 const SEARCH_TYPES = [
   { value: "general", label: "All Fields" },
@@ -22,6 +26,39 @@ const SEARCH_TYPES = [
   { value: "city", label: "City" },
   { value: "description", label: "Specialty" },
 ];
+
+const SORT_OPTIONS = [
+  { value: "default", label: "Recommended" },
+  { value: "rating-desc", label: "Highest Rated" },
+  { value: "slots-desc", label: "Most Open Slots" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
+];
+
+const reviewSummaryCache = new Map();
+const slotSummaryCache = new Map();
+
+function parsePrice(value) {
+  const match = String(value || "").match(/[\d.]+/);
+  if (!match) return null;
+  const num = Number(match[0]);
+  return Number.isNaN(num) ? null : num;
+}
+
+function summarizeSlots(slots) {
+  const now = Date.now();
+  const sorted = [...(slots || [])]
+    .filter((slot) => !slot.isBooked && slot.availableDate)
+    .sort((a, b) => new Date(a.availableDate) - new Date(b.availableDate));
+  const futureSlots = sorted.filter(
+    (slot) => new Date(slot.availableDate).getTime() >= now
+  );
+  const effective = futureSlots.length > 0 ? futureSlots : sorted;
+  return {
+    openCount: sorted.length,
+    nextSlot: effective[0]?.availableDate || null,
+  };
+}
 
 function StarRow({ rating, size = "w-3.5 h-3.5" }) {
   const rounded = Math.round(rating || 0);
@@ -56,9 +93,11 @@ export default function Providers() {
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchType, setSearchType] = useState("general");
+  const [sortBy, setSortBy] = useState("default");
   const [failedImages, setFailedImages] = useState({});
   const [maxPrice, setMaxPrice] = useState("");
   const [providerRatings, setProviderRatings] = useState({});
+  const [providerSlots, setProviderSlots] = useState({});
   const [activeReviewsProvider, setActiveReviewsProvider] = useState(null);
 
   const fetchProviders = useCallback(async () => {
@@ -103,38 +142,64 @@ export default function Providers() {
       const data = response.data;
       const list = data.content || [];
       setProviders(list);
-
-      const reviewLists = await Promise.all(
-        list.map((provider) =>
-          api
-            .get(`/api/reviews/provider/${provider.id}`)
-            .then((r) => r.data || [])
-            .catch(() => [])
-        )
-      );
-
-      setProviderRatings(
-        Object.fromEntries(
-          list.map((provider, index) => {
-            const reviews = reviewLists[index];
-            const total = reviews.reduce((sum, review) => sum + review.rating, 0);
-            return [
-              provider.id,
-              {
-                count: reviews.length,
-                average: reviews.length ? total / reviews.length : 0,
-                reviews,
-              },
-            ];
-          })
-        )
-      );
-
       setTotalElements(data.totalElements || 0);
       setTotalPages(data.totalPages || 0);
       setHasNext(data.hasNext || false);
       setHasPrevious(data.hasPrevious || false);
       setErr("");
+
+      const missingReviews = list.filter((p) => !reviewSummaryCache.has(p.id));
+      const missingSlots = list.filter((p) => !slotSummaryCache.has(p.id));
+
+      await Promise.all([
+        ...missingReviews.map((provider) =>
+          api
+            .get(`/api/reviews/provider/${provider.id}`)
+            .then((r) => {
+              const reviews = r.data || [];
+              const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+              reviewSummaryCache.set(provider.id, {
+                count: reviews.length,
+                average: reviews.length ? total / reviews.length : 0,
+                reviews,
+              });
+            })
+            .catch(() => {
+              reviewSummaryCache.set(provider.id, {
+                count: 0,
+                average: 0,
+                reviews: [],
+              });
+            })
+        ),
+        ...missingSlots.map((provider) =>
+          api
+            .get(`/api/availabilities/provider/${provider.id}`)
+            .then((r) => {
+              slotSummaryCache.set(provider.id, summarizeSlots(r.data || []));
+            })
+            .catch(() => {
+              slotSummaryCache.set(provider.id, { openCount: 0, nextSlot: null });
+            })
+        ),
+      ]);
+
+      setProviderRatings(
+        Object.fromEntries(
+          list.map((p) => [
+            p.id,
+            reviewSummaryCache.get(p.id) || { count: 0, average: 0, reviews: [] },
+          ])
+        )
+      );
+      setProviderSlots(
+        Object.fromEntries(
+          list.map((p) => [
+            p.id,
+            slotSummaryCache.get(p.id) || { openCount: 0, nextSlot: null },
+          ])
+        )
+      );
     } catch {
       setErr("Failed to load service providers. Please try again.");
       setProviders([]);
@@ -149,14 +214,43 @@ export default function Providers() {
 
   const filteredProviders = useMemo(() => {
     const cap = Number(maxPrice);
-    if (!maxPrice || Number.isNaN(cap) || cap <= 0) return providers;
-    return providers.filter((p) => {
-      const priceMatch = String(p.servicePricing || "").match(/[\d.]+/);
-      if (!priceMatch) return true;
-      const price = Number(priceMatch[0]);
-      return Number.isNaN(price) || price <= cap;
-    });
-  }, [providers, maxPrice]);
+    const filtered =
+      maxPrice && !Number.isNaN(cap) && cap > 0
+        ? providers.filter((p) => {
+            const price = parsePrice(p.servicePricing);
+            return price === null || price <= cap;
+          })
+        : [...providers];
+
+    if (sortBy === "rating-desc") {
+      filtered.sort((a, b) => {
+        const ra = providerRatings[a.id]?.average || 0;
+        const rb = providerRatings[b.id]?.average || 0;
+        if (rb !== ra) return rb - ra;
+        return (providerRatings[b.id]?.count || 0) - (providerRatings[a.id]?.count || 0);
+      });
+    } else if (sortBy === "slots-desc") {
+      filtered.sort(
+        (a, b) =>
+          (providerSlots[b.id]?.openCount || 0) -
+          (providerSlots[a.id]?.openCount || 0)
+      );
+    } else if (sortBy === "price-asc") {
+      filtered.sort((a, b) => {
+        const pa = parsePrice(a.servicePricing) ?? Number.MAX_SAFE_INTEGER;
+        const pb = parsePrice(b.servicePricing) ?? Number.MAX_SAFE_INTEGER;
+        return pa - pb;
+      });
+    } else if (sortBy === "price-desc") {
+      filtered.sort((a, b) => {
+        const pa = parsePrice(a.servicePricing) ?? -1;
+        const pb = parsePrice(b.servicePricing) ?? -1;
+        return pb - pa;
+      });
+    }
+
+    return filtered;
+  }, [providers, maxPrice, sortBy, providerRatings, providerSlots]);
 
   const handleProviderClick = (provider) => {
     navigate(`/book-appointment/${provider.id}`, {
@@ -175,8 +269,13 @@ export default function Providers() {
     setSearchTerm("");
     setSearchType("general");
     setMaxPrice("");
+    setSortBy("default");
     setCurrentPage(0);
   };
+
+  const hasActiveFilters = Boolean(
+    searchTerm.trim() || maxPrice || sortBy !== "default" || searchType !== "general"
+  );
 
   const modalRatingInfo = activeReviewsProvider
     ? providerRatings[activeReviewsProvider.id] || {
@@ -187,382 +286,499 @@ export default function Providers() {
     : null;
 
   const searchForm = (
-    <form
-      onSubmit={handleSearchSubmit}
-      className="flex flex-col xl:flex-row gap-3 items-stretch xl:items-center"
-    >
-      <div className="relative flex-1 min-w-0">
-        <FiSearch
-          className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
-          aria-hidden="true"
-        />
-        <input
-          type="text"
-          placeholder="Search by service, city, or provider name..."
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          className="w-full pl-10 pr-9 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
-        />
-        {(searchInput || searchTerm) && (
-          <button
-            type="button"
-            onClick={() => {
-              setSearchInput("");
-              setSearchTerm("");
-              setCurrentPage(0);
-            }}
-            aria-label="Clear search"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-          >
-            <FiX className="w-4 h-4" />
-          </button>
-        )}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2.5">
-        <div
-          role="group"
-          aria-label="Search scope"
-          className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg"
-        >
-          {SEARCH_TYPES.map((t) => (
+    <div className="space-y-3">
+      <form
+        onSubmit={handleSearchSubmit}
+        className="flex flex-col xl:flex-row gap-3 items-stretch xl:items-center"
+      >
+        <div className="relative flex-1 min-w-0">
+          <FiSearch
+            className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+            aria-hidden="true"
+          />
+          <input
+            type="text"
+            placeholder="Search by service, city, or provider name..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full pl-10 pr-9 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+          />
+          {(searchInput || searchTerm) && (
             <button
-              key={t.value}
               type="button"
               onClick={() => {
-                setSearchType(t.value);
+                setSearchInput("");
+                setSearchTerm("");
                 setCurrentPage(0);
               }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
-                searchType === t.value
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative w-36 shrink-0">
-          <label htmlFor="max-price-filter" className="sr-only">
-            Maximum price
-          </label>
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 pointer-events-none">
-            Max $
-          </span>
-          <input
-            id="max-price-filter"
-            type="number"
-            min="0"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-            placeholder="Any"
-            className="w-full pl-12 pr-7 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
-          />
-          {maxPrice && (
-            <button
-              type="button"
-              onClick={() => setMaxPrice("")}
-              aria-label="Clear max price"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-            >
-              <FiX className="w-3.5 h-3.5" />
+              <FiX className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        <button
-          type="submit"
-          className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors whitespace-nowrap shrink-0"
-        >
-          Search
-        </button>
-      </div>
-    </form>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div
+            role="group"
+            aria-label="Search scope"
+            className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg"
+          >
+            {SEARCH_TYPES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => {
+                  setSearchType(t.value);
+                  setCurrentPage(0);
+                }}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
+                  searchType === t.value
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-36 shrink-0">
+            <label htmlFor="max-price-filter" className="sr-only">
+              Maximum price
+            </label>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-slate-400 pointer-events-none">
+              Max $
+            </span>
+            <input
+              id="max-price-filter"
+              type="number"
+              min="0"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              placeholder="Any"
+              className="w-full pl-12 pr-7 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+            />
+            {maxPrice && (
+              <button
+                type="button"
+                onClick={() => setMaxPrice("")}
+                aria-label="Clear max price"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <FiX className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="shrink-0">
+            <label htmlFor="provider-sort-select" className="sr-only">
+              Sort providers
+            </label>
+            <select
+              id="provider-sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2.5 text-sm bg-white border border-slate-300 rounded-lg text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            className="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors whitespace-nowrap shrink-0"
+          >
+            Search
+          </button>
+        </div>
+      </form>
+
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="text-xs font-medium text-slate-500">Active filters:</span>
+          {searchTerm.trim() && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput("");
+                setSearchTerm("");
+                setCurrentPage(0);
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-medium hover:bg-indigo-100 transition-colors"
+            >
+              <span>Search: &ldquo;{searchTerm.trim()}&rdquo;</span>
+              <FiX className="w-3 h-3" />
+            </button>
+          )}
+          {searchType !== "general" && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchType("general");
+                setCurrentPage(0);
+              }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-colors"
+            >
+              <span>
+                Scope: {SEARCH_TYPES.find((t) => t.value === searchType)?.label}
+              </span>
+              <FiX className="w-3 h-3" />
+            </button>
+          )}
+          {maxPrice && (
+            <button
+              type="button"
+              onClick={() => setMaxPrice("")}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-colors"
+            >
+              <span>Max ${maxPrice} (page)</span>
+              <FiX className="w-3 h-3" />
+            </button>
+          )}
+          {sortBy !== "default" && (
+            <button
+              type="button"
+              onClick={() => setSortBy("default")}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-medium hover:bg-slate-200 transition-colors"
+            >
+              <span>
+                Sort: {SORT_OPTIONS.find((s) => s.value === sortBy)?.label}
+              </span>
+              <FiX className="w-3 h-3" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={clearSearch}
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-700 ml-1"
+          >
+            Reset all
+          </button>
+        </div>
+      )}
+    </div>
   );
 
   const directoryContent = (
     <>
-      {err && (
-        <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm mb-6">
-          {err}
-        </div>
-      )}
+      <AlertBanner
+        variant="error"
+        message={err}
+        onDismiss={() => setErr("")}
+        className="mb-6"
+      />
 
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="bg-white border border-slate-200 rounded-xl overflow-hidden animate-pulse"
-              >
-                <div className="aspect-[4/3] bg-slate-100" />
-                <div className="p-5 space-y-3">
-                  <div className="h-5 bg-slate-100 rounded w-3/4" />
-                  <div className="h-3.5 bg-slate-100 rounded w-1/2" />
-                  <div className="h-10 bg-slate-100 rounded w-full" />
-                </div>
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="bg-white border border-slate-200 rounded-2xl overflow-hidden animate-pulse"
+            >
+              <div className="aspect-[4/3] bg-slate-100" />
+              <div className="p-5 space-y-3">
+                <div className="h-5 bg-slate-100 rounded w-3/4" />
+                <div className="h-3.5 bg-slate-100 rounded w-1/2" />
+                <div className="h-10 bg-slate-100 rounded w-full" />
               </div>
-            ))}
-          </div>
-        ) : filteredProviders.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
-            <FiSearch className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-            <h2 className="text-base font-semibold text-slate-900">
-              No providers match your filters
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              {maxPrice && providers.length > 0
-                ? `No specialists on this page are priced at $${maxPrice} or below.`
-                : searchTerm
-                ? `No service providers matched "${searchTerm}".`
-                : "No service providers are currently listed."}
-            </p>
-            {(searchTerm || maxPrice) && (
+            </div>
+          ))}
+        </div>
+      ) : filteredProviders.length === 0 ? (
+        <EmptyState
+          icon={FiSearch}
+          title="No providers match your filters"
+          description={
+            maxPrice && providers.length > 0
+              ? `No specialists on this page are priced at $${maxPrice} or below.`
+              : searchTerm
+              ? `No service providers matched "${searchTerm}".`
+              : "No service providers are currently listed."
+          }
+          action={
+            hasActiveFilters ? (
               <button
                 type="button"
                 onClick={clearSearch}
-                className="mt-4 px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
               >
                 Reset all filters
               </button>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProviders.map((provider) => {
-                const showFallback =
-                  !provider.profileImage || failedImages[provider.id];
-                const ratingInfo = providerRatings[provider.id] || {
-                  count: 0,
-                  average: 0,
-                  reviews: [],
-                };
+            ) : null
+          }
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProviders.map((provider) => {
+              const showFallback =
+                !provider.profileImage || failedImages[provider.id];
+              const ratingInfo = providerRatings[provider.id] || {
+                count: 0,
+                average: 0,
+                reviews: [],
+              };
+              const slotInfo = providerSlots[provider.id] || {
+                openCount: 0,
+                nextSlot: null,
+              };
 
-                return (
-                  <article
-                    key={provider.id}
-                    className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-indigo-300 hover:shadow-sm transition-all flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="aspect-[4/3] bg-slate-100 overflow-hidden border-b border-slate-100">
-                        {showFallback ? (
-                          <div className="w-full h-full bg-gradient-to-br from-slate-100 to-indigo-50 flex flex-col items-center justify-center p-6 text-center">
-                            <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-indigo-600 mb-2">
-                              <FiBriefcase className="w-5 h-5" aria-hidden="true" />
-                            </div>
-                            <span className="text-xs font-medium text-slate-500">
-                              {provider.user?.username || "Verified Provider"}
-                            </span>
+              return (
+                <article
+                  key={provider.id}
+                  className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-300 hover:-translate-y-0.5 hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden border-b border-slate-100">
+                      {showFallback ? (
+                        <div className="w-full h-full bg-gradient-to-br from-slate-100 to-indigo-50 flex flex-col items-center justify-center p-6 text-center">
+                          <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-indigo-600 mb-2 shadow-sm">
+                            <FiBriefcase className="w-5 h-5" aria-hidden="true" />
                           </div>
-                        ) : (
-                          <img
-                            src={provider.profileImage}
-                            alt={provider.serviceName}
-                            referrerPolicy="no-referrer"
-                            onError={() =>
-                              setFailedImages((prev) => ({
-                                ...prev,
-                                [provider.id]: true,
-                              }))
-                            }
-                            className="w-full h-full object-cover"
-                          />
+                          <span className="text-xs font-medium text-slate-500">
+                            {provider.user?.username || "Verified Provider"}
+                          </span>
+                        </div>
+                      ) : (
+                        <img
+                          src={provider.profileImage}
+                          alt={provider.serviceName}
+                          referrerPolicy="no-referrer"
+                          onError={() =>
+                            setFailedImages((prev) => ({
+                              ...prev,
+                              [provider.id]: true,
+                            }))
+                          }
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+
+                      <div className="absolute top-3 right-3">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border backdrop-blur-sm tabular-nums ${
+                            slotInfo.openCount > 0
+                              ? "bg-white/90 text-emerald-700 border-emerald-200"
+                              : "bg-white/90 text-slate-600 border-slate-200"
+                          }`}
+                        >
+                          <FiClock className="w-3 h-3" aria-hidden="true" />
+                          <span>
+                            {slotInfo.openCount > 0
+                              ? `${slotInfo.openCount} open`
+                              : "No slots"}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      <h2 className="text-lg font-semibold text-slate-900">
+                        {provider.serviceName}
+                      </h2>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                        <span>{provider.user?.username || "Specialist"}</span>
+                        {provider.city && (
+                          <>
+                            <span aria-hidden="true">·</span>
+                            <span className="inline-flex items-center gap-1">
+                              <FiMapPin className="w-3 h-3" aria-hidden="true" />
+                              {provider.city}
+                              {provider.state ? `, ${provider.state}` : ""}
+                            </span>
+                          </>
                         )}
                       </div>
 
-                      <div className="p-5">
-                        <h2 className="text-lg font-semibold text-slate-900">
-                          {provider.serviceName}
-                        </h2>
-                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-                          <span>{provider.user?.username || "Specialist"}</span>
-                          {provider.city && (
-                            <>
-                              <span aria-hidden="true">·</span>
-                              <span className="inline-flex items-center gap-1">
-                                <FiMapPin className="w-3 h-3" aria-hidden="true" />
-                                {provider.city}
-                                {provider.state ? `, ${provider.state}` : ""}
-                              </span>
-                            </>
-                          )}
+                      {/* Rating & Review Trigger */}
+                      <div className="mt-3 flex items-center justify-between gap-2 text-xs">
+                        <div
+                          className="flex items-center gap-1.5"
+                          aria-label={
+                            ratingInfo.count
+                              ? `${ratingInfo.average.toFixed(1)} out of 5 from ${ratingInfo.count} reviews`
+                              : "No reviews yet"
+                          }
+                        >
+                          <StarRow rating={ratingInfo.average} />
+                          <span className="font-semibold text-slate-900 font-mono tabular-nums">
+                            {ratingInfo.count ? ratingInfo.average.toFixed(1) : "New"}
+                          </span>
+                          <span className="text-slate-500 tabular-nums">
+                            · {ratingInfo.count}{" "}
+                            {ratingInfo.count === 1 ? "review" : "reviews"}
+                          </span>
                         </div>
 
-                        {/* Clean Rating & Review Trigger */}
-                        <div className="mt-3 flex items-center justify-between gap-2 text-xs">
-                          <div
-                            className="flex items-center gap-1.5"
-                            aria-label={
-                              ratingInfo.count
-                                ? `${ratingInfo.average.toFixed(1)} out of 5 from ${ratingInfo.count} reviews`
-                                : "No reviews yet"
-                            }
+                        {ratingInfo.count > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setActiveReviewsProvider(provider)}
+                            className="inline-flex items-center gap-1 font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
                           >
-                            <StarRow rating={ratingInfo.average} />
-                            <span className="font-semibold text-slate-900 font-mono tabular-nums">
-                              {ratingInfo.count ? ratingInfo.average.toFixed(1) : "New"}
-                            </span>
-                            <span className="text-slate-500 tabular-nums">
-                              · {ratingInfo.count}{" "}
-                              {ratingInfo.count === 1 ? "review" : "reviews"}
-                            </span>
-                          </div>
-
-                          {ratingInfo.count > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setActiveReviewsProvider(provider)}
-                              className="inline-flex items-center gap-1 font-medium text-indigo-600 hover:text-indigo-700 whitespace-nowrap"
-                            >
-                              <FiMessageSquare className="w-3 h-3" aria-hidden="true" />
-                              <span>Read reviews</span>
-                            </button>
-                          )}
-                        </div>
-
-                        {provider.description && (
-                          <p className="mt-3 text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                            {provider.description}
-                          </p>
+                            <FiMessageSquare className="w-3 h-3" aria-hidden="true" />
+                            <span>Read reviews</span>
+                          </button>
                         )}
                       </div>
-                    </div>
 
-                    <div className="px-5 py-3.5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-slate-900 font-mono tabular-nums">
-                        {provider.servicePricing
-                          ? `$${provider.servicePricing}`
-                          : "Standard consultation"}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleProviderClick(provider)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
-                      >
-                        <span>Select Time</span>
-                        <FiArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+                      {provider.description && (
+                        <p className="mt-3 text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                          {provider.description}
+                        </p>
+                      )}
 
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={(page) => setCurrentPage(page)}
-              hasNext={hasNext}
-              hasPrevious={hasPrevious}
-              totalElements={totalElements}
-              pageSize={6}
-            />
+                      {slotInfo.nextSlot && (
+                        <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-xs text-slate-700 tabular-nums">
+                          <FiCalendar className="w-3 h-3 text-indigo-600 shrink-0" aria-hidden="true" />
+                          <span>
+                            Next: {dayjs(slotInfo.nextSlot).format("MMM D · h:mm A")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="px-5 py-3.5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold text-slate-900 font-mono tabular-nums">
+                      {provider.servicePricing
+                        ? `$${provider.servicePricing}`
+                        : "Standard consultation"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleProviderClick(provider)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
+                    >
+                      <span>Select Time</span>
+                      <FiArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={(page) => setCurrentPage(page)}
+            hasNext={hasNext}
+            hasPrevious={hasPrevious}
+            totalElements={totalElements}
+            pageSize={6}
+          />
         </>
       )}
     </>
   );
 
-  const reviewsModal = activeReviewsProvider && modalRatingInfo && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="provider-reviews-title"
-        >
-          <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-lg w-full overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4">
-              <div>
-                <h2
-                  id="provider-reviews-title"
-                  className="text-base font-semibold text-slate-900"
-                >
-                  {activeReviewsProvider.serviceName}
-                </h2>
-                <div className="mt-1 flex items-center gap-2 text-xs text-slate-600">
-                  <StarRow rating={modalRatingInfo.average} size="w-3.5 h-3.5" />
-                  <span className="font-semibold text-slate-900 font-mono tabular-nums">
-                    {modalRatingInfo.average.toFixed(1)} out of 5
-                  </span>
-                  <span aria-hidden="true">·</span>
-                  <span className="tabular-nums">
-                    {modalRatingInfo.count}{" "}
-                    {modalRatingInfo.count === 1 ? "client review" : "client reviews"}
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveReviewsProvider(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-                aria-label="Close reviews"
+  const reviewsModal = (
+    <Modal
+      open={Boolean(activeReviewsProvider && modalRatingInfo)}
+      onClose={() => setActiveReviewsProvider(null)}
+      labelledBy="provider-reviews-title"
+      maxWidth="max-w-lg"
+    >
+      {activeReviewsProvider && modalRatingInfo && (
+        <>
+          <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4">
+            <div>
+              <h2
+                id="provider-reviews-title"
+                className="text-base font-semibold text-slate-900"
               >
-                <FiX className="w-5 h-5" />
-              </button>
+                {activeReviewsProvider.serviceName}
+              </h2>
+              <div className="mt-1 flex items-center gap-2 text-xs text-slate-600">
+                <StarRow rating={modalRatingInfo.average} size="w-3.5 h-3.5" />
+                <span className="font-semibold text-slate-900 font-mono tabular-nums">
+                  {modalRatingInfo.average.toFixed(1)} out of 5
+                </span>
+                <span aria-hidden="true">·</span>
+                <span className="tabular-nums">
+                  {modalRatingInfo.count}{" "}
+                  {modalRatingInfo.count === 1 ? "client review" : "client reviews"}
+                </span>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setActiveReviewsProvider(null)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              aria-label="Close reviews"
+            >
+              <FiX className="w-5 h-5" />
+            </button>
+          </div>
 
-            <div className="max-h-96 overflow-y-auto divide-y divide-slate-100 px-6">
-              {modalRatingInfo.reviews.map((review) => (
-                <div key={review.id} className="py-4 space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center shrink-0">
-                        {(review.reviewer || "C").slice(0, 2).toUpperCase()}
-                      </span>
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">
-                          {review.reviewer}
-                        </p>
-                        <p className="text-xs text-slate-400 tabular-nums">
-                          {dayjs(review.createdAt).format("MMM D, YYYY")}
-                        </p>
-                      </div>
-                    </div>
-                    <div
-                      className="flex items-center gap-1.5"
-                      aria-label={`${review.rating} out of 5 stars`}
-                    >
-                      <StarRow rating={review.rating} size="w-3.5 h-3.5" />
-                      <span className="text-xs font-mono font-semibold text-slate-700 tabular-nums">
-                        {review.rating}.0
-                      </span>
+          <div className="max-h-96 overflow-y-auto divide-y divide-slate-100 px-6">
+            {modalRatingInfo.reviews.map((review) => (
+              <div key={review.id} className="py-4 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-7 rounded-md bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-center shrink-0">
+                      {(review.reviewer || "C").slice(0, 2).toUpperCase()}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">
+                        {review.reviewer}
+                      </p>
+                      <p className="text-xs text-slate-400 tabular-nums">
+                        {dayjs(review.createdAt).format("MMM D, YYYY")}
+                      </p>
                     </div>
                   </div>
-                  {review.comment && (
-                    <p className="text-sm text-slate-600 leading-relaxed">
-                      {review.comment}
-                    </p>
-                  )}
+                  <div
+                    className="flex items-center gap-1.5"
+                    aria-label={`${review.rating} out of 5 stars`}
+                  >
+                    <StarRow rating={review.rating} size="w-3.5 h-3.5" />
+                    <span className="text-xs font-mono font-semibold text-slate-700 tabular-nums">
+                      {review.rating}.0
+                    </span>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setActiveReviewsProvider(null)}
-                className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const target = activeReviewsProvider;
-                  setActiveReviewsProvider(null);
-                  handleProviderClick(target);
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
-              >
-                <span>Select Time</span>
-                <FiArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+                {review.comment && (
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    {review.comment}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
-      );
+
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveReviewsProvider(null)}
+              className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const target = activeReviewsProvider;
+                setActiveReviewsProvider(null);
+                handleProviderClick(target);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+            >
+              <span>Select Time</span>
+              <FiArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </>
+      )}
+    </Modal>
+  );
 
   if (token && role === "ADMIN") {
     return (

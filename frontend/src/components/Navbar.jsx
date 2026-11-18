@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../features/auth/authSlice";
@@ -9,17 +9,50 @@ import {
   FiX,
   FiUser,
   FiChevronRight,
+  FiChevronDown,
+  FiGrid,
 } from "react-icons/fi";
 
 export default function Navbar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token, role, profileImage } = useSelector((state) => state.auth);
+  const { token, role, user, profileImage } = useSelector((state) => state.auth);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuOpen]);
 
   const handleLogout = () => {
     dispatch(logout());
+    setMenuOpen(false);
     setMobileOpen(false);
     navigate("/");
   };
@@ -33,7 +66,13 @@ export default function Navbar() {
   const getDashboardLabel = () => {
     if (role === "ADMIN") return "Admin Console";
     if (role === "PROVIDER") return "Provider Portal";
-    return "My Dashboard";
+    return "My Overview";
+  };
+
+  const getRoleLabel = () => {
+    if (role === "ADMIN") return "Administrator";
+    if (role === "PROVIDER") return "Service Provider";
+    return "Client Account";
   };
 
   const navLinks = [{ to: "/", label: "Home" }];
@@ -88,32 +127,10 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Zone 3: Primary Action */}
+        {/* Zone 3: Account Controls */}
         <div className="hidden md:flex items-center gap-3 shrink-0">
           {token ? (
             <>
-              <Link
-                to="/profile"
-                aria-label="Open profile"
-                title="Profile"
-                className={`inline-flex h-10 w-10 items-center justify-center rounded-full border p-1 transition-colors shrink-0 ${
-                  location.pathname === "/profile"
-                    ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                    : "text-slate-700 border-slate-200 bg-white hover:bg-slate-50"
-                }`}
-              >
-                <span className="w-full h-full rounded-full overflow-hidden bg-indigo-50 border border-slate-200 flex items-center justify-center shrink-0">
-                  {profileImage ? (
-                    <img
-                      src={profileImage}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <FiUser className="w-3.5 h-3.5 text-indigo-700" aria-hidden="true" />
-                  )}
-                </span>
-              </Link>
               {role !== "USER" && (
                 <Link
                   to={getDashboardPath()}
@@ -123,14 +140,125 @@ export default function Navbar() {
                   <FiChevronRight className="w-4 h-4" aria-hidden="true" />
                 </Link>
               )}
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium text-slate-700 border border-slate-200 bg-white hover:bg-slate-50 transition-colors whitespace-nowrap shrink-0"
-              >
-                <FiLogOut className="w-4 h-4" aria-hidden="true" />
-                <span>Sign Out</span>
-              </button>
+
+              <div className="relative" ref={menuRef}>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((prev) => !prev)}
+                  aria-label="Open account menu"
+                  aria-expanded={menuOpen}
+                  aria-haspopup="menu"
+                  title="Account menu"
+                  className={`inline-flex items-center gap-1.5 rounded-full border p-1 pr-2 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    menuOpen || location.pathname === "/profile"
+                      ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                      : "text-slate-600 border-slate-200 bg-white hover:bg-slate-50"
+                  }`}
+                >
+                  <span className="w-8 h-8 rounded-full overflow-hidden bg-indigo-50 border border-slate-200 flex items-center justify-center shrink-0">
+                    {profileImage ? (
+                      <img
+                        src={profileImage}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <FiUser className="w-4 h-4 text-indigo-700" aria-hidden="true" />
+                    )}
+                  </span>
+                  <FiChevronDown
+                    className={`w-3.5 h-3.5 transition-transform ${
+                      menuOpen ? "rotate-180" : ""
+                    }`}
+                    aria-hidden="true"
+                  />
+                </button>
+
+                {menuOpen && (
+                  <div
+                    role="menu"
+                    aria-label="Account options"
+                    className="absolute right-0 mt-2 w-60 bg-white border border-slate-200 rounded-xl shadow-lg py-1.5 z-50"
+                  >
+                    <div className="px-3.5 py-2.5 border-b border-slate-100 flex items-center gap-2.5">
+                      <span className="w-9 h-9 rounded-full overflow-hidden bg-indigo-50 border border-slate-200 flex items-center justify-center shrink-0">
+                        {profileImage ? (
+                          <img
+                            src={profileImage}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <FiUser className="w-4 h-4 text-indigo-700" aria-hidden="true" />
+                        )}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 truncate">
+                          {user || "Account"}
+                        </p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {getRoleLabel()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="py-1">
+                      <Link
+                        to={getDashboardPath()}
+                        role="menuitem"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                      >
+                        <FiGrid className="w-4 h-4 text-slate-400" aria-hidden="true" />
+                        <span>{getDashboardLabel()}</span>
+                      </Link>
+                      {role === "USER" && (
+                        <Link
+                          to="/appointments"
+                          role="menuitem"
+                          onClick={() => setMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                        >
+                          <FiCalendar className="w-4 h-4 text-slate-400" aria-hidden="true" />
+                          <span>My Appointments</span>
+                        </Link>
+                      )}
+                      <Link
+                        to="/profile"
+                        role="menuitem"
+                        onClick={() => setMenuOpen(false)}
+                        className={`flex items-center gap-2.5 px-3.5 py-2 text-sm transition-colors ${
+                          location.pathname === "/profile"
+                            ? "bg-indigo-50 text-indigo-700 font-medium"
+                            : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                        }`}
+                      >
+                        <FiUser
+                          className={`w-4 h-4 ${
+                            location.pathname === "/profile"
+                              ? "text-indigo-600"
+                              : "text-slate-400"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        <span>Account Profile</span>
+                      </Link>
+                    </div>
+
+                    <div className="border-t border-slate-100 pt-1">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors"
+                      >
+                        <FiLogOut className="w-4 h-4" aria-hidden="true" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>
@@ -185,10 +313,8 @@ export default function Navbar() {
               <>
                 <Link
                   to="/profile"
-                  aria-label="Open profile"
-                  title="Profile"
                   onClick={() => setMobileOpen(false)}
-                  className={`w-full inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium ${
                     location.pathname === "/profile"
                       ? "text-indigo-700 bg-indigo-50"
                       : "text-slate-700 bg-slate-50 hover:bg-slate-100"
@@ -202,9 +328,13 @@ export default function Navbar() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <FiUser className="w-3.5 h-3.5 text-indigo-700" aria-hidden="true" />
+                      <FiUser className="w-4 h-4 text-indigo-700" aria-hidden="true" />
                     )}
                   </span>
+                  <div className="min-w-0 text-left">
+                    <p className="text-sm font-semibold truncate">{user || "Account Profile"}</p>
+                    <p className="text-xs text-slate-500">Account Profile</p>
+                  </div>
                 </Link>
                 {role !== "USER" && (
                   <Link

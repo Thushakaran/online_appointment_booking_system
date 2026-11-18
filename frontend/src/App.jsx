@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCurrentUser } from "./features/auth/authSlice";
@@ -6,18 +6,20 @@ import { fetchCurrentUser } from "./features/auth/authSlice";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ToastProvider } from "./components/ui/ToastProvider";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import ProviderDashboard from "./pages/ProviderDashboard";
-import ProviderSetup from "./pages/ProviderSetup";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminProviderManagement from "./pages/AdminProviderManagement";
 import Providers from "./pages/Providers";
-import BookAppointment from "./pages/BookAppointment";
-import Appointments from "./pages/Appointment";
-import Profile from "./pages/Profile";
+
+const ProviderDashboard = lazy(() => import("./pages/ProviderDashboard"));
+const ProviderSetup = lazy(() => import("./pages/ProviderSetup"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminProviderManagement = lazy(() => import("./pages/AdminProviderManagement"));
+const BookAppointment = lazy(() => import("./pages/BookAppointment"));
+const Appointments = lazy(() => import("./pages/Appointment"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 const ADMIN_PROVIDER_ROUTES = [
   "/provider-dashboard",
@@ -25,6 +27,17 @@ const ADMIN_PROVIDER_ROUTES = [
   "/admin-dashboard",
   "/admin/providers",
 ];
+
+function RouteLoader() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <div className="flex flex-col items-center gap-3">
+        <span className="w-8 h-8 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin" />
+        <span className="text-xs font-medium text-slate-500">Loading workspace...</span>
+      </div>
+    </div>
+  );
+}
 
 function NotFoundPage() {
   return (
@@ -84,82 +97,84 @@ function AppShell() {
     <div className="min-h-screen flex flex-col bg-slate-50">
       {!isWorkspaceRoute && <Navbar />}
       <div className="flex-1">
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/providers" element={<Providers />} />
-          <Route
-            path="/book-appointment/:providerId"
-            element={<BookAppointment />}
-          />
+        <Suspense fallback={<RouteLoader />}>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/providers" element={<Providers />} />
+            <Route
+              path="/book-appointment/:providerId"
+              element={<BookAppointment />}
+            />
 
-          {/* User-protected routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["USER"]}>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/appointments"
-            element={
-              <ProtectedRoute allowedRoles={["USER"]}>
-                <Appointments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute allowedRoles={["USER", "PROVIDER", "ADMIN"]}>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+            {/* User-protected routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["USER"]}>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/appointments"
+              element={
+                <ProtectedRoute allowedRoles={["USER"]}>
+                  <Appointments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute allowedRoles={["USER", "PROVIDER", "ADMIN"]}>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Provider-protected routes */}
-          <Route
-            path="/provider-setup"
-            element={
-              <ProtectedRoute allowedRoles={["PROVIDER"]}>
-                <ProviderSetup />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/provider-dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["PROVIDER"]}>
-                <ProviderDashboard />
-              </ProtectedRoute>
-            }
-          />
+            {/* Provider-protected routes */}
+            <Route
+              path="/provider-setup"
+              element={
+                <ProtectedRoute allowedRoles={["PROVIDER"]}>
+                  <ProviderSetup />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/provider-dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["PROVIDER"]}>
+                  <ProviderDashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Admin-protected routes */}
-          <Route
-            path="/admin-dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/providers"
-            element={
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminProviderManagement />
-              </ProtectedRoute>
-            }
-          />
+            {/* Admin-protected routes */}
+            <Route
+              path="/admin-dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/providers"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AdminProviderManagement />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Fallback route */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+            {/* Fallback route */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
       </div>
       {!isWorkspaceRoute && <Footer />}
     </div>
@@ -168,9 +183,11 @@ function AppShell() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppShell />
-    </BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
+        <AppShell />
+      </BrowserRouter>
+    </ToastProvider>
   );
 }
 

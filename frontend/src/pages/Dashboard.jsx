@@ -12,10 +12,15 @@ import {
   FiShield,
   FiSliders,
   FiXCircle,
+  FiStar,
+  FiBriefcase,
+  FiDownload,
 } from "react-icons/fi";
 import { dashboardAPI } from "../api/dashboard";
 import api from "../api/axios";
 import StatusBadge from "../components/ui/StatusBadge";
+import AlertBanner from "../components/ui/AlertBanner";
+import { useToast } from "../components/ui/toastContext";
 
 function PublicLanding() {
   const { token, role } = useSelector((state) => state.auth);
@@ -234,10 +239,51 @@ function PublicLanding() {
   );
 }
 
+function getRelativeDayLabel(dateInput) {
+  if (!dateInput) return "";
+  const target = dayjs(dateInput).startOf("day");
+  const today = dayjs().startOf("day");
+  const diff = target.diff(today, "day");
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff > 1 && diff <= 14) return `In ${diff} days`;
+  return "";
+}
+
+function downloadReminder(appointment) {
+  const date = dayjs(appointment.appointmentDate);
+  const stamp = date.format("YYYYMMDDTHHmmss");
+  const title = `${appointment.provider?.serviceName || "Appointment"} appointment`;
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "BEGIN:VEVENT",
+    `UID:appointment-${appointment.id}@appointflow`,
+    `DTSTART:${stamp}`,
+    `DTEND:${date.add(1, "hour").format("YYYYMMDDTHHmmss")}`,
+    `SUMMARY:${title}`,
+    "BEGIN:VALARM",
+    "TRIGGER:-PT1H",
+    "ACTION:DISPLAY",
+    `DESCRIPTION:Reminder: ${title}`,
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+  link.href = url;
+  link.download = `appointment-${appointment.id}.ics`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function UserWorkspaceDashboard() {
+  const toast = useToast();
   const { userId, user } = useSelector((state) => state.auth);
   const [appointments, setAppointments] = useState([]);
   const [providers, setProviders] = useState([]);
+  const [providerMeta, setProviderMeta] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -249,8 +295,35 @@ function UserWorkspaceDashboard() {
           userId ? api.get(`/api/appointments/user/${userId}`) : Promise.resolve({ data: [] }),
           api.get("/api/providers/paginated?page=0&size=3"),
         ]);
+        const provList = provRes.data?.content || [];
         setAppointments(apptRes.data || []);
-        setProviders(provRes.data?.content || []);
+        setProviders(provList);
+
+        const metaEntries = await Promise.all(
+          provList.map(async (p) => {
+            const [revRes, availRes] = await Promise.all([
+              api.get(`/api/reviews/provider/${p.id}`).catch(() => ({ data: [] })),
+              api.get(`/api/availabilities/provider/${p.id}`).catch(() => ({ data: [] })),
+            ]);
+            const revs = revRes.data || [];
+            const avg = revs.length
+              ? revs.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / revs.length
+              : 0;
+            const openSlots = (availRes.data || [])
+              .filter((s) => !s.isBooked && s.availableDate)
+              .sort((a, b) => new Date(a.availableDate) - new Date(b.availableDate));
+            return [
+              p.id,
+              {
+                reviewCount: revs.length,
+                averageRating: avg,
+                openCount: openSlots.length,
+                nextSlot: openSlots[0]?.availableDate || null,
+              },
+            ];
+          })
+        );
+        setProviderMeta(Object.fromEntries(metaEntries));
         setError("");
       } catch {
         setError("Unable to load your dashboard data.");
@@ -334,11 +407,11 @@ function UserWorkspaceDashboard() {
           </div>
         </div>
 
-        {error && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
+        <AlertBanner
+          variant="error"
+          message={error}
+          onDismiss={() => setError("")}
+        />
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -416,23 +489,47 @@ function UserWorkspaceDashboard() {
               </div>
             ) : (
               <div className="divide-y divide-slate-100">
-                {upcoming.slice(0, 5).map((appt) => (
-                  <div
-                    key={appt.id}
-                    className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 truncate">
-                        {appt.provider?.serviceName || "Consultation"}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-0.5 tabular-nums">
-                        {appt.provider?.user?.username || "Provider"} ·{" "}
-                        {dayjs(appt.appointmentDate).format("MMM D, YYYY · h:mm A")}
-                      </p>
+                {upcoming.slice(0, 5).map((appt) => {
+                  const relLabel = getRelativeDayLabel(appt.appointmentDate);
+                  return (
+                    <div
+                      key={appt.id}
+                      className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold text-slate-900 truncate">
+                            {appt.provider?.serviceName || "Consultation"}
+                          </p>
+                          {relLabel && (
+                            <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[11px] font-medium">
+                              {relLabel}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5 tabular-nums">
+                          {appt.provider?.user?.username || "Provider"} ·{" "}
+                          {dayjs(appt.appointmentDate).format("MMM D, YYYY · h:mm A")}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            downloadReminder(appt);
+                            toast.success("Calendar reminder downloaded.");
+                          }}
+                          title="Download calendar reminder (.ics)"
+                          aria-label={`Download reminder for ${appt.provider?.serviceName || "appointment"}`}
+                          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 transition-colors"
+                        >
+                          <FiDownload className="w-3.5 h-3.5" aria-hidden="true" />
+                        </button>
+                        <StatusBadge status={appt.status} />
+                      </div>
                     </div>
-                    <StatusBadge status={appt.status} />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -496,37 +593,84 @@ function UserWorkspaceDashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {providers.map((provider) => (
-              <Link
-                key={provider.id}
-                to={`/book-appointment/${provider.id}`}
-                state={{ provider }}
-                className="border border-slate-200 rounded-xl p-4 hover:border-indigo-300 hover:bg-slate-50/60 transition-colors flex flex-col justify-between"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {provider.serviceName}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {provider.user?.username || "Specialist"}
-                    {provider.city ? ` · ${provider.city}` : ""}
-                  </p>
-                  {provider.description && (
-                    <p className="text-xs text-slate-600 mt-2 line-clamp-2">
-                      {provider.description}
-                    </p>
-                  )}
-                </div>
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-medium">
-                  <span className="text-slate-700 font-mono tabular-nums">
-                    {provider.servicePricing ? `$${provider.servicePricing}` : "Standard rate"}
-                  </span>
-                  <span className="text-indigo-600 inline-flex items-center gap-1">
-                    Book slot <FiArrowRight className="w-3.5 h-3.5" />
-                  </span>
-                </div>
-              </Link>
-            ))}
+            {providers.map((provider) => {
+              const meta = providerMeta[provider.id] || {
+                reviewCount: 0,
+                averageRating: 0,
+                openCount: 0,
+                nextSlot: null,
+              };
+              return (
+                <Link
+                  key={provider.id}
+                  to={`/book-appointment/${provider.id}`}
+                  state={{ provider }}
+                  className="border border-slate-200 rounded-xl overflow-hidden hover:border-indigo-300 hover:-translate-y-0.5 hover:shadow-md transition-all flex flex-col justify-between bg-white"
+                >
+                  <div>
+                    <div className="h-36 bg-slate-100 border-b border-slate-100 overflow-hidden relative">
+                      {provider.profileImage ? (
+                        <img
+                          src={provider.profileImage}
+                          alt={provider.serviceName}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-slate-100 to-indigo-50 flex items-center justify-center text-indigo-600">
+                          <FiBriefcase className="w-6 h-6" aria-hidden="true" />
+                        </div>
+                      )}
+                      {meta.openCount > 0 && (
+                        <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded bg-white/90 border border-emerald-200 text-emerald-700 text-[11px] font-semibold tabular-nums">
+                          {meta.openCount} open
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-slate-900 truncate">
+                          {provider.serviceName}
+                        </p>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-800 shrink-0 tabular-nums">
+                          <FiStar
+                            className={`w-3.5 h-3.5 ${
+                              meta.reviewCount > 0
+                                ? "text-amber-500 fill-amber-400"
+                                : "text-slate-300"
+                            }`}
+                            aria-hidden="true"
+                          />
+                          <span>
+                            {meta.reviewCount > 0
+                              ? meta.averageRating.toFixed(1)
+                              : "New"}
+                          </span>
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 truncate">
+                        {provider.user?.username || "Specialist"}
+                        {provider.city ? ` · ${provider.city}` : ""}
+                      </p>
+                      {provider.description && (
+                        <p className="text-xs text-slate-600 mt-2 line-clamp-2">
+                          {provider.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between text-xs font-medium">
+                    <span className="text-slate-700 font-mono tabular-nums">
+                      {provider.servicePricing ? `$${provider.servicePricing}` : "Standard rate"}
+                    </span>
+                    <span className="text-indigo-600 inline-flex items-center gap-1">
+                      Book slot <FiArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>

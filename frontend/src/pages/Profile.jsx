@@ -27,8 +27,11 @@ import api from "../api/axios";
 import { logout, updateUser } from "../features/auth/authSlice";
 import DashboardShell from "../components/DashboardShell";
 import StatusBadge from "../components/ui/StatusBadge";
+import AlertBanner from "../components/ui/AlertBanner";
+import { useToast } from "../components/ui/toastContext";
 
 export default function Profile() {
+  const toast = useToast();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { token, role } = useSelector((state) => state.auth);
@@ -38,7 +41,6 @@ export default function Profile() {
   const [appointments, setAppointments] = useState([]);
   const [availabilities, setAvailabilities] = useState([]);
   const [err, setErr] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -129,15 +131,14 @@ export default function Profile() {
     e.preventDefault();
     if (!me) return;
     setErr("");
-    setSuccess("");
     setSavingProfile(true);
     try {
       const updatedUser = await api.put(`/api/users/${me.id}`, editForm);
       setMe(updatedUser.data);
 
       if (editForm.username !== me.username) {
-        setSuccess(
-          "Username updated. Signing you out so you can log in with your new username..."
+        toast.info(
+          "Username updated. Signing you out so your session token refreshes..."
         );
         setTimeout(() => {
           dispatch(logout());
@@ -153,24 +154,27 @@ export default function Profile() {
           profileImage: updatedUser.data.profileImage || "",
         })
       );
-      setSuccess("Account details updated successfully.");
+      toast.success("Account details updated successfully.");
     } catch (error) {
+      let message = "Failed to update profile.";
       if (error.response) {
         const { status, data } = error.response;
         if (status === 400) {
-          setErr(data.error || "Invalid profile information provided.");
+          message = data.error || "Invalid profile information provided.";
         } else if (status === 401) {
-          setErr("Authentication failed. Please log in again.");
+          message = "Authentication failed. Please log in again.";
         } else if (status === 403) {
-          setErr("You do not have permission to update this profile.");
+          message = "You do not have permission to update this profile.";
         } else if (status === 409) {
-          setErr("That username or email is already taken.");
+          message = "That username or email is already taken.";
         } else {
-          setErr(data.error || "Failed to update profile.");
+          message = data.error || "Failed to update profile.";
         }
       } else {
-        setErr("Network error. Please verify your connection.");
+        message = "Network error. Please verify your connection.";
       }
+      setErr(message);
+      toast.error(message);
     } finally {
       setSavingProfile(false);
     }
@@ -201,7 +205,6 @@ export default function Profile() {
     if (!me || profileImageDraft === null) return;
     setSavingImage(true);
     setErr("");
-    setSuccess("");
     try {
       const response = await api.put(`/api/users/${me.id}`, {
         profileImage: profileImageDraft,
@@ -215,15 +218,16 @@ export default function Profile() {
         })
       );
       setProfileImageDraft(null);
-      setSuccess(
+      toast.success(
         profileImageDraft ? "Profile photo updated." : "Profile photo removed."
       );
     } catch (error) {
-      setErr(
+      const message =
         error.response?.data?.message ||
-          error.response?.data?.error ||
-          "Could not save your profile photo."
-      );
+        error.response?.data?.error ||
+        "Could not save your profile photo.";
+      setErr(message);
+      toast.error(message);
     } finally {
       setSavingImage(false);
     }
@@ -232,7 +236,6 @@ export default function Profile() {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     setErr("");
-    setSuccess("");
 
     if (passwordForm.newPassword.length < 6) {
       setErr("New password must be at least 6 characters.");
@@ -254,13 +257,14 @@ export default function Profile() {
         newPassword: "",
         confirmPassword: "",
       });
-      setSuccess("Password changed successfully.");
+      toast.success("Password changed successfully.");
     } catch (error) {
-      setErr(
+      const message =
         error?.response?.data?.error ||
-          error?.response?.data?.message ||
-          "Unable to change password. Check your current password."
-      );
+        error?.response?.data?.message ||
+        "Unable to change password. Check your current password.";
+      setErr(message);
+      toast.error(message);
     } finally {
       setSavingPassword(false);
     }
@@ -298,33 +302,11 @@ export default function Profile() {
 
   const content = (
     <div className="space-y-6">
-        {err && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
-            <span>{err}</span>
-            <button
-              type="button"
-              onClick={() => setErr("")}
-              className="text-rose-500 hover:text-rose-700 p-1"
-              aria-label="Dismiss error"
-            >
-              <FiX className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {success && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
-            <span>{success}</span>
-            <button
-              type="button"
-              onClick={() => setSuccess("")}
-              className="text-emerald-600 hover:text-emerald-800 p-1"
-              aria-label="Dismiss notice"
-            >
-              <FiX className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        <AlertBanner
+          variant="error"
+          message={err}
+          onDismiss={() => setErr("")}
+        />
 
         {loading ? (
           <div className="space-y-6">

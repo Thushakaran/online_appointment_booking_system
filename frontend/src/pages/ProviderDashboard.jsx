@@ -23,10 +23,24 @@ import api from "../api/axios";
 import DashboardShell from "../components/DashboardShell";
 import StatusBadge from "../components/ui/StatusBadge";
 import ConfirmModal from "../components/ui/ConfirmModal";
+import AlertBanner from "../components/ui/AlertBanner";
+import EmptyState from "../components/ui/EmptyState";
+import { useToast } from "../components/ui/toastContext";
+
+const TIME_PRESETS = [
+  { label: "09:00 AM", value: "09:00" },
+  { label: "10:00 AM", value: "10:00" },
+  { label: "11:30 AM", value: "11:30" },
+  { label: "01:00 PM", value: "13:00" },
+  { label: "02:30 PM", value: "14:30" },
+  { label: "04:00 PM", value: "16:00" },
+  { label: "05:30 PM", value: "17:30" },
+];
 
 const BOOKING_FILTERS = ["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"];
 
 export default function ProviderDashboard() {
+  const toast = useToast();
   const { token, role, user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
@@ -35,14 +49,17 @@ export default function ProviderDashboard() {
   const [availabilities, setAvailabilities] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [availabilityForm, setAvailabilityForm] = useState({ availableDate: "", repeatWeeks: 1 });
+  const [availabilityForm, setAvailabilityForm] = useState(() => ({
+    date: dayjs().add(1, "day").format("YYYY-MM-DD"),
+    time: "10:00",
+    repeatWeeks: 1,
+  }));
   const [editingAvailability, setEditingAvailability] = useState(null);
   const [editForm, setEditForm] = useState({ availableDate: "" });
   const [bookingFilter, setBookingFilter] = useState("ALL");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
   const [profileExists, setProfileExists] = useState(false);
 
   const [deleteSlotTarget, setDeleteSlotTarget] = useState(null);
@@ -130,27 +147,38 @@ export default function ProviderDashboard() {
     fetchProviderData();
   }, [fetchProviderData]);
 
-  useEffect(() => {
-    if (!message) return;
-    const t = setTimeout(() => setMessage(""), 4000);
-    return () => clearTimeout(t);
-  }, [message]);
-
   const handleAddAvailability = async (e) => {
     e.preventDefault();
-    if (!availabilityForm.availableDate) return;
+    if (!availabilityForm.date || !availabilityForm.time) {
+      toast.error("Please select both a date and start time.");
+      return;
+    }
+    const baseDateTime = dayjs(`${availabilityForm.date}T${availabilityForm.time}`);
+    if (!baseDateTime.isValid()) {
+      toast.error("Invalid date or time selected.");
+      return;
+    }
     try {
       setError("");
-      setMessage("");
       const repeats = Math.min(12, Math.max(1, Number(availabilityForm.repeatWeeks) || 1));
-      await Promise.all(Array.from({ length: repeats }, (_, week) => api.post("/api/availabilities", {
-        availableDate: dayjs(availabilityForm.availableDate).add(week, "week").format("YYYY-MM-DDTHH:mm:ss"),
-      })));
-      setAvailabilityForm({ availableDate: "", repeatWeeks: 1 });
-      setMessage(repeats > 1 ? `Added ${repeats} weekly availability slots.` : "Availability slot added.");
+      await Promise.all(
+        Array.from({ length: repeats }, (_, week) =>
+          api.post("/api/availabilities", {
+            availableDate: baseDateTime.add(week, "week").format("YYYY-MM-DDTHH:mm:ss"),
+          })
+        )
+      );
+      setAvailabilityForm((prev) => ({ ...prev, repeatWeeks: 1 }));
+      toast.success(
+        repeats > 1
+          ? `Added ${repeats} weekly availability slots.`
+          : "Availability slot added."
+      );
       await fetchProviderData();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to add availability slot.");
+      const msg = err.response?.data?.message || "Failed to add availability slot.";
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -159,9 +187,8 @@ export default function ProviderDashboard() {
     try {
       setDeletingSlot(true);
       setError("");
-      setMessage("");
       await api.delete(`/api/availabilities/${deleteSlotTarget.id}`);
-      setMessage("Availability slot removed.");
+      toast.success("Availability slot removed.");
       setDeleteSlotTarget(null);
       await fetchProviderData();
     } catch (err) {
@@ -176,6 +203,7 @@ export default function ProviderDashboard() {
         msg = err.response.data.message;
       }
       setError(msg);
+      toast.error(msg);
       setDeleteSlotTarget(null);
     } finally {
       setDeletingSlot(false);
@@ -192,14 +220,15 @@ export default function ProviderDashboard() {
   const handleUpdateAvailability = async (availabilityId) => {
     try {
       setError("");
-      setMessage("");
       await api.put(`/api/availabilities/${availabilityId}`, editForm);
-      setMessage("Availability slot updated.");
+      toast.success("Availability slot updated.");
       setEditingAvailability(null);
       setEditForm({ availableDate: "" });
       await fetchProviderData();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update slot.");
+      const msg = err.response?.data?.message || "Failed to update slot.";
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -207,19 +236,25 @@ export default function ProviderDashboard() {
     try {
       setUpdatingBookingId(appointmentId);
       setError("");
-      setMessage("");
       await api.put(`/api/appointments/${appointmentId}/status`, nextStatus, {
         headers: { "Content-Type": "text/plain" },
       });
-      setMessage(`Appointment marked as ${nextStatus.toLowerCase()}.`);
+      toast.success(`Appointment marked as ${nextStatus.toLowerCase()}.`);
       await fetchProviderData();
     } catch (err) {
-      const apiMessage = err.response?.data?.message || err.response?.data?.detail || err.response?.data?.error;
-      setError(apiMessage || (err.response?.status === 403
-        ? "You cannot change this appointment because it is not assigned to your provider account."
-        : err.response?.status === 401
-          ? "Your session has expired. Please sign in again."
-          : "Unable to update appointment status. Check the selected appointment and try again."));
+      const apiMessage =
+        err.response?.data?.message ||
+        err.response?.data?.detail ||
+        err.response?.data?.error;
+      const msg =
+        apiMessage ||
+        (err.response?.status === 403
+          ? "You cannot change this appointment because it is not assigned to your provider account."
+          : err.response?.status === 401
+            ? "Your session has expired. Please sign in again."
+            : "Unable to update appointment status. Check the selected appointment and try again.");
+      setError(msg);
+      toast.error(msg);
     } finally {
       setUpdatingBookingId(null);
     }
@@ -315,31 +350,11 @@ export default function ProviderDashboard() {
       }
     >
       <div className="space-y-6">
-        {error && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
-            <span>{error}</span>
-            <button
-              type="button"
-              onClick={() => setError("")}
-              aria-label="Dismiss error"
-            >
-              <FiX className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {message && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
-            <span>{message}</span>
-            <button
-              type="button"
-              onClick={() => setMessage("")}
-              aria-label="Dismiss notice"
-            >
-              <FiX className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        <AlertBanner
+          variant="error"
+          message={error}
+          onDismiss={() => setError("")}
+        />
 
         {loading ? (
           <div className="space-y-6">
@@ -506,70 +521,180 @@ export default function ProviderDashboard() {
                   </span>
                 </div>
 
-                {/* Add Availability Form */}
+                {/* Visual Schedule Builder Form */}
                 <form
                   onSubmit={handleAddAvailability}
-                  className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-end gap-3"
+                  className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5 space-y-4"
                 >
-                  <div className="flex-1">
-                    <label
-                      htmlFor="new-slot-date"
-                      className="block text-xs font-medium text-slate-700 mb-1.5"
-                    >
-                      New Time Slot (Date & Time)
-                    </label>
-                    <input
-                      id="new-slot-date"
-                      type="datetime-local"
-                      required
-                      value={availabilityForm.availableDate}
-                      onChange={(e) =>
-                        setAvailabilityForm({ ...availabilityForm, availableDate: e.target.value })
-                      }
-                      className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                    <div className="md:col-span-5 space-y-1.5">
+                      <label
+                        htmlFor="new-slot-date"
+                        className="block text-xs font-medium text-slate-700"
+                      >
+                        Date
+                      </label>
+                      <input
+                        id="new-slot-date"
+                        type="date"
+                        required
+                        min={dayjs().format("YYYY-MM-DD")}
+                        value={availabilityForm.date}
+                        onChange={(e) =>
+                          setAvailabilityForm((prev) => ({
+                            ...prev,
+                            date: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      />
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {[
+                          { label: "Today", offset: 0 },
+                          { label: "Tomorrow", offset: 1 },
+                          { label: "+2 days", offset: 2 },
+                          { label: "Next week", offset: 7 },
+                        ].map((d) => {
+                          const targetVal = dayjs()
+                            .add(d.offset, "day")
+                            .format("YYYY-MM-DD");
+                          const active = availabilityForm.date === targetVal;
+                          return (
+                            <button
+                              key={d.label}
+                              type="button"
+                              onClick={() =>
+                                setAvailabilityForm((prev) => ({
+                                  ...prev,
+                                  date: targetVal,
+                                }))
+                              }
+                              className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                                active
+                                  ? "bg-indigo-600 text-white"
+                                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
+                              }`}
+                            >
+                              {d.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-4 space-y-1.5">
+                      <label
+                        htmlFor="new-slot-time"
+                        className="block text-xs font-medium text-slate-700"
+                      >
+                        Start Time
+                      </label>
+                      <input
+                        id="new-slot-time"
+                        type="time"
+                        required
+                        value={availabilityForm.time}
+                        onChange={(e) =>
+                          setAvailabilityForm((prev) => ({
+                            ...prev,
+                            time: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3.5 py-2 text-sm font-mono bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div className="md:col-span-3 space-y-1.5">
+                      <label
+                        htmlFor="repeat-weeks"
+                        className="block text-xs font-medium text-slate-700"
+                      >
+                        Repeat Weekly (1–12)
+                      </label>
+                      <input
+                        id="repeat-weeks"
+                        type="number"
+                        min="1"
+                        max="12"
+                        value={availabilityForm.repeatWeeks}
+                        onChange={(e) =>
+                          setAvailabilityForm((prev) => ({
+                            ...prev,
+                            repeatWeeks: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3.5 py-2 text-sm font-mono tabular-nums bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      />
+                    </div>
                   </div>
-                  <div className="w-full sm:w-36">
-                    <label
-                      htmlFor="repeat-weeks"
-                      className="block text-xs font-medium text-slate-700 mb-1.5"
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/80">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-medium text-slate-500 mr-1">
+                        Quick times:
+                      </span>
+                      {TIME_PRESETS.map((preset) => {
+                        const active = availabilityForm.time === preset.value;
+                        return (
+                          <button
+                            key={preset.value}
+                            type="button"
+                            onClick={() =>
+                              setAvailabilityForm((prev) => ({
+                                ...prev,
+                                time: preset.value,
+                              }))
+                            }
+                            className={`px-2.5 py-1 rounded-md text-xs font-mono font-medium transition-colors ${
+                              active
+                                ? "bg-indigo-600 text-white"
+                                : "bg-white border border-slate-200 text-slate-700 hover:border-indigo-300"
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap shrink-0"
                     >
-                      Repeat (weeks)
-                    </label>
-                    <input
-                      id="repeat-weeks"
-                      type="number"
-                      min="1"
-                      max="12"
-                      value={availabilityForm.repeatWeeks}
-                      onChange={(e) =>
-                        setAvailabilityForm({
-                          ...availabilityForm,
-                          repeatWeeks: e.target.value,
-                        })
-                      }
-                      className="w-full px-3.5 py-2 text-sm font-mono tabular-nums bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                    />
+                      <FiPlus className="w-4 h-4" />
+                      <span>
+                        {Number(availabilityForm.repeatWeeks) > 1
+                          ? `Publish ${Math.min(12, Math.max(1, Number(availabilityForm.repeatWeeks) || 1))} Slots`
+                          : "Publish Slot"}
+                      </span>
+                    </button>
                   </div>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap"
-                  >
-                    <FiPlus className="w-4 h-4" />
-                    <span>Add Slot</span>
-                  </button>
+
+                  {availabilityForm.date && availabilityForm.time && (
+                    <p className="text-xs text-slate-500 tabular-nums">
+                      Preview:{" "}
+                      <span className="font-medium text-slate-700">
+                        {dayjs(`${availabilityForm.date}T${availabilityForm.time}`).format(
+                          "ddd, MMM D, YYYY [at] h:mm A"
+                        )}
+                      </span>
+                      {Number(availabilityForm.repeatWeeks) > 1
+                        ? ` (repeating weekly for ${Math.min(
+                            12,
+                            Math.max(1, Number(availabilityForm.repeatWeeks) || 1)
+                          )} weeks)`
+                        : ""}
+                    </p>
+                  )}
                 </form>
 
                 {availabilities.length === 0 ? (
-                  <div className="border border-dashed border-slate-200 rounded-xl p-8 text-center">
-                    <FiClock className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-sm font-medium text-slate-900">
-                      No availability slots published
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Add a date and time above so clients can book appointments.
-                    </p>
-                  </div>
+                  <EmptyState
+                    dashed
+                    icon={FiClock}
+                    title="No availability slots published"
+                    description="Choose a date and time above so clients can book appointments."
+                  />
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {availabilities.map((slot) => {

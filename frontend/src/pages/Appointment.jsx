@@ -18,6 +18,9 @@ import {
 import api from "../api/axios";
 import StatusBadge from "../components/ui/StatusBadge";
 import ConfirmModal from "../components/ui/ConfirmModal";
+import AlertBanner from "../components/ui/AlertBanner";
+import EmptyState from "../components/ui/EmptyState";
+import { useToast } from "../components/ui/toastContext";
 
 const FILTER_TABS = [
   { id: "ALL", label: "All" },
@@ -79,13 +82,23 @@ const sortAppointments = (appointments) => {
   });
 };
 
+function getRelativeDayBadge(dateObj) {
+  if (!dateObj || dateObj.getTime() <= 0) return "";
+  const diff = dayjs(dateObj).startOf("day").diff(dayjs().startOf("day"), "day");
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff > 1 && diff <= 14) return `In ${diff} days`;
+  return "";
+}
+
 export default function Appointments() {
+  const toast = useToast();
   const { userId } = useSelector((state) => state.auth);
   const [items, setItems] = useState([]);
   const [err, setErr] = useState("");
-  const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [sortOrder, setSortOrder] = useState("priority");
   const [searchQuery, setSearchQuery] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -141,33 +154,32 @@ export default function Appointments() {
 
   const updateStatus = async (id, status) => {
     setErr("");
-    setMsg("");
     setActionLoadingId(id);
     try {
       if (status === "CANCELLED") {
         await api.put(`/api/appointments/${id}/cancel`);
-        setMsg("Appointment cancelled and slot released.");
+        toast.success("Appointment cancelled and slot released.");
       } else if (status === "CONFIRMED") {
         await api.put(`/api/appointments/${id}/confirm`);
-        setMsg("Appointment confirmed.");
+        toast.success("Appointment confirmed.");
       } else {
         await api.put(`/api/appointments/${id}/status`, status, {
           headers: { "Content-Type": "text/plain" },
         });
-        setMsg(`Appointment updated to ${status.toLowerCase()}.`);
+        toast.success(`Appointment updated to ${status.toLowerCase()}.`);
       }
       await load(userId);
     } catch (e) {
+      let message = "Failed to update appointment status. Please try again.";
       if (e?.response?.status === 403) {
-        setErr("Access denied. You do not have permission for this action.");
+        message = "Access denied. You do not have permission for this action.";
       } else if (e?.response?.status === 401) {
-        setErr("Session expired. Please log in again.");
-      } else {
-        setErr(
-          e?.response?.data?.message ||
-            "Failed to update appointment status. Please try again."
-        );
+        message = "Session expired. Please log in again.";
+      } else if (e?.response?.data?.message) {
+        message = e.response.data.message;
       }
+      setErr(message);
+      toast.error(message);
     } finally {
       setActionLoadingId(null);
       setCancelTarget(null);
@@ -176,7 +188,6 @@ export default function Appointments() {
 
   const beginReschedule = async (appointment) => {
     setErr("");
-    setMsg("");
     setRescheduleTarget(appointment);
     setRescheduleLoading(true);
     setSelectedRescheduleSlot("");
@@ -190,7 +201,9 @@ export default function Appointments() {
         )
       );
     } catch {
-      setErr("Could not load available times for this provider.");
+      const message = "Could not load available times for this provider.";
+      setErr(message);
+      toast.error(message);
       setRescheduleTarget(null);
     } finally {
       setRescheduleLoading(false);
@@ -204,13 +217,14 @@ export default function Appointments() {
       await api.put(
         `/api/appointments/${rescheduleTarget.id}/reschedule/${selectedRescheduleSlot}`
       );
-      setMsg("Appointment rescheduled successfully.");
+      toast.success("Appointment rescheduled successfully.");
       setRescheduleTarget(null);
       await load(userId);
     } catch (e) {
-      setErr(
-        e.response?.data?.message || "Could not reschedule this appointment."
-      );
+      const message =
+        e.response?.data?.message || "Could not reschedule this appointment.";
+      setErr(message);
+      toast.error(message);
     } finally {
       setActionLoadingId(null);
     }
@@ -235,7 +249,6 @@ export default function Appointments() {
       editingReviewId === appointmentId && Boolean(reviews[appointmentId]);
     setReviewSavingId(appointmentId);
     setErr("");
-    setMsg("");
     try {
       const payload = {
         rating: Number(form.rating || 5),
@@ -246,17 +259,18 @@ export default function Appointments() {
         : await api.post(`/api/reviews/appointment/${appointmentId}`, payload);
       setReviews((current) => ({ ...current, [appointmentId]: response.data }));
       setEditingReviewId(null);
-      setMsg(
+      toast.success(
         isEditing
           ? "Your review has been updated."
           : "Thanks for sharing your review."
       );
     } catch (error) {
-      setErr(
+      const message =
         error.response?.data?.message ||
-          error.response?.data?.detail ||
-          "Could not save your review."
-      );
+        error.response?.data?.detail ||
+        "Could not save your review.";
+      setErr(message);
+      toast.error(message);
     } finally {
       setReviewSavingId(null);
     }
@@ -281,7 +295,7 @@ export default function Appointments() {
 
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return items.filter((appt) => {
+    const list = items.filter((appt) => {
       if (statusFilter === "UPCOMING") {
         if (
           (appt.status !== "PENDING" && appt.status !== "CONFIRMED") ||
@@ -302,7 +316,19 @@ export default function Appointments() {
         (appt.provider?.city || "").toLowerCase().includes(q)
       );
     });
-  }, [items, statusFilter, searchQuery]);
+
+    if (sortOrder === "soonest") {
+      return [...list].sort(
+        (a, b) => getAppointmentDate(a) - getAppointmentDate(b)
+      );
+    }
+    if (sortOrder === "latest") {
+      return [...list].sort(
+        (a, b) => getAppointmentDate(b) - getAppointmentDate(a)
+      );
+    }
+    return list;
+  }, [items, statusFilter, searchQuery, sortOrder]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-8">
@@ -324,36 +350,14 @@ export default function Appointments() {
             <span>Book Appointment</span>
           </Link>
         </div>
-        {err && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
-            <span>{err}</span>
-            <button
-              type="button"
-              onClick={() => setErr("")}
-              className="text-rose-500 hover:text-rose-700 p-1"
-              aria-label="Dismiss error"
-            >
-              <FiX className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+        <AlertBanner
+          variant="error"
+          message={err}
+          onDismiss={() => setErr("")}
+        />
 
-        {msg && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
-            <span>{msg}</span>
-            <button
-              type="button"
-              onClick={() => setMsg("")}
-              className="text-emerald-600 hover:text-emerald-800 p-1"
-              aria-label="Dismiss notice"
-            >
-              <FiX className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Filter Bar & Search */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        {/* Filter Bar, Search & Sort */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-1.5">
             {FILTER_TABS.map((tab) => {
               const active = statusFilter === tab.id;
@@ -381,18 +385,36 @@ export default function Appointments() {
             })}
           </div>
 
-          <div className="relative w-full lg:w-72">
-            <FiSearch
-              className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-              aria-hidden="true"
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search service, provider, city..."
-              className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-            />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="relative w-full sm:w-64">
+              <FiSearch
+                className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                aria-hidden="true"
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search service, provider, city..."
+                className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="appointment-sort" className="sr-only">
+                Sort appointments
+              </label>
+              <select
+                id="appointment-sort"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="w-full sm:w-auto px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+              >
+                <option value="priority">Sort: Priority</option>
+                <option value="soonest">Sort: Soonest Date</option>
+                <option value="latest">Sort: Latest Date</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -411,38 +433,39 @@ export default function Appointments() {
             ))}
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
-            <FiCalendar className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <h2 className="text-base font-semibold text-slate-900">
-              {items.length === 0
-                ? "No appointments yet"
-                : "No matching appointments"}
-            </h2>
-            <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
-              {items.length === 0
+          <EmptyState
+            icon={FiCalendar}
+            title={
+              items.length === 0 ? "No appointments yet" : "No matching appointments"
+            }
+            description={
+              items.length === 0
                 ? "Explore our provider directory to find a specialist and reserve an available time slot."
-                : "Try clearing your search filter or switching status tabs."}
-            </p>
-            {items.length === 0 ? (
-              <Link
-                to="/providers"
-                className="mt-5 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
-              >
-                Browse Providers
-              </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setStatusFilter("ALL");
-                  setSearchQuery("");
-                }}
-                className="mt-5 px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
-              >
-                Reset Filters
-              </button>
-            )}
-          </div>
+                : "Try clearing your search filter or switching status tabs."
+            }
+            action={
+              items.length === 0 ? (
+                <Link
+                  to="/providers"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+                >
+                  Browse Providers
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStatusFilter("ALL");
+                    setSearchQuery("");
+                    setSortOrder("priority");
+                  }}
+                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors"
+                >
+                  Reset Filters
+                </button>
+              )
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
             {filteredItems.map((appointment) => {
@@ -504,7 +527,7 @@ export default function Appointments() {
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2 pt-1 text-slate-900 font-medium tabular-nums">
+                      <div className="flex items-center gap-2 pt-1 text-slate-900 font-medium tabular-nums flex-wrap">
                         <FiClock
                           className="w-4 h-4 text-indigo-600 shrink-0"
                           aria-hidden="true"
@@ -514,13 +537,21 @@ export default function Appointments() {
                             ? dayjs(apptDate).format("MMM D, YYYY · h:mm A")
                             : "Date unavailable"}
                         </span>
+                        {canCancel && getRelativeDayBadge(apptDate) && (
+                          <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[11px] font-medium">
+                            {getRelativeDayBadge(apptDate)}
+                          </span>
+                        )}
                       </div>
 
                       {canCancel && (
                         <div className="pt-1">
                           <button
                             type="button"
-                            onClick={() => downloadReminder(appointment)}
+                            onClick={() => {
+                              downloadReminder(appointment);
+                              toast.success("Calendar reminder (.ics) downloaded.");
+                            }}
                             className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
                           >
                             <FiDownload className="w-3.5 h-3.5" aria-hidden="true" />

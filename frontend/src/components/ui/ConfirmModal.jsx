@@ -1,4 +1,5 @@
 import { FiAlertTriangle, FiX } from "react-icons/fi";
+import Modal from "./Modal";
 
 export default function ConfirmModal({
   open,
@@ -11,21 +12,20 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
 }) {
-  if (!open) return null;
-
   const confirmBtnClass =
     variant === "danger"
       ? "bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-500 text-white"
       : "bg-indigo-600 hover:bg-indigo-700 focus-visible:ring-indigo-500 text-white";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="confirm-modal-title"
+    <Modal
+      open={open}
+      onClose={onCancel}
+      disableClose={loading}
+      labelledBy="confirm-modal-title"
+      maxWidth="max-w-md"
     >
-      <div className="bg-white border border-slate-200 rounded-xl shadow-xl max-w-md w-full p-6">
+      <div className="p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
             <div
@@ -79,6 +79,6 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

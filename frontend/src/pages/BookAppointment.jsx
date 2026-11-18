@@ -14,8 +14,11 @@ import {
   FiStar,
 } from "react-icons/fi";
 import api from "../api/axios";
+import AlertBanner from "../components/ui/AlertBanner";
+import { useToast } from "../components/ui/toastContext";
 
 export default function BookAppointment() {
+  const toast = useToast();
   const navigate = useNavigate();
   const { providerId } = useParams();
   const location = useLocation();
@@ -119,6 +122,7 @@ export default function BookAppointment() {
         slotDate: selectedSlot.availableDate,
       });
       setSelectedSlot(null);
+      toast.success("Appointment requested successfully.");
       await loadProviderAndAvailabilities();
     } catch (error) {
       let errorMessage = "Booking failed. Please try again.";
@@ -132,6 +136,7 @@ export default function BookAppointment() {
         errorMessage = error.response.data.message;
       }
       setErr(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setBookingLoading(false);
     }
@@ -184,15 +189,11 @@ export default function BookAppointment() {
           <span>Back to Providers</span>
         </button>
 
-        {err && (
-          <div
-            role="alert"
-            className="flex items-start gap-2.5 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg text-sm"
-          >
-            <FiAlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-            <span>{err}</span>
-          </div>
-        )}
+        <AlertBanner
+          variant="error"
+          message={err}
+          onDismiss={() => setErr("")}
+        />
 
         {/* Confirmed Success Banner */}
         {confirmedBooking && (
