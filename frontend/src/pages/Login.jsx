@@ -50,12 +50,6 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const fillDemo = (username, password) => {
-    dispatch(clearError());
-    setValidationErrors({});
-    setForm({ username, password });
-  };
-
   useEffect(() => {
     const checkProviderProfile = async () => {
       if (token && role === "PROVIDER") {
@@ -197,36 +191,6 @@ export default function Login() {
             )}
           </button>
         </form>
-
-        {/* Quick-Fill Demo Credentials */}
-        <div className="mt-6 pt-5 border-t border-slate-200">
-          <p className="text-xs font-medium text-slate-500 mb-2.5">
-            Quick-fill demo account
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => fillDemo("alex_user", "password123")}
-              className="px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              Client
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemo("dr_maya", "password123")}
-              className="px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              Provider
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemo("admin", "admin123")}
-              className="px-2.5 py-1.5 text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              Admin
-            </button>
-          </div>
-        </div>
 
         <p className="mt-6 text-center text-sm text-slate-600">
           New to AppointFlow?{" "}

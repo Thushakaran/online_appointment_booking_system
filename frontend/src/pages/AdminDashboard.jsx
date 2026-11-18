@@ -631,7 +631,7 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <span className="text-xs font-mono text-slate-500 tabular-nums">
-                    {appointments.length} sampled
+                    {appointments.length} shown of {appointmentsTotalElements}
                   </span>
                 </div>
 

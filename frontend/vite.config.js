@@ -1,18 +1,30 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import mockApiPlugin from './mockApiPlugin.js'
+import process from 'node:process'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), mockApiPlugin()],
+  plugins: [react()],
   server: {
     host: '0.0.0.0',
     port: 3000,
     allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: process.env.BACKEND_URL || 'http://127.0.0.1:8081',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     host: '0.0.0.0',
     port: 3000,
     allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: process.env.BACKEND_URL || 'http://127.0.0.1:8081',
+        changeOrigin: true,
+      },
+    },
   },
 })
