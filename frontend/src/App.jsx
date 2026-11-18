@@ -105,7 +105,7 @@ function AppShell() {
           <Route
             path="/profile"
             element={
-              <ProtectedRoute allowedRoles={["USER", "PROVIDER"]}>
+              <ProtectedRoute allowedRoles={["USER", "PROVIDER", "ADMIN"]}>
                 <Profile />
               </ProtectedRoute>
             }

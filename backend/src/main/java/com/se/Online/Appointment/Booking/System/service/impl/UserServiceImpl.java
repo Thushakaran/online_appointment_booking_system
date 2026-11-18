@@ -76,6 +76,9 @@ public class UserServiceImpl implements UserService {
         if (userDetails.getUsername() != null && !userDetails.getUsername().isBlank()) {
             existingUser.setUsername(userDetails.getUsername());
         }
+        if (userDetails.getProfileImage() != null) {
+            existingUser.setProfileImage(userDetails.getProfileImage());
+        }
 
         return userRepository.save(existingUser);
     }

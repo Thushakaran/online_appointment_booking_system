@@ -42,7 +42,6 @@ export default function Navbar() {
     navLinks.push({ to: "/dashboard", label: "Overview" });
     navLinks.push({ to: "/providers", label: "Providers" });
     navLinks.push({ to: "/appointments", label: "Appointments" });
-    navLinks.push({ to: "/profile", label: "Profile" });
   } else if (role !== "PROVIDER") {
     navLinks.push({ to: "/providers", label: "Providers" });
   }
@@ -94,7 +93,7 @@ export default function Navbar() {
           {token ? (
             <>
               <Link
-                to={role === "ADMIN" ? getDashboardPath() : "/profile"}
+                to="/profile"
                 className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
                   location.pathname === "/profile"
                     ? "bg-indigo-50 text-indigo-700"
@@ -173,6 +172,18 @@ export default function Navbar() {
           <div className="pt-3 border-t border-slate-200 flex flex-col gap-2">
             {token ? (
               <>
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileOpen(false)}
+                  className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium ${
+                    location.pathname === "/profile"
+                      ? "text-indigo-700 bg-indigo-50"
+                      : "text-slate-700 bg-slate-50 hover:bg-slate-100"
+                  }`}
+                >
+                  <FiUser className="w-4 h-4" aria-hidden="true" />
+                  <span>Profile ({user})</span>
+                </Link>
                 {role !== "USER" && (
                   <Link
                     to={getDashboardPath()}

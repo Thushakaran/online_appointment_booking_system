@@ -36,6 +36,8 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [editForm, setEditForm] = useState({ username: "", email: "" });
+  const [profileImageDraft, setProfileImageDraft] = useState(null);
+  const [savingImage, setSavingImage] = useState(false);
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -148,6 +150,40 @@ export default function Profile() {
     }
   };
 
+  const handleProfileImageSelect = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setErr("Choose a valid image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErr("Profile images must be 5 MB or smaller.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfileImageDraft(String(reader.result));
+      setErr("");
+    };
+    reader.onerror = () => setErr("Could not read this image. Please try another file.");
+    reader.readAsDataURL(file);
+  };
+
+  const saveProfileImage = async () => {
+    if (!me || profileImageDraft === null) return;
+    setSavingImage(true); setErr(""); setSuccess("");
+    try {
+      const response = await api.put(`/api/users/${me.id}`, { profileImage: profileImageDraft });
+      setMe(response.data);
+      setProfileImageDraft(null);
+      setSuccess(profileImageDraft ? "Profile photo updated." : "Profile photo removed.");
+    } catch (error) {
+      setErr(error.response?.data?.message || error.response?.data?.error || "Could not save your profile photo.");
+    } finally { setSavingImage(false); }
+  };
+
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     setErr("");
@@ -211,6 +247,10 @@ export default function Profile() {
     [appointments, role]
   );
 
+  const profileImage = profileImageDraft !== null
+    ? profileImageDraft
+    : me?.profileImage || (role === "PROVIDER" ? provider?.profileImage : "");
+
   const content = (
     <div className="space-y-6">
         {err && (
@@ -259,16 +299,32 @@ export default function Profile() {
             <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="w-16 h-16 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center overflow-hidden shrink-0">
-                  {role === "PROVIDER" && provider?.profileImage ? (
+                  {profileImage ? (
                     <img
-                      src={provider.profileImage}
-                      alt={provider.serviceName || me.username}
+                      src={profileImage}
+                      alt={`${me.username}'s profile`}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <span className="font-display text-xl font-bold text-indigo-600">
                       {(me.username || "U").slice(0, 2).toUpperCase()}
                     </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                    <FiUser className="h-3.5 w-3.5" />
+                    <span>{me.profileImage ? "Change photo" : "Add photo"}</span>
+                    <input type="file" accept="image/*" onChange={handleProfileImageSelect} className="sr-only" />
+                  </label>
+                  {(me.profileImage || profileImageDraft) && profileImageDraft === null && (
+                    <button type="button" onClick={() => setProfileImageDraft("")} className="rounded-lg px-2.5 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50">Remove photo</button>
+                  )}
+                  {profileImageDraft !== null && (
+                    <>
+                      <button type="button" onClick={saveProfileImage} disabled={savingImage} className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50">{savingImage ? "Saving…" : "Save photo"}</button>
+                      <button type="button" onClick={() => setProfileImageDraft(null)} disabled={savingImage} className="rounded-lg px-2.5 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100">Discard</button>
+                    </>
                   )}
                 </div>
                 <div className="min-w-0">
