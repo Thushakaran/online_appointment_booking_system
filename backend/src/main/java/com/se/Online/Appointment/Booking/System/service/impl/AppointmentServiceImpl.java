@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Service
 public class AppointmentServiceImpl implements AppointmentService {
@@ -176,11 +177,43 @@ public class AppointmentServiceImpl implements AppointmentService {
     public Appointment updateAppointmentStatus(Long id, String status) {
         Appointment appointment = getAppointmentById(id);
         AppointmentStatus nextStatus = AppointmentStatus.valueOf(status.trim().replace("\"", "").toUpperCase());
+        if (nextStatus == AppointmentStatus.COMPLETED && appointment.getAppointmentDate() != null
+                && appointment.getAppointmentDate().isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("An appointment can only be completed after its scheduled time");
+        }
         appointment.setStatus(nextStatus);
         if (nextStatus == AppointmentStatus.CANCELLED && appointment.getAvailability() != null) {
             appointment.getAvailability().setBooked(false);
             availabilityRepository.save(appointment.getAvailability());
         }
+        return appointmentRepository.save(appointment);
+    }
+
+    @Override
+    @Transactional
+    public Appointment rescheduleAppointment(Long appointmentId, Long availabilityId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
+        Availability next = availabilityRepository.findByIdForUpdate(availabilityId)
+                .orElseThrow(() -> new ResourceNotFoundException("Availability not found"));
+        if (next.isBooked() || next.getProvider() == null || appointment.getProvider() == null
+                || !next.getProvider().getId().equals(appointment.getProvider().getId())) {
+            throw new IllegalArgumentException("Selected time is unavailable for this provider");
+        }
+        if (next.getAvailableDate() == null || !next.getAvailableDate().isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Choose a future appointment time");
+        }
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new IllegalArgumentException("Cancelled appointments cannot be rescheduled");
+        }
+        Availability previous = appointment.getAvailability();
+        if (previous != null) {
+            previous.setBooked(false);
+            availabilityRepository.save(previous);
+        }
+        next.setBooked(true);
+        appointment.setAvailability(next);
+        appointment.setAppointmentDate(next.getAvailableDate());
         return appointmentRepository.save(appointment);
     }
 

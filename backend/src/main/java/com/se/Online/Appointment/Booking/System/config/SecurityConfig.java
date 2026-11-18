@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/availabilities/provider/**").permitAll()
                         // Allow public access to dashboard statistics
                         .requestMatchers("/api/dashboard/**").permitAll()
+                        .requestMatchers("/api/reviews/provider/**").permitAll()
                         // Protected endpoints
                         .requestMatchers("/api/users/me").authenticated()
                         .requestMatchers("/api/providers/me").authenticated()

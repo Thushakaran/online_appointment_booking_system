@@ -30,6 +30,8 @@ public interface AppointmentService {
 
     Appointment updateAppointmentStatus(Long id, String status);
 
+    Appointment rescheduleAppointment(Long appointmentId, Long availabilityId);
+
     void deleteAppointment(Long id);
 
     // Dashboard statistics

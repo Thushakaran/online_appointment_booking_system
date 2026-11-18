@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 import {
   FiSearch,
   FiMapPin,
@@ -32,6 +33,8 @@ export default function Providers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchType, setSearchType] = useState("general");
   const [failedImages, setFailedImages] = useState({});
+  const [maxPrice, setMaxPrice] = useState("");
+  const [providerRatings, setProviderRatings] = useState({});
 
   const fetchProviders = useCallback(async () => {
     try {
@@ -74,6 +77,13 @@ export default function Providers() {
 
       const data = response.data;
       setProviders(data.content || []);
+      const reviewLists = await Promise.all((data.content || []).map((provider) =>
+        api.get(`/api/reviews/provider/${provider.id}`).then((r) => r.data || []).catch(() => [])
+      ));
+      setProviderRatings(Object.fromEntries((data.content || []).map((provider, index) => {
+        const reviews = reviewLists[index];
+        return [provider.id, { count: reviews.length, average: reviews.length ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0, reviews: reviews.slice(0, 3) }];
+      })));
       setTotalElements(data.totalElements || 0);
       setTotalPages(data.totalPages || 0);
       setHasNext(data.hasNext || false);
@@ -192,6 +202,9 @@ export default function Providers() {
               </button>
             </div>
           </form>
+          <div className="mt-3 flex flex-wrap gap-3 items-center text-sm">
+            <label className="flex items-center gap-2 text-slate-600">Maximum price<input type="number" min="0" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="Any" className="w-24 px-2 py-1.5 border border-slate-300 rounded-md" /></label>
+          </div>
         </div>
       </div>
 
@@ -243,7 +256,10 @@ export default function Providers() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {providers.map((provider) => {
+              {providers.filter((p) => {
+                const price = Number(String(p.servicePricing || "").replace(/[^\d.]/g, ""));
+                return !maxPrice || !price || price <= Number(maxPrice);
+              }).map((provider) => {
                 const showFallback =
                   !provider.profileImage || failedImages[provider.id];
                 return (
@@ -295,6 +311,25 @@ export default function Providers() {
                             </>
                           )}
                         </div>
+                        <div className="mt-2 flex items-center gap-1.5 text-sm" aria-label={providerRatings[provider.id]?.count ? `${providerRatings[provider.id].average.toFixed(1)} out of 5 from ${providerRatings[provider.id].count} reviews` : "No reviews yet"}>
+                          <span className="text-amber-500" aria-hidden="true">★</span>
+                          <span className="font-semibold text-slate-800">{providerRatings[provider.id]?.count ? providerRatings[provider.id].average.toFixed(1) : "New"}</span>
+                          <span className="text-xs text-slate-500">({providerRatings[provider.id]?.count || 0} reviews)</span>
+                        </div>
+                        {!!providerRatings[provider.id]?.count && (
+                          <details className="mt-2 text-xs text-slate-600">
+                            <summary className="cursor-pointer text-indigo-700 hover:text-indigo-900">Read recent reviews</summary>
+                            <div className="mt-2 space-y-2">
+                              {providerRatings[provider.id].reviews.map((review) => (
+                                <blockquote key={review.id} className="border-l-2 border-amber-300 pl-2.5 py-0.5">
+                                  <p className="text-amber-600" aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(review.rating)}<span className="sr-only"> {review.rating} out of 5 stars</span></p>
+                                  {review.comment && <p className="mt-0.5">{review.comment}</p>}
+                                  <footer className="mt-0.5 text-slate-400">{review.reviewer} · {dayjs(review.createdAt).format("MMM D, YYYY")}</footer>
+                                </blockquote>
+                              ))}
+                            </div>
+                          </details>
+                        )}
                         {provider.description && (
                           <p className="mt-3 text-sm text-slate-600 line-clamp-2 leading-relaxed">
                             {provider.description}

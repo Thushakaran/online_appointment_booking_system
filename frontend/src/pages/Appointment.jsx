@@ -19,6 +19,7 @@ import ConfirmModal from "../components/ui/ConfirmModal";
 const FILTER_TABS = [
   { id: "ALL", label: "All" },
   { id: "UPCOMING", label: "Upcoming" },
+  { id: "PAST", label: "Past" },
   { id: "PENDING", label: "Pending" },
   { id: "CONFIRMED", label: "Confirmed" },
   { id: "COMPLETED", label: "Completed" },
@@ -33,6 +34,14 @@ const getAppointmentDate = (appointment) => {
     return new Date(appointment.availability.availableDate);
   }
   return new Date(0);
+};
+
+const downloadReminder = (appointment) => {
+  const date = dayjs(getAppointmentDate(appointment));
+  const stamp = date.format("YYYYMMDDTHHmmss");
+  const title = `${appointment.provider?.serviceName || "Appointment"} appointment`;
+  const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT", `UID:appointment-${appointment.id}@appointflow`, `DTSTART:${stamp}`, `DTEND:${dayjs(getAppointmentDate(appointment)).add(1, "hour").format("YYYYMMDDTHHmmss")}`, `SUMMARY:${title}`, "BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", `DESCRIPTION:Reminder: ${title}`, "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([ics], { type: "text/calendar" })); link.download = `appointment-${appointment.id}.ics`; link.click(); URL.revokeObjectURL(link.href);
 };
 
 const sortAppointments = (appointments) => {
@@ -55,12 +64,24 @@ export default function Appointments() {
   const [searchQuery, setSearchQuery] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  const [rescheduleSlots, setRescheduleSlots] = useState([]);
+  const [selectedRescheduleSlot, setSelectedRescheduleSlot] = useState("");
+  const [reviews, setReviews] = useState({});
+  const [reviewForms, setReviewForms] = useState({});
+  const [reviewSavingId, setReviewSavingId] = useState(null);
 
   const load = useCallback(async (uid) => {
     try {
       setLoading(true);
       const res = await api.get(`/api/appointments/user/${uid}`);
-      setItems(sortAppointments(res.data || []));
+      const loadedItems = sortAppointments(res.data || []);
+      setItems(loadedItems);
+      const completed = loadedItems.filter((appointment) => appointment.status === "COMPLETED");
+      const reviewResults = await Promise.all(completed.map((appointment) =>
+        api.get(`/api/reviews/appointment/${appointment.id}`).then((response) => [appointment.id, response.data]).catch(() => [appointment.id, null])
+      ));
+      setReviews(Object.fromEntries(reviewResults));
       setErr("");
     } catch (e) {
       if (e?.response?.status === 403) {
@@ -119,12 +140,45 @@ export default function Appointments() {
     }
   };
 
+  const beginReschedule = async (appointment) => {
+    setErr(""); setMsg(""); setRescheduleTarget(appointment);
+    try {
+      const response = await api.get(`/api/availabilities/provider/${appointment.provider.id}`);
+      setRescheduleSlots((response.data || []).filter((slot) => slot.id !== appointment.availability?.id));
+      setSelectedRescheduleSlot("");
+    } catch { setErr("Could not load available times for this provider."); setRescheduleTarget(null); }
+  };
+
+  const saveReschedule = async () => {
+    if (!rescheduleTarget || !selectedRescheduleSlot) return;
+    setActionLoadingId(rescheduleTarget.id);
+    try {
+      await api.put(`/api/appointments/${rescheduleTarget.id}/reschedule/${selectedRescheduleSlot}`);
+      setMsg("Appointment rescheduled successfully."); setRescheduleTarget(null); await load(userId);
+    } catch (e) { setErr(e.response?.data?.message || "Could not reschedule this appointment."); }
+    finally { setActionLoadingId(null); }
+  };
+
+  const submitReview = async (appointmentId) => {
+    const form = reviewForms[appointmentId] || { rating: "5", comment: "" };
+    setReviewSavingId(appointmentId); setErr(""); setMsg("");
+    try {
+      const response = await api.post(`/api/reviews/appointment/${appointmentId}`, form);
+      setReviews((current) => ({ ...current, [appointmentId]: response.data }));
+      setMsg("Thanks for sharing your review.");
+    } catch (error) {
+      setErr(error.response?.data?.message || error.response?.data?.detail || "Could not submit your review.");
+    } finally { setReviewSavingId(null); }
+  };
+
   const counts = useMemo(() => {
+    const now = Date.now();
     return {
       ALL: items.length,
       UPCOMING: items.filter(
-        (a) => a.status === "PENDING" || a.status === "CONFIRMED"
+        (a) => (a.status === "PENDING" || a.status === "CONFIRMED") && getAppointmentDate(a).getTime() >= now
       ).length,
+      PAST: items.filter((a) => getAppointmentDate(a).getTime() < now).length,
       PENDING: items.filter((a) => a.status === "PENDING").length,
       CONFIRMED: items.filter((a) => a.status === "CONFIRMED").length,
       COMPLETED: items.filter((a) => a.status === "COMPLETED").length,
@@ -136,9 +190,11 @@ export default function Appointments() {
     const q = searchQuery.trim().toLowerCase();
     return items.filter((appt) => {
       if (statusFilter === "UPCOMING") {
-        if (appt.status !== "PENDING" && appt.status !== "CONFIRMED") {
+        if ((appt.status !== "PENDING" && appt.status !== "CONFIRMED") || getAppointmentDate(appt).getTime() < Date.now()) {
           return false;
         }
+      } else if (statusFilter === "PAST") {
+        if (getAppointmentDate(appt).getTime() >= Date.now()) return false;
       } else if (statusFilter !== "ALL" && appt.status !== statusFilter) {
         return false;
       }
@@ -364,9 +420,43 @@ export default function Appointments() {
                             : "Date unavailable"}
                         </span>
                       </div>
+                      {canCancel && <button type="button" onClick={() => downloadReminder(appointment)} className="mt-1 text-xs text-indigo-700 underline underline-offset-2">Add calendar reminder</button>}
                     </div>
                   </div>
 
+                  {appointment.status === "COMPLETED" && (
+                    <div className="mt-4 rounded-lg bg-amber-50/70 border border-amber-100 p-3">
+                      {reviews[appointment.id] ? (
+                        <div>
+                          <p className="text-xs font-semibold text-slate-800">Your review <span className="text-amber-600">{"★".repeat(reviews[appointment.id].rating)}</span></p>
+                          {reviews[appointment.id].comment && <p className="mt-1 text-xs text-slate-600">{reviews[appointment.id].comment}</p>}
+                        </div>
+                      ) : (
+                        <form onSubmit={(event) => { event.preventDefault(); submitReview(appointment.id); }} className="space-y-2">
+                          <p className="text-xs font-semibold text-slate-800">How was your appointment?</p>
+                          <div className="flex gap-2">
+                            <label className="sr-only" htmlFor={`review-rating-${appointment.id}`}>Rating</label>
+                            <select id={`review-rating-${appointment.id}`} value={reviewForms[appointment.id]?.rating || "5"} onChange={(event) => setReviewForms((current) => ({ ...current, [appointment.id]: { ...current[appointment.id], rating: event.target.value } }))} className="text-xs border border-slate-300 rounded-md px-2 py-1.5">
+                              {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} {rating === 1 ? "star" : "stars"}</option>)}
+                            </select>
+                            <button type="submit" disabled={reviewSavingId === appointment.id} className="px-3 py-1.5 rounded-md bg-amber-500 text-white text-xs font-semibold disabled:opacity-50">{reviewSavingId === appointment.id ? "Saving…" : "Leave review"}</button>
+                          </div>
+                          <label className="sr-only" htmlFor={`review-comment-${appointment.id}`}>Review comment</label>
+                          <textarea id={`review-comment-${appointment.id}`} maxLength={1200} rows={2} value={reviewForms[appointment.id]?.comment || ""} onChange={(event) => setReviewForms((current) => ({ ...current, [appointment.id]: { ...current[appointment.id], comment: event.target.value } }))} placeholder="Add a comment (optional)" className="w-full resize-y text-xs border border-slate-300 rounded-md px-2 py-1.5" />
+                        </form>
+                      )}
+                    </div>
+                  )}
+
+                  {rescheduleTarget?.id === appointment.id && (
+                    <div className="mt-3 flex gap-2">
+                      <select aria-label="Choose a new appointment time" value={selectedRescheduleSlot} onChange={(e) => setSelectedRescheduleSlot(e.target.value)} className="min-w-0 flex-1 text-xs border border-slate-300 rounded-lg px-2 py-2">
+                        <option value="">Choose a new time</option>
+                        {rescheduleSlots.map((slot) => <option key={slot.id} value={slot.id}>{dayjs(slot.availableDate).format("MMM D, YYYY h:mm A")}</option>)}
+                      </select>
+                      <button type="button" disabled={!selectedRescheduleSlot || isBusy} onClick={saveReschedule} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs disabled:opacity-50">Save</button>
+                    </div>
+                  )}
                   <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
                     <span className="text-xs font-mono text-slate-500 tabular-nums truncate">
                       {appointment.provider?.servicePricing
@@ -388,6 +478,7 @@ export default function Appointments() {
                           <span>Confirm</span>
                         </button>
                       )}
+                      {canCancel && <button type="button" disabled={isBusy} onClick={() => beginReschedule(appointment)} className="px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-medium disabled:opacity-50">Reschedule</button>}
                       {canCancel && (
                         <button
                           type="button"

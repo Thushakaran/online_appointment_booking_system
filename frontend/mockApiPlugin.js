@@ -191,10 +191,12 @@ function createInitialStore() {
     providers,
     availabilities,
     appointments,
+    reviews: [],
     nextUserId: 10,
     nextProviderId: 7,
     nextAvailabilityId: 21,
     nextAppointmentId: 6,
+    nextReviewId: 1,
   };
 }
 
@@ -722,6 +724,52 @@ export default function mockApiPlugin() {
       }
 
       // Appointments
+      const providerReviewsMatch = pathname.match(/^\/api\/reviews\/provider\/(\d+)$/);
+      if (providerReviewsMatch && method === "GET") {
+        const providerId = Number(providerReviewsMatch[1]);
+        return sendJson(res, 200, store.reviews
+          .filter((review) => review.providerId === providerId)
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      }
+
+      const appointmentReviewMatch = pathname.match(/^\/api\/reviews\/appointment\/(\d+)$/);
+      if (appointmentReviewMatch && (method === "GET" || method === "POST")) {
+        if (!currentUser || currentUser.role !== "USER") {
+          return sendJson(res, 403, { error: "Client access required" });
+        }
+        const appointmentId = Number(appointmentReviewMatch[1]);
+        const appointment = store.appointments.find((item) => item.id === appointmentId);
+        if (!appointment) return sendJson(res, 404, { error: "Appointment not found" });
+        if (appointment.userId !== currentUser.id) return sendJson(res, 403, { error: "Forbidden" });
+        const existingReview = store.reviews.find((review) => review.appointmentId === appointmentId);
+        if (method === "GET") {
+          return existingReview
+            ? sendJson(res, 200, existingReview)
+            : sendJson(res, 404, { error: "Review not found" });
+        }
+        if (appointment.status !== "COMPLETED") {
+          return sendJson(res, 400, { message: "Only completed appointments can be reviewed" });
+        }
+        if (existingReview) return sendJson(res, 409, { message: "This appointment already has a review" });
+        const rating = Number(body.rating);
+        const comment = String(body.comment || "").trim();
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+          return sendJson(res, 400, { message: "Rating must be between 1 and 5" });
+        }
+        if (comment.length > 1200) return sendJson(res, 400, { message: "Review comments must be 1,200 characters or fewer" });
+        const review = {
+          id: store.nextReviewId++,
+          appointmentId,
+          providerId: appointment.providerId,
+          reviewer: currentUser.username,
+          rating,
+          comment,
+          createdAt: new Date().toISOString(),
+        };
+        store.reviews.push(review);
+        return sendJson(res, 201, review);
+      }
+
       if (pathname === "/api/appointments" && method === "POST") {
         if (!currentUser || currentUser.role !== "USER") {
           return sendJson(res, 403, { error: "Client access required" });

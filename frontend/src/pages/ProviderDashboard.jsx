@@ -32,7 +32,7 @@ export default function ProviderDashboard() {
   const [provider, setProvider] = useState(null);
   const [availabilities, setAvailabilities] = useState([]);
   const [appointments, setAppointments] = useState([]);
-  const [availabilityForm, setAvailabilityForm] = useState({ availableDate: "" });
+  const [availabilityForm, setAvailabilityForm] = useState({ availableDate: "", repeatWeeks: 1 });
   const [editingAvailability, setEditingAvailability] = useState(null);
   const [editForm, setEditForm] = useState({ availableDate: "" });
   const [bookingFilter, setBookingFilter] = useState("ALL");
@@ -132,9 +132,12 @@ export default function ProviderDashboard() {
     try {
       setError("");
       setMessage("");
-      await api.post("/api/availabilities", availabilityForm);
-      setAvailabilityForm({ availableDate: "" });
-      setMessage("Availability slot added.");
+      const repeats = Math.min(12, Math.max(1, Number(availabilityForm.repeatWeeks) || 1));
+      await Promise.all(Array.from({ length: repeats }, (_, week) => api.post("/api/availabilities", {
+        availableDate: dayjs(availabilityForm.availableDate).add(week, "week").format("YYYY-MM-DDTHH:mm:ss"),
+      })));
+      setAvailabilityForm({ availableDate: "", repeatWeeks: 1 });
+      setMessage(repeats > 1 ? `Added ${repeats} weekly availability slots.` : "Availability slot added.");
       await fetchProviderData();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to add availability slot.");
@@ -466,10 +469,14 @@ export default function ProviderDashboard() {
                       required
                       value={availabilityForm.availableDate}
                       onChange={(e) =>
-                        setAvailabilityForm({ availableDate: e.target.value })
+                        setAvailabilityForm({ ...availabilityForm, availableDate: e.target.value })
                       }
                       className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
+                  </div>
+                  <div className="w-full sm:w-32">
+                    <label htmlFor="repeat-weeks" className="block text-xs font-medium text-slate-700 mb-1.5">Repeat weekly</label>
+                    <input id="repeat-weeks" type="number" min="1" max="12" value={availabilityForm.repeatWeeks} onChange={(e) => setAvailabilityForm({ ...availabilityForm, repeatWeeks: e.target.value })} className="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg" />
                   </div>
                   <button
                     type="submit"

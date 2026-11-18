@@ -224,6 +224,17 @@ public class AppointmentController {
         return ResponseEntity.ok(updatedAppointment);
     }
 
+    @PutMapping("/{id}/reschedule/{availabilityId}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Appointment> rescheduleAppointment(@PathVariable Long id,
+            @PathVariable Long availabilityId, Authentication authentication) {
+        Appointment appointment = appointmentService.getAppointmentById(id);
+        if (appointment.getUser() == null || !appointment.getUser().getUsername().equals(authentication.getName())) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(appointmentService.rescheduleAppointment(id, availabilityId));
+    }
+
     // Delete appointment
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
