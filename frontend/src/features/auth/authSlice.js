@@ -54,6 +54,32 @@ export const register = createAsyncThunk(
     }
 );
 
+// Fetch current user profile (including profileImage)
+export const fetchCurrentUser = createAsyncThunk(
+    "auth/fetchCurrentUser",
+    async (_, { getState, rejectWithValue }) => {
+        try {
+            const res = await api.get("/api/users/me");
+            let profileImage = res.data?.profileImage || "";
+            if (!profileImage && getState().auth.role === "PROVIDER") {
+                try {
+                    const providerRes = await api.get("/api/providers/me");
+                    profileImage = providerRes.data?.profileImage || "";
+                } catch {
+                    // Provider profile may not exist yet.
+                }
+            }
+            return {
+                id: res.data?.id,
+                username: res.data?.username,
+                profileImage,
+            };
+        } catch (error) {
+            return rejectWithValue(error.response?.data?.error || "Failed to load user profile.");
+        }
+    }
+);
+
 // -------------------
 // Slice
 // -------------------
@@ -64,6 +90,7 @@ const authSlice = createSlice({
         user: localStorage.getItem("username") || null,
         role: localStorage.getItem("role") || null,
         token: localStorage.getItem("token") || null,
+        profileImage: null,
         loading: false,
         error: null,
     },
@@ -73,6 +100,7 @@ const authSlice = createSlice({
             state.user = null;
             state.role = null;
             state.token = null;
+            state.profileImage = null;
             state.error = null;
 
             localStorage.removeItem("userId");
@@ -88,6 +116,9 @@ const authSlice = createSlice({
                 state.user = action.payload.username;
                 localStorage.setItem("username", action.payload.username);
             }
+            if (action.payload.profileImage !== undefined) {
+                state.profileImage = action.payload.profileImage || null;
+            }
         },
     },
     extraReducers: (builder) => {
@@ -102,6 +133,7 @@ const authSlice = createSlice({
                 state.user = action.payload.username;
                 state.role = action.payload.role;
                 state.token = action.payload.token;
+                state.profileImage = null;
                 state.error = null;
             })
             .addCase(login.rejected, (state, action) => {
@@ -119,6 +151,15 @@ const authSlice = createSlice({
             .addCase(register.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+            .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+                if (action.payload?.username) {
+                    state.user = action.payload.username;
+                    localStorage.setItem("username", action.payload.username);
+                }
+                if (action.payload?.profileImage !== undefined) {
+                    state.profileImage = action.payload.profileImage || null;
+                }
             });
     },
 });

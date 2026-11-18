@@ -31,7 +31,7 @@ export default function DashboardShell({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { role, user, userId } = useSelector((state) => state.auth);
+  const { role, user, userId, profileImage } = useSelector((state) => state.auth);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const readStorageKey = `appointflow:read-notifications:${role || "guest"}:${userId || "guest"}`;
@@ -81,6 +81,7 @@ export default function DashboardShell({
         { to: "/admin-dashboard", label: "Overview", icon: FiGrid },
         { to: "/admin/providers", label: "Provider Directory", icon: FiBriefcase },
         { to: "/providers", label: "Public Directory", icon: FiSearch },
+        { to: "/profile", label: "Account Profile", icon: FiUser },
       ];
     }
     if (role === "PROVIDER") {
@@ -183,9 +184,20 @@ export default function DashboardShell({
         </nav>
 
         <div className="p-4 border-t border-slate-200 space-y-3">
-          <div className="flex items-center gap-3 px-2 py-1.5">
-            <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-semibold text-sm shrink-0">
-              {(user || "U").slice(0, 2).toUpperCase()}
+          <Link
+            to="/profile"
+            className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+          >
+            <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center text-slate-700 font-semibold text-sm shrink-0">
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt={user || "Profile"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                (user || "U").slice(0, 2).toUpperCase()
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-slate-900 truncate">
@@ -199,7 +211,7 @@ export default function DashboardShell({
                   : "Client Account"}
               </p>
             </div>
-          </div>
+          </Link>
 
           <button
             type="button"
@@ -245,7 +257,30 @@ export default function DashboardShell({
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
               {navItems.map(renderNavLink)}
             </nav>
-            <div className="p-4 border-t border-slate-200">
+            <div className="p-4 border-t border-slate-200 space-y-2.5">
+              <Link
+                to="/profile"
+                onClick={() => setSidebarOpen(false)}
+                className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center text-slate-700 font-semibold text-xs shrink-0">
+                  {profileImage ? (
+                    <img
+                      src={profileImage}
+                      alt={user || "Profile"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    (user || "U").slice(0, 2).toUpperCase()
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-slate-900 truncate">
+                    {user || "User"}
+                  </p>
+                  <p className="text-xs text-slate-500 truncate">Account Profile</p>
+                </div>
+              </Link>
               <button
                 type="button"
                 onClick={handleLogout}

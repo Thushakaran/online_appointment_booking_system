@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Link } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCurrentUser } from "./features/auth/authSlice";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -58,13 +60,21 @@ function NotFoundPage() {
 
 function AppShell() {
   const location = useLocation();
+  const dispatch = useDispatch();
   const { token, role } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (token) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [token, dispatch]);
+
   const isWorkspaceRoute =
     ADMIN_PROVIDER_ROUTES.some((prefix) =>
       location.pathname.startsWith(prefix)
     ) ||
     (Boolean(token) &&
-      role === "PROVIDER" &&
+      (role === "PROVIDER" || role === "ADMIN") &&
       location.pathname.startsWith("/profile")) ||
     (Boolean(token) &&
       role === "ADMIN" &&

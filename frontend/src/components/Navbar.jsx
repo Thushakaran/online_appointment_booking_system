@@ -15,7 +15,7 @@ export default function Navbar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token, role, user } = useSelector((state) => state.auth);
+  const { token, role, user, profileImage } = useSelector((state) => state.auth);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {
@@ -94,13 +94,25 @@ export default function Navbar() {
             <>
               <Link
                 to="/profile"
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${
+                className={`inline-flex items-center gap-2.5 pl-1.5 pr-3 py-1 rounded-full text-sm font-medium transition-colors whitespace-nowrap shrink-0 border ${
                   location.pathname === "/profile"
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-slate-700 hover:bg-slate-100"
+                    ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                    : "text-slate-700 border-slate-200 bg-white hover:bg-slate-50"
                 }`}
               >
-                <FiUser className="w-4 h-4 text-slate-500" aria-hidden="true" />
+                <span className="w-7 h-7 rounded-full overflow-hidden bg-indigo-50 border border-slate-200 flex items-center justify-center shrink-0">
+                  {profileImage ? (
+                    <img
+                      src={profileImage}
+                      alt={user || "Profile"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-[11px] font-semibold text-indigo-700">
+                      {(user || "U").slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                </span>
                 <span className="max-w-[140px] truncate">{user}</span>
               </Link>
               {role !== "USER" && (
@@ -175,13 +187,23 @@ export default function Navbar() {
                 <Link
                   to="/profile"
                   onClick={() => setMobileOpen(false)}
-                  className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium ${
+                  className={`w-full inline-flex items-center justify-center gap-2.5 px-4 py-2 rounded-lg text-sm font-medium ${
                     location.pathname === "/profile"
                       ? "text-indigo-700 bg-indigo-50"
                       : "text-slate-700 bg-slate-50 hover:bg-slate-100"
                   }`}
                 >
-                  <FiUser className="w-4 h-4" aria-hidden="true" />
+                  <span className="w-6 h-6 rounded-full overflow-hidden bg-indigo-100 border border-slate-200 flex items-center justify-center shrink-0">
+                    {profileImage ? (
+                      <img
+                        src={profileImage}
+                        alt={user || "Profile"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <FiUser className="w-3.5 h-3.5 text-indigo-700" aria-hidden="true" />
+                    )}
+                  </span>
                   <span>Profile ({user})</span>
                 </Link>
                 {role !== "USER" && (
