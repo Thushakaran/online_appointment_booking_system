@@ -180,13 +180,14 @@ public class AppointmentController {
     // Update appointment status
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('PROVIDER')")
-    public ResponseEntity<Appointment> updateAppointmentStatus(@PathVariable Long id, @RequestBody String status,
+    public ResponseEntity<?> updateAppointmentStatus(@PathVariable Long id, @RequestBody String status,
             Authentication auth) {
-        Appointment appointment = appointmentService.getAppointmentById(id);
-        if (appointment.getProvider() == null ||
-                !providerService.getProviderByUsername(auth.getName()).getId()
-                        .equals(appointment.getProvider().getId())) {
-            return ResponseEntity.status(403).build();
+        boolean inProviderQueue = appointmentService.getAppointmentsByProviderUsername(auth.getName()).stream()
+                .anyMatch(item -> item.getId().equals(id));
+        if (!inProviderQueue) {
+            return ResponseEntity.status(403).body(java.util.Map.of(
+                    "message", "Provider authorization check failed: appointment " + id
+                            + " is not in the appointment list for signed-in account " + auth.getName() + "."));
         }
         Appointment updatedAppointment = appointmentService.updateAppointmentStatus(id, status);
         return ResponseEntity.ok(updatedAppointment);

@@ -177,10 +177,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     public Appointment updateAppointmentStatus(Long id, String status) {
         Appointment appointment = getAppointmentById(id);
         AppointmentStatus nextStatus = AppointmentStatus.valueOf(status.trim().replace("\"", "").toUpperCase());
-        if (nextStatus == AppointmentStatus.COMPLETED && appointment.getAppointmentDate() != null
-                && appointment.getAppointmentDate().isAfter(LocalDateTime.now())) {
-            throw new IllegalArgumentException("An appointment can only be completed after its scheduled time");
-        }
         appointment.setStatus(nextStatus);
         if (nextStatus == AppointmentStatus.CANCELLED && appointment.getAvailability() != null) {
             appointment.getAvailability().setBooked(false);

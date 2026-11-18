@@ -204,9 +204,12 @@ export default function ProviderDashboard() {
       setMessage(`Appointment marked as ${nextStatus.toLowerCase()}.`);
       await fetchProviderData();
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Unable to update appointment status."
-      );
+      const apiMessage = err.response?.data?.message || err.response?.data?.detail || err.response?.data?.error;
+      setError(apiMessage || (err.response?.status === 403
+        ? "You cannot change this appointment because it is not assigned to your provider account."
+        : err.response?.status === 401
+          ? "Your session has expired. Please sign in again."
+          : "Unable to update appointment status. Check the selected appointment and try again."));
     } finally {
       setUpdatingBookingId(null);
     }
