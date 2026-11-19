@@ -1,10 +1,38 @@
 # AppointFlow - Online Appointment Booking System
 
+<<<<<<< HEAD
 ![AppointFlow home page](public/AppointFlow.png)
 
 AppointFlow is a full-stack appointment booking application. Clients can find service providers, check availability, book appointments, and manage their bookings. Providers manage their profiles and schedules, while administrators manage users, providers, and appointments.
 
 ## Features
+=======
+A full-stack web application for managing appointment bookings between users and service providers. Built with React frontend and Spring Boot backend.
+
+## Screenshots
+
+### Home
+
+![AppointFlow home page](docs/screenshots/home.png)
+
+### System Overview
+
+![System overview](docs/screenshots/overview.png)
+
+### Service Providers
+
+![Service providers](docs/screenshots/providers.png)
+
+### Appointment Booking
+
+![Appointment booking](docs/screenshots/appointment_booking.png)
+
+### Appointments
+
+![Appointments](docs/screenshots/appointments.png)
+
+## 🚀 Features
+>>>>>>> 653f0ec09e3f6fc8edadd9b73ad4faf3fdf4b2ec
 
 ### Clients
 
@@ -44,9 +72,16 @@ AppointFlow is a full-stack appointment booking application. Clients can find se
 
 ## Requirements
 
+<<<<<<< HEAD
 - Node.js supported by Vite 7 (20.19+ or 22.12+ recommended) and npm
 - Java 24
 - MySQL
+=======
+```bash
+git clone https://github.com/Thushakaran/online_appointment_booking_system.git
+cd online_appointment_booking_system
+```
+>>>>>>> 653f0ec09e3f6fc8edadd9b73ad4faf3fdf4b2ec
 
 ## Setup
 
@@ -122,8 +157,37 @@ npm run build
 
 Run backend tests from `backend` (the configured test starts the Spring application, so MySQL and the required environment variables must be available):
 
+<<<<<<< HEAD
 ```powershell
 .\mvnw.cmd test
+=======
+```
+Online-Application-Booking-System/
+├── backend/                          # Spring Boot backend
+│   ├── src/main/java/
+│   │   └── com/se/Online/Appointment/Booking/System/
+│   │       ├── config/               # Configuration classes
+│   │       ├── controller/           # REST controllers
+│   │       ├── dto/                  # Data Transfer Objects
+│   │       ├── model/                # Entity models
+│   │       ├── repository/           # Data access layer
+│   │       ├── security/             # Security configuration
+│   │       └── service/              # Business logic
+│   ├── src/main/resources/
+│   │   └── application.properties    # Application configuration
+│   └── pom.xml                       # Maven dependencies
+├── docs/screenshots/                 # Application screenshots
+├── frontend/                         # React frontend
+│   ├── src/
+│   │   ├── api/                      # API integration
+│   │   ├── app/                      # Redux store
+│   │   ├── components/               # Reusable components
+│   │   ├── features/                 # Feature-specific code
+│   │   └── pages/                    # Page components
+│   ├── package.json                  # Node.js dependencies
+│   └── vite.config.js               # Vite configuration
+└── README.md                         # This file
+>>>>>>> 653f0ec09e3f6fc8edadd9b73ad4faf3fdf4b2ec
 ```
 
 ```bash
