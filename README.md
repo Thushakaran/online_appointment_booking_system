@@ -1,38 +1,10 @@
 # AppointFlow - Online Appointment Booking System
 
-<<<<<<< HEAD
 ![AppointFlow home page](public/AppointFlow.png)
 
 AppointFlow is a full-stack appointment booking application. Clients can find service providers, check availability, book appointments, and manage their bookings. Providers manage their profiles and schedules, while administrators manage users, providers, and appointments.
 
 ## Features
-=======
-A full-stack web application for managing appointment bookings between users and service providers. Built with React frontend and Spring Boot backend.
-
-## Screenshots
-
-### Home
-
-![AppointFlow home page](docs/screenshots/home.png)
-
-### System Overview
-
-![System overview](docs/screenshots/overview.png)
-
-### Service Providers
-
-![Service providers](docs/screenshots/providers.png)
-
-### Appointment Booking
-
-![Appointment booking](docs/screenshots/appointment_booking.png)
-
-### Appointments
-
-![Appointments](docs/screenshots/appointments.png)
-
-## 🚀 Features
->>>>>>> 653f0ec09e3f6fc8edadd9b73ad4faf3fdf4b2ec
 
 ### Clients
 
@@ -51,17 +23,19 @@ A full-stack web application for managing appointment bookings between users and
 
 - View platform statistics and manage users, service-provider listings, and appointments.
 
-> Provider approval workflows are not currently implemented. Providers create their service profile from the provider setup flow.
+Provider approval workflows are not currently implemented. Providers create their service profile from the provider setup flow.
 
 ## Screenshots
 
-| Home page | Provider directory |
+| Home page | System overview |
 | --- | --- |
-| ![Home page](docs/screenshots/home.png) | ![Provider directory](docs/screenshots/providers.png) |
+| ![Home page](docs/screenshots/home.png) | ![System overview](docs/screenshots/overview.png) |
 
-| Appointment booking | Appointments |
+| Provider directory | Appointment booking |
 | --- | --- |
-| ![Appointment booking](docs/screenshots/appointment_booking.png) | ![Appointments](docs/screenshots/appointments.png) |
+| ![Provider directory](docs/screenshots/providers.png) | ![Appointment booking](docs/screenshots/appointment_booking.png) |
+
+![Appointments](docs/screenshots/appointments.png)
 
 ## Technology
 
@@ -72,20 +46,20 @@ A full-stack web application for managing appointment bookings between users and
 
 ## Requirements
 
-<<<<<<< HEAD
 - Node.js supported by Vite 7 (20.19+ or 22.12+ recommended) and npm
 - Java 24
 - MySQL
-=======
+
+## Setup
+
+### 1. Clone the repository
+
 ```bash
 git clone https://github.com/Thushakaran/online_appointment_booking_system.git
 cd online_appointment_booking_system
 ```
->>>>>>> 653f0ec09e3f6fc8edadd9b73ad4faf3fdf4b2ec
 
-## Setup
-
-### 1. Create the database
+### 2. Create the database
 
 Start MySQL and create the application database:
 
@@ -111,11 +85,11 @@ export DB_PASSWORD="your-mysql-password"
 export JWT_SECRET="paste-generated-base64-key-here"
 ```
 
-Set these variables in the terminal session used to start the backend. The backend uses `spring.jpa.hibernate.ddl-auto=update` and the schema initialization script for local development.
+Set these variables in the terminal session used to start the backend. The backend uses automatic schema updates and a schema initialization script for local development.
 
-### 2. Start the backend
+### 3. Start the backend
 
-From the repository root:
+From the repository root, run:
 
 ```powershell
 cd backend
@@ -131,7 +105,7 @@ cd backend
 
 The API listens on `http://localhost:8081`.
 
-### 3. Start the frontend
+### 4. Start the frontend
 
 In a second terminal, from the repository root:
 
@@ -140,11 +114,11 @@ npm install
 npm run dev
 ```
 
-The Vite development server listens on `http://localhost:3000` and proxies `/api` requests to the backend at port 8081. To use a different backend address, set `BACKEND_URL` before starting Vite.
+The Vite development server listens on `http://localhost:3000` and proxies `/api` requests to the backend at port 8081. Set `BACKEND_URL` before starting Vite to use a different backend address.
 
 ## Admin account
 
-Public registration cannot create administrator accounts. Follow the [Admin Setup Guide](backend/ADMIN_SETUP.md) to create an initial admin account securely.
+Public registration cannot create administrator accounts. Follow the [Admin Setup Guide](backend/ADMIN_SETUP.md) to create an initial admin account.
 
 ## Useful commands
 
@@ -155,40 +129,15 @@ npm run lint
 npm run build
 ```
 
-Run backend tests from `backend` (the configured test starts the Spring application, so MySQL and the required environment variables must be available):
+Run backend tests from `backend`. The configured test starts the Spring application, so MySQL and the required environment variables must be available.
 
-<<<<<<< HEAD
+Windows PowerShell:
+
 ```powershell
 .\mvnw.cmd test
-=======
 ```
-Online-Application-Booking-System/
-├── backend/                          # Spring Boot backend
-│   ├── src/main/java/
-│   │   └── com/se/Online/Appointment/Booking/System/
-│   │       ├── config/               # Configuration classes
-│   │       ├── controller/           # REST controllers
-│   │       ├── dto/                  # Data Transfer Objects
-│   │       ├── model/                # Entity models
-│   │       ├── repository/           # Data access layer
-│   │       ├── security/             # Security configuration
-│   │       └── service/              # Business logic
-│   ├── src/main/resources/
-│   │   └── application.properties    # Application configuration
-│   └── pom.xml                       # Maven dependencies
-├── docs/screenshots/                 # Application screenshots
-├── frontend/                         # React frontend
-│   ├── src/
-│   │   ├── api/                      # API integration
-│   │   ├── app/                      # Redux store
-│   │   ├── components/               # Reusable components
-│   │   ├── features/                 # Feature-specific code
-│   │   └── pages/                    # Page components
-│   ├── package.json                  # Node.js dependencies
-│   └── vite.config.js               # Vite configuration
-└── README.md                         # This file
->>>>>>> 653f0ec09e3f6fc8edadd9b73ad4faf3fdf4b2ec
-```
+
+macOS/Linux:
 
 ```bash
 ./mvnw test
