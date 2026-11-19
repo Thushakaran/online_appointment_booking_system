@@ -1,165 +1,145 @@
-# Online Application Booking System
+# AppointFlow - Online Appointment Booking System
 
-![AppointFlow Screenshot](public/AppointFlow.png)
+![AppointFlow home page](public/AppointFlow.png)
 
-A full-stack web application for managing appointment bookings between users and service providers. Built with React frontend and Spring Boot backend.
+AppointFlow is a full-stack appointment booking application. Clients can find service providers, check availability, book appointments, and manage their bookings. Providers manage their profiles and schedules, while administrators manage users, providers, and appointments.
 
-## 🚀 Features
+## Features
 
-### For Users
+### Clients
 
-- **User Registration & Authentication**: Secure JWT-based authentication system
-- **Browse Service Providers**: View available service providers and their details
-- **Book Appointments**: Schedule appointments with preferred providers
-- **Manage Appointments**: View, reschedule, or cancel existing appointments
-- **User Profile**: Update personal information and view booking history
+- Register and sign in with JWT-based authentication.
+- Search providers by service, city, or both; review provider profiles, pricing, availability, and client reviews.
+- Book an available time slot, view appointment status, reschedule or cancel bookings, and download calendar reminders.
+- Update profile information and leave or edit a review after a completed appointment.
 
-### For Service Providers
+### Service providers
 
-- **Provider Registration**: Set up service provider accounts
-- **Availability Management**: Set and manage available time slots
-- **Appointment Management**: View and manage incoming appointment requests
-- **Provider Dashboard**: Monitor bookings and availability
+- Register with a provider account and set up a service profile.
+- Create and manage available time slots.
+- Review appointments and update their status from the provider dashboard.
 
-### For Administrators
+### Administrators
 
-- **User Management**: Manage all users and service providers
-- **System Overview**: View system statistics and analytics
-- **Provider Approval**: Approve or reject service provider registrations
-- **Admin Dashboard**: Comprehensive administrative interface
+- View platform statistics and manage users, service-provider listings, and appointments.
 
-## 🛠️ Tech Stack
+> Provider approval workflows are not currently implemented. Providers create their service profile from the provider setup flow.
 
-### Frontend
+## Screenshots
 
-- **React 19** - Modern React with hooks and functional components
-- **Redux Toolkit** - State management
-- **React Router** - Client-side routing
-- **Axios** - HTTP client for API communication
-- **Tailwind CSS** - Utility-first CSS framework
-- **React Icons** - Icon library
-- **Day.js** - Date manipulation library
-- **Vite** - Build tool and development server
+| Home page | Provider directory |
+| --- | --- |
+| ![Home page](docs/screenshots/home.png) | ![Provider directory](docs/screenshots/providers.png) |
 
-### Backend
+| Appointment booking | Appointments |
+| --- | --- |
+| ![Appointment booking](docs/screenshots/appointment_booking.png) | ![Appointments](docs/screenshots/appointments.png) |
 
-- **Spring Boot 3.5.4** - Java-based web framework
-- **Spring Security** - Authentication and authorization
-- **Spring Data JPA** - Database access layer
-- **MySQL** - Relational database
-- **JWT** - JSON Web Tokens for authentication
-- **Lombok** - Reduces boilerplate code
-- **Maven** - Build tool and dependency management
+## Technology
 
-## 🚀 Quick Start
+- **Frontend:** React 19, React Router, Redux Toolkit, Axios, Tailwind CSS, Vite 7
+- **Backend:** Java 24, Spring Boot 3.5.4, Spring Security, Spring Data JPA, Maven
+- **Database:** MySQL
+- **Authentication:** JWT
 
-### 1. Clone the Repository
+## Requirements
 
-```bash
-git clone <repository-url>
-cd Online-Application-Booking-System
-```
+- Node.js supported by Vite 7 (20.19+ or 22.12+ recommended) and npm
+- Java 24
+- MySQL
 
-### 2. Database Setup
+## Setup
 
-1. Create a MySQL database:
+### 1. Create the database
+
+Start MySQL and create the application database:
 
 ```sql
 CREATE DATABASE online_appointment_booking_system;
 ```
 
-2. Update database credentials in `backend/src/main/resources/application.properties`:
+The backend reads its database credentials and JWT signing key from environment variables. Do not commit real credentials or signing keys. Generate a unique Base64 JWT key containing at least 32 random bytes for each environment, for example with `openssl rand -base64 32`. Rotate any credentials or signing keys that were previously committed.
 
-```properties
-spring.datasource.username=your_username
-spring.datasource.password=your_password
+PowerShell:
+
+```powershell
+$env:DB_USERNAME = "root"
+$env:DB_PASSWORD = "your-mysql-password"
+$env:JWT_SECRET = "paste-generated-base64-key-here"
 ```
 
-### 3. Backend Setup
+macOS/Linux:
 
-1. Navigate to the backend directory:
+```bash
+export DB_USERNAME="root"
+export DB_PASSWORD="your-mysql-password"
+export JWT_SECRET="paste-generated-base64-key-here"
+```
+
+Set these variables in the terminal session used to start the backend. The backend uses `spring.jpa.hibernate.ddl-auto=update` and the schema initialization script for local development.
+
+### 2. Start the backend
+
+From the repository root:
+
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+On macOS/Linux:
 
 ```bash
 cd backend
-```
-
-2. Run the Spring Boot application:
-
-```bash
 ./mvnw spring-boot:run
 ```
 
-The backend will start on `http://localhost:8081`
+The API listens on `http://localhost:8081`.
 
-### 4. Frontend Setup
+### 3. Start the frontend
 
-1. Navigate to the frontend directory:
-
-```bash
-cd frontend
-```
-
-2. Install dependencies:
+In a second terminal, from the repository root:
 
 ```bash
 npm install
-```
-
-3. Start the development server:
-
-```bash
 npm run dev
 ```
 
-The frontend will start on `http://localhost:5173`
+The Vite development server listens on `http://localhost:3000` and proxies `/api` requests to the backend at port 8081. To use a different backend address, set `BACKEND_URL` before starting Vite.
 
-## 👤 Admin Setup
+## Admin account
 
-For security reasons, admin users cannot be created through the public registration. Follow the [Admin Setup Guide](backend/ADMIN_SETUP.md) to create your first admin account.
+Public registration cannot create administrator accounts. Follow the [Admin Setup Guide](backend/ADMIN_SETUP.md) to create an initial admin account securely.
 
-### Quick Admin Setup (Development)
+## Useful commands
 
-1. Start the application
-2. Connect to your MySQL database
-3. Insert the first admin user:
+Run these from the repository root:
 
-```sql
-INSERT INTO user (username, email, password, role)
-VALUES (
-    'admin',
-    'admin@example.com',
-    '$2a$10$YourHashedPasswordHere',
-    'ADMIN'
-);
+```bash
+npm run lint
+npm run build
 ```
 
-## 📁 Project Structure
+Run backend tests from `backend` (the configured test starts the Spring application, so MySQL and the required environment variables must be available):
 
-```
-Online-Application-Booking-System/
-├── backend/                          # Spring Boot backend
-│   ├── src/main/java/
-│   │   └── com/se/Online/Appointment/Booking/System/
-│   │       ├── config/               # Configuration classes
-│   │       ├── controller/           # REST controllers
-│   │       ├── dto/                  # Data Transfer Objects
-│   │       ├── model/                # Entity models
-│   │       ├── repository/           # Data access layer
-│   │       ├── security/             # Security configuration
-│   │       └── service/              # Business logic
-│   ├── src/main/resources/
-│   │   └── application.properties    # Application configuration
-│   └── pom.xml                       # Maven dependencies
-├── frontend/                         # React frontend
-│   ├── src/
-│   │   ├── api/                      # API integration
-│   │   ├── app/                      # Redux store
-│   │   ├── components/               # Reusable components
-│   │   ├── features/                 # Feature-specific code
-│   │   └── pages/                    # Page components
-│   ├── package.json                  # Node.js dependencies
-│   └── vite.config.js               # Vite configuration
-└── README.md                         # This file
+```powershell
+.\mvnw.cmd test
 ```
 
-**Note**: This is a development version. For production deployment, ensure proper security configurations, environment variables, and database optimizations are in place.
+```bash
+./mvnw test
+```
+
+## Project layout
+
+```text
+backend/       Spring Boot API, database entities, and business logic
+frontend/      React application and Vite configuration
+docs/          Product screenshots
+public/        README screenshot and other public assets
+README.md      Project setup and usage guide
+```
+
+## Development notes
+
+The current database settings use automatic schema updates and SQL logging for development. Review these settings, configure production secrets, restrict CORS origins, and use managed database migrations before deploying to production.

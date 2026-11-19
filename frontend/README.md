@@ -1,12 +1,18 @@
-# React + Vite
+﻿# AppointFlow Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The frontend is a React 19 single-page application built with Vite. It includes the client booking flow, provider portal, and admin workspace.
 
-Currently, two official plugins are available:
+For full-stack prerequisites, database configuration, admin setup, and start-up instructions, see the [project README](../README.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Frontend commands
 
-## Expanding the ESLint configuration
+Run these from the repository root:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev
+npm run lint
+npm run build
+```
+
+The development server uses `http://localhost:3000`. Requests to `/api` are proxied to `http://localhost:8081` by default. Set `BACKEND_URL` to point to a different backend address.
