@@ -37,6 +37,8 @@ public interface ProviderService {
 
     PaginationResponse<Provider> searchByCityPaginated(String city, int page, int size);
 
+    PaginationResponse<Provider> searchByServiceAndCityPaginated(String serviceName, String city, int page, int size);
+
     List<Provider> searchByDescription(String description);
 
     PaginationResponse<Provider> searchByDescriptionPaginated(String description, int page, int size);

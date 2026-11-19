@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import dayjs from "dayjs";
@@ -23,7 +23,10 @@ import AlertBanner from "../components/ui/AlertBanner";
 import { useToast } from "../components/ui/toastContext";
 
 function PublicLanding() {
+  const navigate = useNavigate();
   const { token, role } = useSelector((state) => state.auth);
+  const [serviceQuery, setServiceQuery] = useState("");
+  const [cityQuery, setCityQuery] = useState("");
   const [stats, setStats] = useState({
     totalProviders: 0,
     totalAppointments: 0,
@@ -58,6 +61,21 @@ function PublicLanding() {
     return { to: "/dashboard", label: "Open My Dashboard" };
   }, [token, role]);
 
+  const handleProviderSearch = (event) => {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (serviceQuery.trim()) params.set("service", serviceQuery.trim());
+    if (cityQuery.trim()) params.set("city", cityQuery.trim());
+    if (serviceQuery.trim() && !cityQuery.trim()) {
+      params.set("q", serviceQuery.trim());
+      params.set("type", "service");
+    } else if (cityQuery.trim() && !serviceQuery.trim()) {
+      params.set("q", cityQuery.trim());
+      params.set("type", "city");
+    }
+    navigate(`/providers${params.size ? `?${params.toString()}` : ""}`);
+  };
+
   return (
     <div className="bg-slate-50 text-slate-900">
       {/* Hero Section */}
@@ -69,13 +87,31 @@ function PublicLanding() {
                 Appointment Scheduling Platform
               </p>
               <h1 className="font-display text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 leading-[1.12] text-balance">
-                Schedule trusted specialists without the back-and-forth
+                Find a provider and book a time that works for you
               </h1>
               <p className="mt-5 text-base sm:text-lg text-slate-600 leading-relaxed max-w-xl">
                 Discover verified service providers, inspect live time slots, and
                 confirm appointments in seconds—with dedicated portals for clients,
                 providers, and administrators.
               </p>
+
+              <form onSubmit={handleProviderSearch} className="mt-7 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+                  <label className="relative">
+                    <span className="sr-only">Service or specialty</span>
+                    <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                    <input value={serviceQuery} onChange={(event) => setServiceQuery(event.target.value)} placeholder="Service or specialty" className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-9 pr-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" />
+                  </label>
+                  <label className="relative">
+                    <span className="sr-only">City</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true">⌖</span>
+                    <input value={cityQuery} onChange={(event) => setCityQuery(event.target.value)} placeholder="City" className="w-full rounded-lg border border-slate-300 bg-white py-3 pl-9 pr-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" />
+                  </label>
+                  <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700">
+                    Find providers <FiArrowRight aria-hidden="true" />
+                  </button>
+                </div>
+              </form>
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
@@ -163,6 +199,32 @@ function PublicLanding() {
         </div>
       </section>
 
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <div className="max-w-2xl mb-8">
+          <p className="text-sm font-semibold text-indigo-600">Simple from start to finish</p>
+          <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold text-slate-900">Book in three easy steps</h2>
+          <p className="mt-2 text-slate-600">Find the right service, choose an available time, and keep your appointment details together.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {[
+            ["01", "Find a provider", "Search by service or city and review provider profiles, pricing, and client ratings."],
+            ["02", "Choose a time", "See available appointment slots and select the time that fits your schedule."],
+            ["03", "Manage your booking", "Sign in to view upcoming appointments and manage your booking details."],
+          ].map(([number, title, description]) => (
+            <article key={number} className="rounded-xl border border-slate-200 bg-white p-6">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-50 text-sm font-bold text-indigo-700">{number}</span>
+              <h3 className="mt-4 text-lg font-semibold text-slate-900">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>
+            </article>
+          ))}
+        </div>
+        <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 rounded-xl border border-emerald-100 bg-emerald-50/70 px-5 py-4 text-sm text-slate-700">
+          <span className="inline-flex items-center gap-2"><FiCheckCircle className="text-emerald-600" /> Provider profiles and service details</span>
+          <span className="inline-flex items-center gap-2"><FiCheckCircle className="text-emerald-600" /> Availability shown before you book</span>
+          <span className="inline-flex items-center gap-2"><FiCheckCircle className="text-emerald-600" /> Appointment history in your account</span>
+        </div>
+      </section>
+
       {/* Core Workflows */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="max-w-2xl mb-10">
@@ -185,7 +247,7 @@ function PublicLanding() {
                 Browse & Book Providers
               </h3>
               <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                Search verified specialists by service name, city, or specialty,
+                Search providers by service name, city, or specialty,
                 inspect real-time open slots, and confirm in one flow.
               </p>
             </div>
@@ -239,6 +301,38 @@ function PublicLanding() {
             >
               <span>{role === "ADMIN" ? "Open admin console" : "Sign in to portal"}</span>
               <FiArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+      <section className="border-t border-slate-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <div>
+            <p className="text-sm font-semibold text-indigo-600">Good to know</p>
+            <h2 className="mt-2 font-display text-2xl sm:text-3xl font-bold text-slate-900">Frequently asked questions</h2>
+            <p className="mt-2 text-slate-600">A few quick answers before you book.</p>
+          </div>
+          <div className="divide-y divide-slate-200">
+            {[
+              ["How do I find the right provider?", "Search by service or city, then compare provider descriptions, pricing, ratings, and available times."],
+              ["Can I see availability before booking?", "Yes. Provider pages show available appointment slots so you can choose a time before confirming."],
+              ["Where can I manage my appointments?", "Sign in and open My Appointments to review your bookings and their current status."],
+            ].map(([question, answer]) => (
+              <details key={question} className="group py-4">
+                <summary className="cursor-pointer list-none font-semibold text-slate-900 flex items-center justify-between gap-4">{question}<span className="text-indigo-600 group-open:rotate-45 transition-transform" aria-hidden="true">+</span></summary>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600">{answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+        <div className="bg-indigo-50 border-t border-indigo-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Are you a service provider?</h2>
+              <p className="mt-1 text-sm text-slate-600">Create a provider account to set up your profile and manage your schedule.</p>
+            </div>
+            <Link to={role === "PROVIDER" ? "/provider-dashboard" : "/register"} className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700">
+              {role === "PROVIDER" ? "Open provider portal" : "Join as a provider"} <FiArrowRight aria-hidden="true" />
             </Link>
           </div>
         </div>

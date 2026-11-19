@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import dayjs from "dayjs";
 import {
   FiSearch,
@@ -80,6 +80,13 @@ function StarRow({ rating, size = "w-3.5 h-3.5" }) {
 
 export default function Providers() {
   const navigate = useNavigate();
+  const [urlSearchParams] = useSearchParams();
+  const initialSearch = urlSearchParams.get("q") || "";
+  const initialType = SEARCH_TYPES.some((type) => type.value === urlSearchParams.get("type"))
+    ? urlSearchParams.get("type")
+    : "general";
+  const initialService = urlSearchParams.get("service") || (initialType === "service" ? initialSearch : "");
+  const initialCity = urlSearchParams.get("city") || (initialType === "city" ? initialSearch : "");
   const { token, role } = useSelector((state) => state.auth);
   const [providers, setProviders] = useState([]);
   const [err, setErr] = useState("");
@@ -90,9 +97,11 @@ export default function Providers() {
   const [hasPrevious, setHasPrevious] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const [searchInput, setSearchInput] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchType, setSearchType] = useState("general");
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [searchType, setSearchType] = useState(initialType);
+  const [serviceFilter, setServiceFilter] = useState(initialService);
+  const [cityFilter, setCityFilter] = useState(initialCity);
   const [sortBy, setSortBy] = useState("default");
   const [failedImages, setFailedImages] = useState({});
   const [maxPrice, setMaxPrice] = useState("");
@@ -105,7 +114,12 @@ export default function Providers() {
       setLoading(true);
       let response;
 
-      if (searchTerm.trim()) {
+      if (serviceFilter.trim() || cityFilter.trim()) {
+        const params = new URLSearchParams({ page: String(currentPage), size: "6" });
+        if (serviceFilter.trim()) params.set("service", serviceFilter.trim());
+        if (cityFilter.trim()) params.set("city", cityFilter.trim());
+        response = await api.get(`/api/providers/search/filters/paginated?${params.toString()}`);
+      } else if (searchTerm.trim()) {
         switch (searchType) {
           case "service":
             response = await api.get(
@@ -206,7 +220,7 @@ export default function Providers() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, searchType]);
+  }, [currentPage, searchTerm, searchType, serviceFilter, cityFilter]);
 
   useEffect(() => {
     fetchProviders();
@@ -261,20 +275,25 @@ export default function Providers() {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setCurrentPage(0);
-    setSearchTerm(searchInput);
+    const term = searchInput.trim();
+    setServiceFilter(searchType === "service" ? term : "");
+    setCityFilter(searchType === "city" ? term : "");
+    setSearchTerm(searchType === "service" || searchType === "city" ? "" : term);
   };
 
   const clearSearch = () => {
     setSearchInput("");
     setSearchTerm("");
     setSearchType("general");
+    setServiceFilter("");
+    setCityFilter("");
     setMaxPrice("");
     setSortBy("default");
     setCurrentPage(0);
   };
 
   const hasActiveFilters = Boolean(
-    searchTerm.trim() || maxPrice || sortBy !== "default" || searchType !== "general"
+    searchTerm.trim() || serviceFilter.trim() || cityFilter.trim() || maxPrice || sortBy !== "default" || searchType !== "general"
   );
 
   const modalRatingInfo = activeReviewsProvider
@@ -414,6 +433,16 @@ export default function Providers() {
             >
               <span>Search: &ldquo;{searchTerm.trim()}&rdquo;</span>
               <FiX className="w-3 h-3" />
+            </button>
+          )}
+          {serviceFilter.trim() && (
+            <button type="button" onClick={() => { setServiceFilter(""); setCurrentPage(0); }} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-medium hover:bg-indigo-100 transition-colors">
+              <span>Service: &ldquo;{serviceFilter.trim()}&rdquo;</span><FiX className="w-3 h-3" />
+            </button>
+          )}
+          {cityFilter.trim() && (
+            <button type="button" onClick={() => { setCityFilter(""); setCurrentPage(0); }} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-medium hover:bg-indigo-100 transition-colors">
+              <span>City: &ldquo;{cityFilter.trim()}&rdquo;</span><FiX className="w-3 h-3" />
             </button>
           )}
           {searchType !== "general" && (

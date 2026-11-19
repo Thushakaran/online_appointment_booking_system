@@ -131,6 +131,15 @@ public class ProviderController {
         return ResponseEntity.ok(providerService.searchByCityPaginated(city, page, size));
     }
 
+    @GetMapping("/search/filters/paginated")
+    public ResponseEntity<PaginationResponse<Provider>> searchByServiceAndCityPaginated(
+            @RequestParam(required = false) String service,
+            @RequestParam(required = false) String city,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(providerService.searchByServiceAndCityPaginated(service, city, page, size));
+    }
+
     // Search providers by description
     @GetMapping("/search/description")
     public ResponseEntity<List<Provider>> searchByDescription(@RequestParam String description) {

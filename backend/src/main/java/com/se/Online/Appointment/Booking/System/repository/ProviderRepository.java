@@ -32,6 +32,14 @@ public interface ProviderRepository extends JpaRepository<Provider, Long> {
 
     Page<Provider> findByCityContainingIgnoreCase(String city, Pageable pageable);
 
+    @Query("SELECT p FROM Provider p WHERE " +
+            "(:serviceName IS NULL OR LOWER(p.serviceName) LIKE LOWER(CONCAT('%', :serviceName, '%'))) AND " +
+            "(:city IS NULL OR LOWER(p.city) LIKE LOWER(CONCAT('%', :city, '%')))")
+    Page<Provider> findByServiceAndCityContainingIgnoreCase(
+            @Param("serviceName") String serviceName,
+            @Param("city") String city,
+            Pageable pageable);
+
     // Search by state (case-insensitive)
     List<Provider> findByStateContainingIgnoreCase(String state);
 

@@ -261,6 +261,21 @@ public class ProviderServiceImpl implements ProviderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PaginationResponse<Provider> searchByServiceAndCityPaginated(String serviceName, String city, int page, int size) {
+        String serviceFilter = serviceName == null || serviceName.isBlank() ? null : serviceName.trim();
+        String cityFilter = city == null || city.isBlank() ? null : city.trim();
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Provider> providerPage = providerRepository.findByServiceAndCityContainingIgnoreCase(
+                serviceFilter, cityFilter, pageable);
+        for (Provider provider : providerPage.getContent()) {
+            provider.setAvailabilities(availabilityRepository.findByProviderIdAndIsBookedFalse(provider.getId()));
+        }
+        return new PaginationResponse<>(providerPage.getContent(), providerPage.getNumber(),
+                providerPage.getSize(), providerPage.getTotalElements());
+    }
+
+    @Override
     public List<Provider> searchByDescription(String description) {
         if (description == null || description.trim().isEmpty()) {
             return getAllProviders();
