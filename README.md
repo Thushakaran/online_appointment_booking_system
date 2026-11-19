@@ -1,8 +1,28 @@
 # Online Application Booking System
 
-![AppointFlow Screenshot](public/AppointFlow.png)
-
 A full-stack web application for managing appointment bookings between users and service providers. Built with React frontend and Spring Boot backend.
+
+## Screenshots
+
+### Home
+
+![AppointFlow home page](docs/screenshots/home.png)
+
+### System Overview
+
+![System overview](docs/screenshots/overview.png)
+
+### Service Providers
+
+![Service providers](docs/screenshots/providers.png)
+
+### Appointment Booking
+
+![Appointment booking](docs/screenshots/appointment_booking.png)
+
+### Appointments
+
+![Appointments](docs/screenshots/appointments.png)
 
 ## 🚀 Features
 
@@ -56,8 +76,8 @@ A full-stack web application for managing appointment bookings between users and
 ### 1. Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd Online-Application-Booking-System
+git clone https://github.com/Thushakaran/online_appointment_booking_system.git
+cd online_appointment_booking_system
 ```
 
 ### 2. Database Setup
@@ -150,6 +170,7 @@ Online-Application-Booking-System/
 │   ├── src/main/resources/
 │   │   └── application.properties    # Application configuration
 │   └── pom.xml                       # Maven dependencies
+├── docs/screenshots/                 # Application screenshots
 ├── frontend/                         # React frontend
 │   ├── src/
 │   │   ├── api/                      # API integration
