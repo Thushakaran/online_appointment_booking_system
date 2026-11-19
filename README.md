@@ -1,7 +1,5 @@
 # AppointFlow - Online Appointment Booking System
 
-![AppointFlow home page](docs/screenshots/home.jpg)
-
 AppointFlow is a full-stack appointment booking application. Clients can find service providers, check availability, book appointments, and manage their bookings. Providers manage their profiles and schedules, while administrators manage users, providers, and appointments.
 
 ## Features
@@ -27,6 +25,9 @@ Provider approval workflows are not currently implemented. Providers create thei
 
 ## Screenshots
 
+<details>
+<summary>View application screenshots</summary>
+
 | Home page | System overview |
 | --- | --- |
 | ![Home page](docs/screenshots/home.jpg) | ![System overview](docs/screenshots/overview.jpg) |
@@ -36,6 +37,8 @@ Provider approval workflows are not currently implemented. Providers create thei
 | ![Provider directory](docs/screenshots/providers.jpg) | ![Appointment booking](docs/screenshots/appointment_booking.jpg) |
 
 ![Appointments](docs/screenshots/appointments.jpg)
+
+</details>
 
 ## Technology
 
