@@ -1,5 +1,7 @@
 # Online Application Booking System
 
+![AppointFlow Screenshot](public/AppointFlow.png)
+
 A full-stack web application for managing appointment bookings between users and service providers. Built with React frontend and Spring Boot backend.
 
 ## 🚀 Features
