@@ -590,21 +590,21 @@ function PublicLanding() {
             </div>
           </div>
 
-          <div className="mt-12 rounded-2xl bg-slate-900 text-white p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="mt-12 rounded-2xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50 via-indigo-50/50 to-white p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-indigo-300">
+              <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600">
                 Grow your practice
               </p>
-              <h2 className="mt-1 font-display text-xl sm:text-2xl font-bold">
+              <h2 className="mt-1 font-display text-xl sm:text-2xl font-bold text-slate-900">
                 Are you a service provider?
               </h2>
-              <p className="mt-1 text-sm text-slate-300 max-w-xl">
+              <p className="mt-1 text-sm text-slate-600 max-w-xl">
                 Create a provider profile, publish your open time windows, and manage client bookings in one place.
               </p>
             </div>
             <Link
               to={role === "PROVIDER" ? "/provider-dashboard" : "/register"}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-500 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors whitespace-nowrap shrink-0 shadow-sm"
             >
               <span>
                 {role === "PROVIDER" ? "Open provider portal" : "Join as a provider"}
